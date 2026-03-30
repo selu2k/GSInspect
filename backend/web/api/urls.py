@@ -1,6 +1,8 @@
 from django.urls import path
-from . import views
+from .views import HealthView, BoltListView
 
 urlpatterns = [
-    path("health/", views.health),
+    path("health/", HealthView.as_view(), name="health"),
+    path("public/bolts/", BoltListView.as_view(), name="bolt-list"),
+    path("external/bolts/", BoltListView.as_view(), name="bolt-list-external"),
 ]
