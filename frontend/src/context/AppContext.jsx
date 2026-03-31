@@ -8,12 +8,12 @@ const MOCK_PRODUCTS = [
 ];
 
 const MOCK_TESTS = [
-  { test_id: '10', product_id: 'p1', test_methodology: 'dynamic', test_facility: 'Facility A' },
-  { test_id: '11', product_id: 'p1', test_methodology: 'dynamic', test_facility: 'Facility A' },
-  { test_id: '17', product_id: 'p2', test_methodology: 'dynamic', test_facility: 'Facility B' },
-  { test_id: '18', product_id: 'p2', test_methodology: 'static', test_facility: 'Facility B' },
-  { test_id: '19', product_id: 'p3', test_methodology: 'dynamic', test_facility: 'Facility C' },
-  { test_id: '20', product_id: 'p3', test_methodology: 'dynamic', test_facility: 'Facility C' }
+  { test_id: '10', product_id: 'p1', test_methodology: 'dynamic', test_facility: 'Facility A', peak_strength: 303.1, bond_strength: null, yield_strength: 180, ultimate_deformation: 216, stiffness: null, installation_method: "Manual or Handheld", loading_rate: null, encapsulation_method: "Capsule", energy_absorption: 25, number_of_drops: 1 },
+  { test_id: '11', product_id: 'p1', test_methodology: 'dynamic', test_facility: 'Facility A', peak_strength: 295.4, bond_strength: null, yield_strength: 175, ultimate_deformation: 210, stiffness: null, installation_method: "Manual or Handheld", loading_rate: null, encapsulation_method: "Capsule", energy_absorption: 24, number_of_drops: 1 },
+  { test_id: '17', product_id: 'p2', test_methodology: 'dynamic', test_facility: 'Facility B', peak_strength: 37.6, bond_strength: null, yield_strength: 30, ultimate_deformation: 158, stiffness: null, installation_method: "Jumbo", loading_rate: null, encapsulation_method: "Resin", energy_absorption: null, number_of_drops: 2 },
+  { test_id: '18', product_id: 'p2', test_methodology: 'static', test_facility: 'Facility B', peak_strength: 40.0, bond_strength: 15.5, yield_strength: 32, ultimate_deformation: 160, stiffness: 200, installation_method: "Jumbo", loading_rate: '1mm/min', encapsulation_method: "Resin", energy_absorption: null, number_of_drops: null },
+  { test_id: '19', product_id: 'p3', test_methodology: 'dynamic', test_facility: 'Facility C', peak_strength: 230.1, bond_strength: null, yield_strength: 150, ultimate_deformation: 180, stiffness: null, installation_method: "Manual", loading_rate: null, encapsulation_method: "Grout", energy_absorption: 18, number_of_drops: 1 },
+  { test_id: '20', product_id: 'p3', test_methodology: 'dynamic', test_facility: 'Facility C', peak_strength: 242.6, bond_strength: null, yield_strength: 145, ultimate_deformation: 185, stiffness: null, installation_method: "Manual", loading_rate: null, encapsulation_method: "Grout", energy_absorption: 19, number_of_drops: 1 }
 ];
 
 const MOCK_CURVES = [
@@ -34,7 +34,7 @@ export function AppProvider({ children }) {
   const [userRole, setUserRole] = useState('admin');
 
   // Filter State
-  const [supportType, setSupportType] = useState('Rockbolt'); 
+  const [supportType] = useState('rockbolt');
   const [methodology, setMethodology] = useState('dynamic');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedSupplier, setSelectedSupplier] = useState('All');
@@ -94,7 +94,7 @@ export function AppProvider({ children }) {
     MOCK_PRODUCTS,
     MOCK_TESTS,
     MOCK_CURVES,
-    supportType, setSupportType,
+    supportType,
     methodology, setMethodology,
     selectedCategory, setSelectedCategory,
     selectedSupplier, setSelectedSupplier,
