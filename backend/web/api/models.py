@@ -1,6 +1,37 @@
 from django.db import models
 from django.core.exceptions import ValidationError
 
+from django.contrib.auth.models import AbstractUser
+
+class User(AbstractUser):
+    ADMIN = "ADMIN"
+    ENGINEER = "ENGINEER"
+    VIEWER = "VIEWER"
+
+    ROLE_CHOICES = [
+        (ADMIN, "Administrator"),
+        (ENGINEER, "Engineer"),
+        (VIEWER, "Viewer"),
+    ]
+
+    role = models.CharField(
+        max_length=20,
+        choices=ROLE_CHOICES,
+        default=ENGINEER,
+        db_index=True
+    )
+    phone = models.CharField(max_length=20, blank=True, null=True)
+    department = models.CharField(max_length=100, blank=True, null=True)
+    position = models.CharField(max_length=100, blank=True, null=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "api_user"
+
+    def __str__(self):
+        return self.username
 
 class Supplier(models.Model):
     name       = models.CharField(max_length=255, db_index=True)
