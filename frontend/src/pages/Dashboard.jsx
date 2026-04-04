@@ -77,6 +77,51 @@ export default function Dashboard() {
     });
   }, [plottedTests, filteredCurves]);
 
+  const productStats = useMemo(() => {
+    if (chartProductIds.length === 0) return [];
+
+    const numericFields = [
+      'peak_strength',
+      'bond_strength',
+      'yield_strength',
+      'ultimate_deformation',
+      'stiffness',
+      'energy_absorption',
+      'number_of_drops'
+    ];
+
+    return chartProductIds.map(productId => {
+      const product = filteredProductsList.find(p => p.id === productId);
+      const tests = plottedTests.filter(t => t.product_id === productId);
+      const stats = {};
+
+      numericFields.forEach(field => {
+        const values = tests.map(t => t[field]).filter(v => v != null && v !== '');
+        if (values.length > 0) {
+          const count = values.length;
+          const min = Math.min(...values);
+          const max = Math.max(...values);
+          const mean = values.reduce((a, b) => a + Number(b), 0) / count;
+          
+          const sorted = [...values].sort((a, b) => a - b);
+          const median = sorted[Math.floor(count / 2)];
+          const q25 = sorted[Math.floor(count * 0.25)];
+          const q75 = sorted[Math.floor(count * 0.75)];
+          const std_dev = count > 1 ? Math.sqrt(values.reduce((sq, n) => sq + Math.pow(n - mean, 2), 0) / count) : 0;
+
+          stats[field] = { count, min, max, mean, median, q25, q75, std_dev };
+        } else {
+          stats[field] = null;
+        }
+      });
+
+      return {
+        product,
+        stats
+      };
+    });
+  }, [chartProductIds, plottedTests, filteredProductsList]);
+
   return (
     <div className="flex flex-col gap-4 h-full overflow-y-auto pb-6">
       <section className="bg-white rounded-xl shadow-sm border border-slate-200 p-5 shrink-0">
@@ -237,6 +282,61 @@ export default function Dashboard() {
                       <td className="px-4 py-3 text-slate-600">{test.number_of_drops ?? '-'}</td>
                     </tr>
                   );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
+
+      {/* Tests Summary Stats Section */}
+      {plottedTests.length > 0 && productStats.length > 0 && (
+        <section className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 md:p-5 shrink-0 overflow-hidden flex flex-col">
+          <div className="flex items-center justify-between gap-3 mb-3 shrink-0">
+            <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wide">Plotted Products Summary Stats</h3>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse text-sm whitespace-nowrap">
+              <thead>
+                <tr className="bg-slate-50 border-y border-slate-200 text-slate-600">
+                  <th className="px-4 py-3 font-medium">Product / Metric</th>
+                  <th className="px-4 py-3 font-medium">Peak Strength (kN)</th>
+                  <th className="px-4 py-3 font-medium">Yield Strength (kN)</th>
+                  <th className="px-4 py-3 font-medium">Ultimate Def. (mm)</th>
+                  <th className="px-4 py-3 font-medium">Energy Abs. (kJ)</th>
+                  <th className="px-4 py-3 font-medium">Bond Strength</th>
+                  <th className="px-4 py-3 font-medium">Stiffness</th>
+                  <th className="px-4 py-3 font-medium">Drops</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {productStats.map(({ product, stats }) => {
+                  const colorMap = productColorMap[product?.id];
+                  const labels = [
+                    { display: 'Count', key: 'count' },
+                    { display: 'Min', key: 'min' },
+                    { display: 'Max', key: 'max' },
+                    { display: 'Mean', key: 'mean' },
+                    { display: 'Median', key: 'median' },
+                    { display: 'Q25', key: 'q25' },
+                    { display: 'Q75', key: 'q75' },
+                    { display: 'Std Dev', key: 'std_dev' }
+                  ];
+                  return labels.map(({ display, key }, idx) => (
+                    <tr key={`${product?.id}-${key}`} className="hover:bg-slate-50 transition-colors">
+                      <td className="px-4 py-3 font-medium text-slate-700 border-l-4" style={{ borderLeftColor: colorMap?.hex || '#cbd5e1' }}>
+                        {idx === 0 ? product?.product_name : ''} {idx === 0 && <span className="text-slate-400 font-normal pl-2">{display}</span>}
+                        {idx !== 0 && <span className="text-slate-400 pl-4">{display}</span>}
+                      </td>
+                      <td className="px-4 py-2 text-slate-600">{stats.peak_strength && stats.peak_strength[key] != null ? (key === 'count' ? stats.peak_strength[key] : stats.peak_strength[key].toFixed(2)) : '-'}</td>
+                      <td className="px-4 py-2 text-slate-600">{stats.yield_strength && stats.yield_strength[key] != null ? (key === 'count' ? stats.yield_strength[key] : stats.yield_strength[key].toFixed(2)) : '-'}</td>
+                      <td className="px-4 py-2 text-slate-600">{stats.ultimate_deformation && stats.ultimate_deformation[key] != null ? (key === 'count' ? stats.ultimate_deformation[key] : stats.ultimate_deformation[key].toFixed(2)) : '-'}</td>
+                      <td className="px-4 py-2 text-slate-600">{stats.energy_absorption && stats.energy_absorption[key] != null ? (key === 'count' ? stats.energy_absorption[key] : stats.energy_absorption[key].toFixed(2)) : '-'}</td>
+                      <td className="px-4 py-2 text-slate-600">{stats.bond_strength && stats.bond_strength[key] != null ? (key === 'count' ? stats.bond_strength[key] : stats.bond_strength[key].toFixed(2)) : '-'}</td>
+                      <td className="px-4 py-2 text-slate-600">{stats.stiffness && stats.stiffness[key] != null ? (key === 'count' ? stats.stiffness[key] : stats.stiffness[key].toFixed(2)) : '-'}</td>
+                      <td className="px-4 py-2 text-slate-600">{stats.number_of_drops && stats.number_of_drops[key] != null ? (key === 'count' ? stats.number_of_drops[key] : stats.number_of_drops[key].toFixed(2)) : '-'}</td>
+                    </tr>
+                  ));
                 })}
               </tbody>
             </table>
