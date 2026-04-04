@@ -1,0 +1,159 @@
+[
+    {
+        "supplier": "Supplier A",
+        "product_name": "Resin Bolt A D20 mm x 2.4 m",
+        "bolt_length": "2.4",
+        "bolt_diameter": "20",
+        "bolt_category": "Encapsulated",
+        "equipment_compatibility": [
+            "Handheld",
+            "Mechanized Bolting Machine A",
+            "Multi-OEM"
+        ]
+    },
+    {
+        "supplier": "Supplier A",
+        "product_name": "Resin Bolt A D22 mm x 2.4 m",
+        "bolt_length": "2.4",
+        "bolt_diameter": "22",
+        "bolt_category": "Encapsulated",
+        "equipment_compatibility": [
+            "Handheld",
+            "Mechanized Bolting Machine A",
+            "Multi-OEM"
+        ]
+    },
+    {
+        "supplier": "Supplier A",
+        "product_name": "Resin Bolt A D25 mm x 2.4 m",
+        "bolt_length": "2.4",
+        "bolt_diameter": "25",
+        "bolt_category": "Encapsulated",
+        "equipment_compatibility": [
+            "Handheld",
+            "Mechanized Bolting Machine A",
+            "Multi-OEM"
+        ]
+    },
+    {
+        "supplier": "Supplier A",
+        "product_name": "Pumpable Bolt A D20 mm x 2.4 m",
+        "bolt_length": "2.4",
+        "bolt_diameter": "20",
+        "bolt_category": "Encapsulated",
+        "equipment_compatibility": [
+            "Handheld",
+            "Mechanized Bolting Machine A"
+        ]
+    },
+    {
+        "supplier": "Supplier A",
+        "product_name": "Hybrid Bolt D39 x 2.4 m",
+        "bolt_length": "2.4",
+        "bolt_diameter": "20",
+        "bolt_category": "Hybrid",
+        "equipment_compatibility": [
+            "Handheld",
+            "Mechanized Bolting Machine A",
+            "Multi-OEM"
+        ]
+    },
+    {
+        "supplier": "Supplier A",
+        "product_name": "Hybrid Bolt D46 x 2.4 m",
+        "bolt_length": "2.4",
+        "bolt_diameter": "20",
+        "bolt_category": "Hybrid",
+        "equipment_compatibility": [
+            "Handheld",
+            "Mechanized Bolting Machine A",
+            "Multi-OEM"
+        ]
+    },
+    {
+        "supplier": "Supplier A",
+        "product_name": "Hybrid Bolt B D46 x 2.4 m",
+        "bolt_length": "2.4",
+        "bolt_diameter": "20",
+        "bolt_category": "Hybrid",
+        "equipment_compatibility": [
+            "Handheld",
+            "Mechanized Bolting Machine A",
+            "Multi-OEM"
+        ]
+    },
+    {
+        "supplier": "Supplier A",
+        "product_name": "MP1 Bolt  Ø20 mm x 2.2 m",
+        "bolt_length": "2.2",
+        "bolt_diameter": "20",
+        "bolt_category": "Encapsulated",
+        "equipment_compatibility": [
+            "Handheld",
+            "Multi-OEM"
+        ]
+    },
+    {
+        "supplier": "Supplier A",
+        "product_name": "HC-Bolt Yielding  Ø28 mm x 2.4 m",
+        "bolt_length": "2.4",
+        "bolt_diameter": "28",
+        "bolt_category": "Hybrid",
+        "equipment_compatibility": [
+            "Handheld",
+            "Mechanized Bolting Machine A"
+        ]
+    },
+    {
+        "supplier": "Supplier A",
+        "product_name": "Hollow Core Bolt D28 x 2.4 m",
+        "bolt_length": "2.4",
+        "bolt_diameter": "28",
+        "bolt_category": "Encapsulated",
+        "equipment_compatibility": [
+            "Mechanized Bolting Machine A"
+        ]
+    },
+    {
+        "supplier": "Supplier A",
+        "product_name": "Hollow Core Bolt D32 x 2.4 m",
+        "bolt_length": "2.4",
+        "bolt_diameter": "32",
+        "bolt_category": "Encapsulated",
+        "equipment_compatibility": [
+            "Mechanized Bolting Machine A"
+        ]
+    },
+    {
+        "supplier": "Supplier A",
+        "product_name": "HE Bolt 2.4 m",
+        "bolt_length": "2.4",
+        "bolt_diameter": "24",
+        "bolt_category": "Friction",
+        "equipment_compatibility": [
+            "Handheld",
+            "Mechanized Bolting Machine A",
+            "Multi-OEM"
+        ]
+    },
+    {
+        "supplier": "Supplier A",
+        "product_name": "Yielding Bolt B D20 mm x 2.1 m",
+        "bolt_length": "2.1",
+        "bolt_diameter": "20",
+        "bolt_category": "Encapsulated",
+        "equipment_compatibility": [
+            "Mechanized Bolting Machine A"
+        ]
+    },
+    {
+        "supplier": "Supplier A",
+        "product_name": "Yielding Bolt B D20 mm x 3.0 m",
+        "bolt_length": "3",
+        "bolt_diameter": "20",
+        "bolt_category": "Encapsulated",
+        "equipment_compatibility": [
+            "Mechanized Bolting Machine A"
+        ]
+    }
+]

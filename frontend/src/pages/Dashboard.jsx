@@ -13,7 +13,7 @@ import {
 import { useAppContext } from '../context/AppContext';
 
 export default function Dashboard() {
-  const { filteredProductsList, filteredTests, filteredCurves, productColorMap } = useAppContext();
+  const { filteredProductsList, filteredTests, filteredCurves, productColorMap, apiStats } = useAppContext();
 
   const [chartProductIds, setChartProductIds] = useState([]);
 
@@ -80,47 +80,16 @@ export default function Dashboard() {
   const productStats = useMemo(() => {
     if (chartProductIds.length === 0) return [];
 
-    const numericFields = [
-      'peak_strength',
-      'bond_strength',
-      'yield_strength',
-      'ultimate_deformation',
-      'stiffness',
-      'energy_absorption',
-      'number_of_drops'
-    ];
-
     return chartProductIds.map(productId => {
       const product = filteredProductsList.find(p => p.id === productId);
-      const tests = plottedTests.filter(t => t.product_id === productId);
-      const stats = {};
-
-      numericFields.forEach(field => {
-        const values = tests.map(t => t[field]).filter(v => v != null && v !== '');
-        if (values.length > 0) {
-          const count = values.length;
-          const min = Math.min(...values);
-          const max = Math.max(...values);
-          const mean = values.reduce((a, b) => a + Number(b), 0) / count;
-          
-          const sorted = [...values].sort((a, b) => a - b);
-          const median = sorted[Math.floor(count / 2)];
-          const q25 = sorted[Math.floor(count * 0.25)];
-          const q75 = sorted[Math.floor(count * 0.75)];
-          const std_dev = count > 1 ? Math.sqrt(values.reduce((sq, n) => sq + Math.pow(n - mean, 2), 0) / count) : 0;
-
-          stats[field] = { count, min, max, mean, median, q25, q75, std_dev };
-        } else {
-          stats[field] = null;
-        }
-      });
-
+      const stats = apiStats?.[productId] || {};
+      
       return {
         product,
         stats
       };
     });
-  }, [chartProductIds, plottedTests, filteredProductsList]);
+  }, [chartProductIds, apiStats, filteredProductsList]);
 
   return (
     <div className="flex flex-col gap-4 h-full overflow-y-auto pb-6">
