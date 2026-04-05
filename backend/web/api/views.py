@@ -3,7 +3,8 @@ from rest_framework import generics, permissions
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.exceptions import ValidationError
 from django_filters import BaseInFilter, FilterSet
-from .models import Bolt, Test
+from django.db.models import Min, Max
+from .models import Bolt, Test, Supplier
 from .serializers import BoltSerializer, TestSerializer
 from .utils import group_tests_by_bolt
 from django_filters.rest_framework import DjangoFilterBackend
@@ -23,6 +24,54 @@ class HealthView(generics.GenericAPIView):
     
     def get(self, request, *args, **kwargs):
         return Response({"status": "ok"})
+
+
+class FilterOptionsView(generics.GenericAPIView):
+    """Public API endpoint for filter dropdown options."""
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request, *args, **kwargs):
+        suppliers = list(
+            Supplier.objects.filter(bolts__is_published=True)
+            .distinct()
+            .order_by("name")
+            .values("id", "name")
+        )
+
+        categories = list(
+            Bolt.objects.filter(is_published=True)
+            .order_by("category")
+            .values_list("category", flat=True)
+            .distinct()
+        )
+
+        facilities = list(
+            Test.objects.filter(is_published=True, bolt__is_published=True)
+            .order_by("facility")
+            .values_list("facility", flat=True)
+            .distinct()
+        )
+
+        methodologies = list(
+            Test.objects.filter(is_published=True, bolt__is_published=True)
+            .order_by("methodology")
+            .values_list("methodology", flat=True)
+            .distinct()
+        )
+
+        length_range = Bolt.objects.filter(is_published=True).aggregate(
+            min=Min("length"),
+            max=Max("length"),
+        )
+
+        return Response({
+            "suppliers": suppliers,
+            "categories": categories,
+            "facilities": facilities,
+            "methodologies": methodologies,
+            "length_range": length_range,
+        })
+
 
 class BoltPagination(PageNumberPagination):
     page_size = 20
@@ -85,12 +134,6 @@ class TestListView(generics.ListAPIView):
     
     def list(self, request, *args, **kwargs):
         """Override to group tests by bolt and include per-bolt stats."""
-        # Get the filtered tests
         filtered_tests = self.filter_queryset(self.get_queryset())
-        
-        # Group by bolt and calculate stats
         grouped_data = group_tests_by_bolt(filtered_tests)
-        
         return Response(grouped_data)
-
-
