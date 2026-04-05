@@ -1,9 +1,10 @@
-import React from 'react';
-import { Filter, Layers } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Activity, Filter, Layers, Search, ShieldAlert } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
 
 export default function Sidebar() {
   const {
+    supportType,
     methodology, setMethodology,
     selectedCategory, setSelectedCategory,
     selectedSupplier, setSelectedSupplier,
@@ -14,6 +15,28 @@ export default function Sidebar() {
     filteredProductsList, filteredTests, filteredCurves
   } = useAppContext();
 
+  const [draftMethodology, setDraftMethodology] = useState(methodology);
+  const [draftCategory, setDraftCategory] = useState(selectedCategory);
+  const [draftSupplier, setDraftSupplier] = useState(selectedSupplier);
+  const [draftLength, setDraftLength] = useState(selectedLength);
+  const [draftFacility, setDraftFacility] = useState(selectedFacility);
+
+  useEffect(() => {
+    setDraftMethodology(methodology);
+    setDraftCategory(selectedCategory);
+    setDraftSupplier(selectedSupplier);
+    setDraftLength(selectedLength);
+    setDraftFacility(selectedFacility);
+  }, [methodology, selectedCategory, selectedSupplier, selectedLength, selectedFacility]);
+
+  const applyFilters = () => {
+    setMethodology(draftMethodology);
+    setSelectedCategory(draftCategory);
+    setSelectedSupplier(draftSupplier);
+    setSelectedLength(draftLength);
+    setSelectedFacility(draftFacility);
+  };
+
   return (
     <aside className="w-80 bg-white shadow-xl flex flex-col z-10 border-r border-slate-200 flex-shrink-0">
       <div className="p-5 flex-1 overflow-y-auto space-y-6">
@@ -22,19 +45,29 @@ export default function Sidebar() {
           <h2 className="text-sm font-bold text-slate-700 uppercase tracking-wider">Test Filters</h2>
         </div>
 
+        <div>
+          <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Support Type</h3>
+          <div className="flex items-center gap-2 bg-slate-100 border border-slate-200 p-2.5 rounded-lg cursor-not-allowed">
+            <ShieldAlert className="w-4 h-4 text-slate-400" />
+            <span className="text-sm font-medium text-slate-500 capitalize">{supportType} (Locked for MVP)</span>
+          </div>
+        </div>
+
         <div className="space-y-4">
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Test Methodology</label>
+            <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide flex items-center gap-1.5">
+              <Activity className="w-3.5 h-3.5" /> Test Methodology
+            </label>
             <div className="flex bg-slate-100 p-1 rounded-lg">
               <button 
-                onClick={() => setMethodology('static')}
-                className={`flex-1 text-sm py-1.5 rounded-md font-medium transition-colors ${methodology === 'static' ? 'bg-white shadow-sm text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
+                onClick={() => setDraftMethodology('static')}
+                className={`flex-1 text-sm py-1.5 rounded-md font-medium transition-colors ${draftMethodology === 'static' ? 'bg-white shadow-sm text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
               >
                 Static
               </button>
               <button 
-                onClick={() => setMethodology('dynamic')}
-                className={`flex-1 text-sm py-1.5 rounded-md font-medium transition-colors ${methodology === 'dynamic' ? 'bg-white shadow-sm text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
+                onClick={() => setDraftMethodology('dynamic')}
+                className={`flex-1 text-sm py-1.5 rounded-md font-medium transition-colors ${draftMethodology === 'dynamic' ? 'bg-white shadow-sm text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
               >
                 Dynamic
               </button>
@@ -44,7 +77,8 @@ export default function Sidebar() {
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Bolt Category</label>
             <select 
-              value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)}
+              value={draftCategory}
+              onChange={(e) => setDraftCategory(e.target.value)}
               className="w-full bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5"
             >
               {categories.map(c => <option key={c} value={c}>{c}</option>)}
@@ -54,7 +88,8 @@ export default function Sidebar() {
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Supplier</label>
             <select 
-              value={selectedSupplier} onChange={(e) => setSelectedSupplier(e.target.value)}
+              value={draftSupplier}
+              onChange={(e) => setDraftSupplier(e.target.value)}
               className="w-full bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5"
             >
               {suppliers.map(s => <option key={s} value={s}>{s}</option>)}
@@ -64,7 +99,8 @@ export default function Sidebar() {
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Length (m)</label>
             <select 
-              value={selectedLength} onChange={(e) => setSelectedLength(e.target.value)}
+              value={draftLength}
+              onChange={(e) => setDraftLength(e.target.value)}
               className="w-full bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5"
             >
               {lengths.map(l => <option key={l} value={l}>{l}</option>)}
@@ -74,16 +110,24 @@ export default function Sidebar() {
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Test Facility</label>
             <select 
-              value={selectedFacility} onChange={(e) => setSelectedFacility(e.target.value)}
+              value={draftFacility}
+              onChange={(e) => setDraftFacility(e.target.value)}
               className="w-full bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5"
             >
               {facilities.map(f => <option key={f} value={f}>{f}</option>)}
             </select>
           </div>
 
+          <button
+            onClick={applyFilters}
+            className="w-full mt-2 inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-3 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-700"
+          >
+            <Search className="w-4 h-4" /> Search / Show Results
+          </button>
+
         </div>
 
-        <div className="pt-4 border-t border-slate-100 space-y-4">
+        {/* <div className="pt-4 border-t border-slate-100 space-y-4">
           <label className="flex items-center gap-3 cursor-pointer group">
             <div className="relative flex items-center justify-center">
               <input type="checkbox" className="sr-only" checked={showAverage} onChange={(e) => setShowAverage(e.target.checked)} />
@@ -92,7 +136,7 @@ export default function Sidebar() {
             </div>
             <span className="text-sm font-medium text-slate-600 group-hover:text-slate-800">Show Average Overlay</span>
           </label>
-        </div>
+        </div> */}
       </div>
 
       <div className="p-4 bg-slate-50 border-t border-slate-200 border-b">
