@@ -246,17 +246,51 @@ class Command(BaseCommand):
                 additional_test_count += 1
                 
                 # Create test curve with realistic displacement/load data
+                # Displacement increments by 0.5 from 0 to 230
+                # Pattern based on CSV: rapid rise, high plateau with noise, slow variations
                 curve_points = []
-                num_points = random.randint(50, 100)
-                for i in range(num_points):
-                    displacement = round(i * 0.5, 2)
-                    # Create a realistic load curve with peak and decline
-                    load_value = peak_strength * 20 * (1 - (i / 200) ** 2) if i < 100 else peak_strength * 20 * 0.5
-                    load_value = round(load_value + random.uniform(-5, 5), 2)
+                displacement = 0.0
+                peak_load = peak_strength * 10 + random.uniform(50, 100)
+                
+                # Define characteristic points (displacement, load_ratio)
+                # These define the overall shape, noise is added later
+                keypoints = [
+                    (0, 0),                    # Start
+                    (2, 0.70),                 # Early rise
+                    (5, 0.95),                 # Near peak
+                    (7, 1.0),                  # Peak
+                    (15, 0.88),                # High plateau
+                    (50, 0.85),                # Plateau continues
+                    (100, 0.87),               # Slow drift upward
+                    (150, 0.82),               # Slight decline
+                    (200, 0.75),               # Gradual decline
+                    (230, 0.70),               # End
+                ]
+                
+                while displacement <= 230:
+                    # Interpolate base load from keypoints
+                    base_ratio = 0
+                    for i in range(len(keypoints) - 1):
+                        d1, r1 = keypoints[i]
+                        d2, r2 = keypoints[i + 1]
+                        if d1 <= displacement <= d2:
+                            # Linear interpolation between keypoints
+                            t = (displacement - d1) / (d2 - d1)
+                            base_ratio = r1 + (r2 - r1) * t
+                            break
+                    
+                    base_load = peak_load * base_ratio
+                    
+                    # Add realistic noise (smaller values for smoother curves)
+                    noise_magnitude = 3 + (displacement / 230) * 4
+                    noise = random.uniform(-noise_magnitude, noise_magnitude)
+                    
+                    load_value = round(base_load + noise, 2)
                     curve_points.append({
-                        "displacement": displacement,
+                        "displacement": round(displacement, 1),
                         "load": max(0, load_value)
                     })
+                    displacement += 0.5
                 
                 TestCurve.objects.create(
                     test=test,
