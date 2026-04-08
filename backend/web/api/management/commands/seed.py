@@ -156,9 +156,9 @@ class Command(BaseCommand):
         ]
         
         EQUIPMENT_COMPATIBILITY = [
-            "multi-OEM",
-            "handheld",
-            "boltec"
+            "Multi-OEM",
+            "Handheld",
+            "Boltec"
         ]
         
         FACILITIES = [
