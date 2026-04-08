@@ -1,5 +1,4 @@
 import React, { createContext, useState, useEffect, useMemo, useContext } from 'react';
-import mockProducts from './mockProducts.json';
 
 // 
 const TAILWIND_COLORS = ['bg-blue-500', 'bg-emerald-500', 'bg-amber-500', 'bg-violet-500', 'bg-pink-500', 'bg-teal-500', 'bg-rose-500', 'bg-yellow-500'];
@@ -15,6 +14,24 @@ export function AppProvider({ children }) {
   const [apiCurves, setApiCurves] = useState([]);
   const [apiStats, setApiStats] = useState({});
 
+  // Filter Options Data from API
+  const [filterOptions, setFilterOptions] = useState({
+    categories: [],
+    suppliers: [],
+    facilities: [],
+    methodologies: [],
+    length_range: { min: 0, max: 10 }
+  });
+
+  useEffect(() => {
+    fetch('/api/public/filter-options/')
+      .then(res => res.json())
+      .then(data => {
+        setFilterOptions(data);
+      })
+      .catch(err => console.error("Error fetching filter options:", err));
+  }, []);
+
   // Filter State
   const [supportType] = useState('rockbolt');
   const [methodology, setMethodology] = useState('dynamic');
@@ -25,11 +42,15 @@ export function AppProvider({ children }) {
   const [selectedFacility, setSelectedFacility] = useState('All');
   const [showAverage, setShowAverage] = useState(false);
 
-  useEffect(() => {
+  const triggerSearch = (filters) => {
+    setSelectedCategory(filters.category);
+    setSelectedSupplier(filters.supplier);
+    setSelectedLength(filters.length);
+
     const params = new URLSearchParams({ limit: 100 });
-    if (selectedCategory !== 'All') params.append('category', selectedCategory);
-    if (selectedSupplier !== 'All') params.append('supplier', selectedSupplier);
-    if (selectedLength !== 'All') params.append('length', selectedLength);
+    if (filters.category !== 'All') params.append('category', filters.category);
+    if (filters.supplier !== 'All') params.append('supplier', filters.supplier);
+    if (filters.length !== 'All') params.append('length', filters.length);
 
     fetch(`/api/public/bolts/?${params.toString()}`)
       .then(res => res.json())
@@ -42,16 +63,17 @@ export function AppProvider({ children }) {
           bolt_category: b.category
         }));
         setProducts(bolts);
+        setSelectedProductIds([]); // Do not auto-select products
       })
       .catch(err => console.error("Error fetching bolts:", err));
-  }, [selectedCategory, selectedSupplier, selectedLength]);
+  };
 
-  // Categories derived from mock data for dropdowns
-  const categories = useMemo(() => ['All', ...new Set(mockProducts.map(p => p.bolt_category))], []);
-  const suppliers = useMemo(() => ['All', ...new Set(mockProducts.map(p => p.supplier))], []);
-  const lengths = useMemo(() => ['All', ...new Set(mockProducts.map(p => p.bolt_length))], []);
-  const facilities = useMemo(() => ['All', ...new Set(apiTests.map(t => t.test_facility))], [apiTests]);
-
+  // Categories derived from API data for dropdowns
+  const categories = useMemo(() => ['All', ...filterOptions.categories], [filterOptions.categories]);
+  const suppliers = useMemo(() => ['All', ...filterOptions.suppliers.map(s => s.name || s)], [filterOptions.suppliers]);
+  const facilities = useMemo(() => ['All', ...filterOptions.facilities], [filterOptions.facilities]);
+  const lengthRange = useMemo(() => filterOptions.length_range, [filterOptions.length_range]);
+  
   const filteredProductsList = products;
 
   const productColorMap = useMemo(() => {
@@ -60,10 +82,6 @@ export function AppProvider({ children }) {
       map[p.id] = { tailwind: TAILWIND_COLORS[index % 8], hex: HEX_COLORS[index % 8] };
     });
     return map;
-  }, [filteredProductsList]);
-
-  useEffect(() => {
-    setSelectedProductIds(filteredProductsList.map(p => p.id));
   }, [filteredProductsList]);
 
   useEffect(() => {
@@ -147,10 +165,10 @@ export function AppProvider({ children }) {
     selectedFacility, setSelectedFacility,
     showAverage, setShowAverage,
     selectedProductIds, setSelectedProductIds,
-    categories, suppliers, lengths, facilities,
+    categories, suppliers, lengthRange, facilities,
     filteredProductsList, productColorMap,
     filteredTests, filteredCurves,
-    toggleProductSelection
+    toggleProductSelection, triggerSearch
   };
 
   return (
