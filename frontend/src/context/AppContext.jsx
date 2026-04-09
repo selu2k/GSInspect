@@ -1,8 +1,18 @@
 import React, { createContext, useState, useEffect, useMemo, useContext } from 'react';
 
 // 
-const TAILWIND_COLORS = ['bg-blue-500', 'bg-emerald-500', 'bg-amber-500', 'bg-violet-500', 'bg-pink-500', 'bg-teal-500', 'bg-rose-500', 'bg-yellow-500'];
-const HEX_COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#14b8a6', '#f43f5e', '#eab308'];
+const TAILWIND_COLORS = [
+  'bg-blue-500', 'bg-emerald-500', 'bg-amber-500', 'bg-violet-500', 
+  'bg-pink-500', 'bg-teal-500', 'bg-rose-500', 'bg-yellow-500',
+  'bg-indigo-500', 'bg-cyan-500', 'bg-lime-500', 'bg-fuchsia-500',
+  'bg-red-500', 'bg-orange-500', 'bg-green-500', 'bg-sky-500'
+];
+const HEX_COLORS = [
+  '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', 
+  '#ec4899', '#14b8a6', '#f43f5e', '#eab308',
+  '#6366f1', '#06b6d4', '#84cc16', '#d946ef',
+  '#ef4444', '#f97316', '#22c55e', '#0ea5e9'
+];
 
 export const AppContext = createContext();
 
@@ -78,11 +88,12 @@ export function AppProvider({ children }) {
 
   const productColorMap = useMemo(() => {
     const map = {};
-    filteredProductsList.forEach((p, index) => {
-      map[p.id] = { tailwind: TAILWIND_COLORS[index % 8], hex: HEX_COLORS[index % 8] };
+    // Assign colors based on the order of selected products, not filter position
+    selectedProductIds.forEach((productId, index) => {
+      map[productId] = { tailwind: TAILWIND_COLORS[index % 16], hex: HEX_COLORS[index % 16] };
     });
     return map;
-  }, [filteredProductsList]);
+  }, [selectedProductIds]);
 
   useEffect(() => {
     if (selectedProductIds.length === 0) {

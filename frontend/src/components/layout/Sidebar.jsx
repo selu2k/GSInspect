@@ -15,19 +15,19 @@ export default function Sidebar() {
 
   const [draftCategory, setDraftCategory] = useState(selectedCategory);
   const [draftSupplier, setDraftSupplier] = useState(selectedSupplier);
-  const [draftLengthValue, setDraftLengthValue] = useState(selectedLength === 'All' ? lengthRange.max : parseFloat(selectedLength) || lengthRange.min);
+  const [draftLengthValue, setDraftLengthValue] = useState(selectedLength === 'All' ? lengthRange.min : parseFloat(selectedLength) || lengthRange.min);
 
   useEffect(() => {
     setDraftCategory(selectedCategory);
     setDraftSupplier(selectedSupplier);
-    setDraftLengthValue(selectedLength === 'All' ? lengthRange.max : parseFloat(selectedLength) || lengthRange.min);
+    setDraftLengthValue(selectedLength === 'All' ? lengthRange.min : parseFloat(selectedLength) || lengthRange.min);
   }, [selectedCategory, selectedSupplier, selectedLength, lengthRange]);
 
   const applyFilters = () => {
     triggerSearch({
       category: draftCategory,
       supplier: draftSupplier,
-      length: draftLengthValue === lengthRange.max ? 'All' : String(draftLengthValue)
+      length: draftLengthValue === lengthRange.min ? 'All' : String(draftLengthValue)
     });
   };
 
@@ -81,9 +81,19 @@ export default function Sidebar() {
         <div className="space-y-2 pt-1">
           <div className="flex items-baseline justify-between">
             <label className="text-xs font-semibold text-slate-700 uppercase tracking-widest">Bolt Length (m)</label>
-            <div className="text-right">
-              <span className="text-lg font-bold text-blue-600">{draftLengthValue.toFixed(2)}</span>
-              <span className="text-xs text-slate-400 ml-1">m</span>
+            <div className="flex items-center gap-2">
+              {draftLengthValue !== lengthRange.min && (
+                <button
+                  onClick={() => setDraftLengthValue(lengthRange.min)}
+                  className="text-xs text-blue-600 hover:text-blue-700 font-semibold underline"
+                >
+                  Clear
+                </button>
+              )}
+              <div className="text-right">
+                <span className="text-md  text-blue-600">{draftLengthValue === lengthRange.min ? 'Any' : draftLengthValue.toFixed(2)}</span>
+                {draftLengthValue !== lengthRange.min && <span className="text-xs text-slate-400 ml-1">m</span>}
+              </div>
             </div>
           </div>
           <div className="relative px-1 py-1">

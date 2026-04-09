@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Layers, Gauge, Building2 } from 'lucide-react';
+import { Layers, Gauge, Building2, TrendingUp } from 'lucide-react';
 import {
   CartesianGrid,
   Legend,
@@ -15,7 +15,7 @@ import { useAppContext } from '../context/AppContext';
 export default function Dashboard() {
   const { 
     filteredProductsList, filteredTests, filteredCurves, productColorMap, apiStats,
-    selectedProductIds, setSelectedProductIds, toggleProductSelection, showAverage,
+    selectedProductIds, setSelectedProductIds, toggleProductSelection, showAverage, setShowAverage,
     methodology, setMethodology, selectedFacility, setSelectedFacility, facilities
   } = useAppContext();
 
@@ -44,6 +44,26 @@ export default function Dashboard() {
       });
   }, [plottedTests, filteredProductsList, productColorMap]);
 
+  const chartSeriesData = useMemo(() => {
+    if (showAverage) {
+      // Show average curves per product
+      return selectedProductIds.map((productId) => {
+        const product = filteredProductsList.find((p) => p.id === productId);
+        const productName = product ? product.product_name : 'Unknown Product';
+        return {
+          testId: `avg_${productId}`,
+          dataKey: `avg_${productId}`,
+          productId: productId,
+          label: `${productName} (Avg)`,
+          color: productColorMap[productId]?.hex || '#64748b',
+          showInLegend: true,
+          isAverage: true
+        };
+      });
+    }
+    return chartSeries;
+  }, [showAverage, selectedProductIds, chartSeries, filteredProductsList, productColorMap]);
+
   const chartData = useMemo(() => {
     if (plottedTests.length === 0) return [];
 
@@ -56,7 +76,7 @@ export default function Dashboard() {
       return acc;
     }, {});
 
-    return uniqueDisplacements.map((disp) => {
+    const baseData = uniqueDisplacements.map((disp) => {
       const row = { disp };
       plottedTests.forEach((test) => {
         const key = `test_${test.test_id}`;
@@ -64,7 +84,34 @@ export default function Dashboard() {
       });
       return row;
     });
-  }, [plottedTests, filteredCurves]);
+
+    if (!showAverage) return baseData;
+
+    // Calculate average per product
+    return baseData.map((row) => {
+      const newRow = { ...row };
+      const productTests = new Map();
+      
+      plottedTests.forEach((test) => {
+        if (!productTests.has(test.product_id)) {
+          productTests.set(test.product_id, []);
+        }
+        const key = `test_${test.test_id}`;
+        if (row[key] != null) {
+          productTests.get(test.product_id).push(row[key]);
+        }
+      });
+
+      productTests.forEach((values, productId) => {
+        if (values.length > 0) {
+          const avg = values.reduce((a, b) => a + b, 0) / values.length;
+          newRow[`avg_${productId}`] = avg;
+        }
+      });
+      
+      return newRow;
+    });
+  }, [plottedTests, filteredCurves, showAverage]);
 
   const productStats = useMemo(() => {
     if (selectedProductIds.length === 0) return [];
@@ -186,8 +233,23 @@ export default function Dashboard() {
 
       <section className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 md:p-5 flex-1 min-h-[400px] flex flex-col shrink-0">
         <div className="flex items-center justify-between gap-3 mb-3 shrink-0">
-          <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wide">Force-Displacement Chart</h3>
-          <span className="text-xs text-slate-500">{selectedProductIds.length} product(s) plotted</span>
+          <div className="flex items-center gap-3">
+            <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wide">Force-Displacement Chart</h3>
+            <span className="text-xs text-slate-500">{selectedProductIds.length} product(s) plotted</span>
+          </div>
+          {selectedProductIds.length > 0 && (
+            <button
+              onClick={() => setShowAverage(!showAverage)}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                showAverage
+                  ? 'bg-emerald-600 text-white shadow-md'
+                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+              }`}
+            >
+              <TrendingUp className="w-3.5 h-3.5" />
+              {showAverage ? 'Average On' : 'Show Average'}
+            </button>
+          )}
         </div>
 
         {chartData.length === 0 ? (
@@ -227,20 +289,25 @@ export default function Dashboard() {
                 />
                 {/* <Legend iconType="circle" wrapperStyle={{ fontSize: '12px' }} /> */}
 
-                {chartSeries.map((series) => (
-                  <Line
-                    key={series.testId}
-                    type="monotone"
-                    dataKey={series.dataKey}
-                    name={series.label}
-                    legendType={series.showInLegend ? 'line' : 'none'}
-                    stroke={series.color}
-                    strokeWidth={2.25}
-                    dot={false}
-                    connectNulls={false}
-                    isAnimationActive={false}
-                  />
-                ))}
+                {chartSeriesData.map((series) => {
+                  const strokeDasharray = series.isAverage ? '5 5' : 'none';
+                  const strokeWidth = series.isAverage ? 3 : 2.25;
+                  return (
+                    <Line
+                      key={series.testId}
+                      type="monotone"
+                      dataKey={series.dataKey}
+                      name={series.label}
+                      legendType={series.showInLegend ? 'line' : 'none'}
+                      stroke={series.color}
+                      strokeWidth={strokeWidth}
+                      strokeDasharray={strokeDasharray}
+                      dot={false}
+                      connectNulls={false}
+                      isAnimationActive={false}
+                    />
+                  );
+                })}
               </LineChart>
             </ResponsiveContainer>
           </div>
