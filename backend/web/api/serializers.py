@@ -1,8 +1,22 @@
 from rest_framework import serializers
-from .models import Bolt, Test, TestCurve
+from .models import Bolt, Test, TestCurve, Supplier
 
 
-class BoltSerializer(serializers.ModelSerializer):
+class SupplierSerializer(serializers.ModelSerializer):
+    """Serializer for Supplier admin operations."""
+    
+    class Meta:
+        model = Supplier
+        fields = [
+            "id",
+            "name",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["id", "created_at", "updated_at"]
+
+
+class PublicBoltSerializer(serializers.ModelSerializer):
     supplier = serializers.SerializerMethodField()
 
     class Meta:
@@ -24,7 +38,7 @@ class BoltSerializer(serializers.ModelSerializer):
         }
 
 
-class TestCurveSerializer(serializers.ModelSerializer):
+class PublicTestCurveSerializer(serializers.ModelSerializer):
     """Serializer for TestCurve data points."""
     
     class Meta:
@@ -35,9 +49,9 @@ class TestCurveSerializer(serializers.ModelSerializer):
         ]
 
 
-class TestSerializer(serializers.ModelSerializer):
+class PublicTestSerializer(serializers.ModelSerializer):
     """Serializer for Test with related curve."""
-    curve = TestCurveSerializer(read_only=True)
+    curve = PublicTestCurveSerializer(read_only=True)
     methodology_display = serializers.CharField(source='get_methodology_display', read_only=True)
     
     class Meta:

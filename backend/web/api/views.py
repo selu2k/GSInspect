@@ -5,7 +5,7 @@ from rest_framework.exceptions import ValidationError
 from django_filters import BaseInFilter, FilterSet
 from django.db.models import Min, Max
 from .models import Bolt, Test, Supplier
-from .serializers import BoltSerializer, TestSerializer
+from .serializers import PublicBoltSerializer, PublicTestSerializer, SupplierSerializer
 from .utils import group_tests_by_bolt
 from django_filters.rest_framework import DjangoFilterBackend
 
@@ -26,7 +26,7 @@ class HealthView(generics.GenericAPIView):
         return Response({"status": "ok"})
 
 
-class FilterOptionsView(generics.GenericAPIView):
+class PublicFilterOptionsView(generics.GenericAPIView):
     """Public API endpoint for filter dropdown options."""
     permission_classes = [permissions.AllowAny]
 
@@ -79,7 +79,7 @@ class BoltPagination(PageNumberPagination):
     max_page_size = 100
 
 
-class BoltListView(generics.ListAPIView):
+class PublicBoltListView(generics.ListAPIView):
     """
     Public API endpoint for published bolts with filtering and pagination.
     
@@ -91,14 +91,14 @@ class BoltListView(generics.ListAPIView):
     - limit: Items per page (default 20, max 100)
     """
     queryset = Bolt.objects.select_related("supplier").filter(is_published=True).order_by("id")
-    serializer_class = BoltSerializer
+    serializer_class = PublicBoltSerializer
     pagination_class = BoltPagination
     permission_classes = [permissions.AllowAny]
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ["category", "supplier", "length"]
 
 
-class TestListView(generics.ListAPIView):
+class PublicTestListView(generics.ListAPIView):
     """
     Public API endpoint for published tests with associated curve and calculated stats.
     
@@ -115,7 +115,7 @@ class TestListView(generics.ListAPIView):
     - Calculated stats (min/max/mean/median/quartiles/std dev) for filtered results only
     """
     queryset = Test.objects.select_related("curve").filter(is_published=True).order_by("-created_at")
-    serializer_class = TestSerializer
+    serializer_class = PublicTestSerializer
     permission_classes = [permissions.AllowAny]
     filter_backends = [DjangoFilterBackend]
     filterset_class = TestFilterSet
@@ -137,3 +137,30 @@ class TestListView(generics.ListAPIView):
         filtered_tests = self.filter_queryset(self.get_queryset())
         grouped_data = group_tests_by_bolt(filtered_tests)
         return Response(grouped_data)
+
+class SupplierListCreateView(generics.ListCreateAPIView):
+    """
+    Admin API endpoint for supplier management.
+    
+    GET: List all suppliers
+    POST: Create a new supplier
+    """
+    queryset = Supplier.objects.all().order_by("name")
+    serializer_class = SupplierSerializer
+    # CHANGE THIS TO IS_AUTHENTICATED, THIS IS ONLY HERE BECAUSE AUTHENTICATION IS NOT SET UP YET
+    permission_classes = [permissions.AllowAny]
+
+
+class SupplierDetailView(generics.RetrieveUpdateDestroyAPIView):
+    """
+    Admin API endpoint for individual supplier management.
+    
+    GET: Retrieve supplier details
+    PUT/PATCH: Update supplier
+    DELETE: Delete supplier
+    """
+    queryset = Supplier.objects.all()
+    serializer_class = SupplierSerializer
+    # CHANGE THIS TO IS_AUTHENTICATED, THIS IS ONLY HERE BECAUSE AUTHENTICATION IS NOT SET UP YET
+    permission_classes = [permissions.AllowAny]
+    lookup_field = "id"
