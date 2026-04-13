@@ -59,7 +59,7 @@ export function AppProvider({ children }) {
 
     const params = new URLSearchParams({ limit: 100 });
     if (filters.category !== 'All') params.append('category', filters.category);
-    if (filters.supplier !== 'All') params.append('supplier', filters.supplier);
+    if (filters.supplier !== 'All') params.append('supplier', supplierNameToIdMap[filters.supplier]);
     if (filters.length !== 'All') params.append('length', filters.length);
 
     fetch(`/api/public/bolts/?${params.toString()}`)
@@ -81,6 +81,13 @@ export function AppProvider({ children }) {
   // Categories derived from API data for dropdowns
   const categories = useMemo(() => ['All', ...filterOptions.categories], [filterOptions.categories]);
   const suppliers = useMemo(() => ['All', ...filterOptions.suppliers.map(s => s.name || s)], [filterOptions.suppliers]);
+  const supplierNameToIdMap = useMemo(() => {
+    const map = {};
+    filterOptions.suppliers.forEach(s => {
+      map[s.name] = s.id;
+    });
+    return map;
+  }, [filterOptions.suppliers]);
   const facilities = useMemo(() => ['All', ...filterOptions.facilities], [filterOptions.facilities]);
   const lengthRange = useMemo(() => filterOptions.length_range, [filterOptions.length_range]);
   
