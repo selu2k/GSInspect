@@ -14,7 +14,6 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    
     'rest_framework',
     'rest_framework_simplejwt',
     'django_filters',
@@ -35,7 +34,7 @@ ROOT_URLCONF = 'web.urls'
 
 TEMPLATES = [
     {
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'BACKEND': 'django.db.backends.mysql',
         'DIRS': [],
         'APP_DIRS': True,
         'OPTIONS': {
