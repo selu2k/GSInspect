@@ -10,20 +10,11 @@ from .models import Bolt, Test, Supplier
 from .serializers import BoltSerializer, TestSerializer
 from .utils import group_tests_by_bolt
 
+# 从 permissions.py 导入权限类，遵循 DRY 原则
+from .permissions import IsEngineerOrAdmin
 
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-
-
-class IsEngineerOrAdmin(permissions.BasePermission):
-    def has_permission(self, request, view):
-        if request.method in permissions.SAFE_METHODS:
-            return True
-        return (
-            request.user and 
-            request.user.is_authenticated and 
-            request.user.role in ['ADMIN', 'ENGINEER']
-        )
 
 class TestFilterSet(FilterSet):
     bolt_ids = BaseInFilter(field_name='bolt_id')
@@ -78,7 +69,6 @@ class FilterOptionsView(generics.GenericAPIView):
             "length_range": length_range,
         })
 
-
 class BoltPagination(PageNumberPagination):
     page_size = 20
     page_size_query_param = "limit"
@@ -112,20 +102,20 @@ class TestListView(generics.ListAPIView):
         grouped_data = group_tests_by_bolt(filtered_tests)
         return Response(grouped_data)
 
-
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
     @classmethod
     def get_token(cls, user):
         token = super().get_token(user)
-        token['role'] = user.role
+        # 使用 getattr 防止 role 字段被简化删除后代码崩溃
+        token['role'] = getattr(user, 'role', 'ADMIN' if user.is_staff else 'VIEWER')
         token['username'] = user.username
         return token
 
     def validate(self, attrs):
         data = super().validate(attrs)
-        data['role'] = self.user.role
+        data['role'] = getattr(self.user, 'role', 'ADMIN' if self.user.is_staff else 'VIEWER')
         data['username'] = self.user.username
-        data['department'] = self.user.department
+        data['department'] = getattr(self.user, 'department', None)
         return data
 
 class MyTokenObtainPairView(TokenObtainPairView):
