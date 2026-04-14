@@ -1,14 +1,24 @@
 from rest_framework.response import Response
 from rest_framework import generics, permissions
 from rest_framework.pagination import PageNumberPagination
-from .models import Bolt
-from .serializers import BoltSerializer
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
+from .models import Bolt
+from .serializers import BoltSerializer
+
+class IsEngineerOrAdmin(permissions.BasePermission):
+    def has_permission(self, request, view):
+        if request.method in permissions.SAFE_METHODS:
+            return True
+        return (
+            request.user and 
+            request.user.is_authenticated and 
+            request.user.role in ['ADMIN', 'ENGINEER']
+        )
+
 class HealthView(generics.GenericAPIView):
-    """Health check endpoint."""
     permission_classes = [permissions.AllowAny]
     
     def get(self, request, *args, **kwargs):
@@ -19,22 +29,11 @@ class BoltPagination(PageNumberPagination):
     page_size_query_param = "limit"
     max_page_size = 100
 
-
 class BoltListView(generics.ListAPIView):
-    """
-    Public API endpoint for published bolts with filtering and pagination.
-    
-    Query parameters:
-    - category: Filter by category
-    - supplier: Filter by supplier ID
-    - length: Filter by bolt length
-    - page: Page number (default 1)
-    - limit: Items per page (default 20, max 100)
-    """
     queryset = Bolt.objects.select_related("supplier").filter(is_published=True).order_by("id")
     serializer_class = BoltSerializer
     pagination_class = BoltPagination
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ["category", "supplier", "length"]
 
