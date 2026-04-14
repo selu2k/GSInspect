@@ -106,7 +106,19 @@ class BoltListView(generics.ListAPIView):
 
 class TestListView(generics.ListAPIView):
     """
-    Public API endpoint for published tests including grouped data and statistics.
+    Public API endpoint for published tests with associated curve and calculated stats.
+    
+    Query parameters (both required):
+    - bolt_ids: Filter by bolt IDs (comma-separated, e.g., ?bolt_ids=1,2,3)
+    - methodology: Filter by methodology (static or dynamic)
+    
+    Optional:
+    - facility: Filter by facility name
+    
+    Response includes:
+    - Test details with all measurements
+    - Associated TestCurve with displacement/load data points
+    - Calculated stats (min/max/mean/median/quartiles/std dev) for filtered results only
     """
     queryset = Test.objects.select_related("curve").filter(is_published=True).order_by("-created_at")
     serializer_class = TestSerializer
