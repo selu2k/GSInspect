@@ -10,13 +10,16 @@ from .models import Bolt, Test, Supplier
 from .serializers import BoltSerializer, TestSerializer
 from .utils import group_tests_by_bolt
 
-# 从 permissions.py 导入权限类，遵循 DRY 原则
+# Import permission class from permissions.py to follow DRY principles
 from .permissions import IsEngineerOrAdmin
 
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 class TestFilterSet(FilterSet):
+    """
+    Filter set for Test model to support multi-id filtering via comma-separated strings.
+    """
     bolt_ids = BaseInFilter(field_name='bolt_id')
     
     class Meta:
@@ -24,12 +27,18 @@ class TestFilterSet(FilterSet):
         fields = ['methodology', 'facility']
 
 class HealthView(generics.GenericAPIView):
+    """
+    Health check endpoint for monitoring system status.
+    """
     permission_classes = [permissions.AllowAny]
     
     def get(self, request, *args, **kwargs):
         return Response({"status": "ok"})
 
 class FilterOptionsView(generics.GenericAPIView):
+    """
+    Public API endpoint to provide dynamic options for frontend filter dropdowns.
+    """
     permission_classes = [permissions.AllowAny]
 
     def get(self, request, *args, **kwargs):
@@ -70,11 +79,17 @@ class FilterOptionsView(generics.GenericAPIView):
         })
 
 class BoltPagination(PageNumberPagination):
+    """
+    Standard pagination configuration for Bolt lists.
+    """
     page_size = 20
     page_size_query_param = "limit"
     max_page_size = 100
 
 class BoltListView(generics.ListAPIView):
+    """
+    Public API endpoint for retrieving published bolts with filtering and pagination.
+    """
     queryset = Bolt.objects.select_related("supplier").filter(is_published=True).order_by("id")
     serializer_class = BoltSerializer
     pagination_class = BoltPagination
@@ -83,6 +98,9 @@ class BoltListView(generics.ListAPIView):
     filterset_fields = ["category", "supplier", "length"]
 
 class TestListView(generics.ListAPIView):
+    """
+    Public API endpoint for published tests including grouped data and statistics.
+    """
     queryset = Test.objects.select_related("curve").filter(is_published=True).order_by("-created_at")
     serializer_class = TestSerializer
     permission_classes = [permissions.AllowAny]
@@ -94,19 +112,23 @@ class TestListView(generics.ListAPIView):
         bolt_ids = self.request.query_params.get('bolt_ids')
         methodology = self.request.query_params.get('methodology')
         if not bolt_ids or not methodology:
-            raise ValidationError({'detail': 'bolt_ids and methodology are required.'})
+            raise ValidationError({'detail': 'bolt_ids and methodology are required parameters.'})
         return queryset
     
     def list(self, request, *args, **kwargs):
+        # Apply filters and group tests by bolt using utility helper
         filtered_tests = self.filter_queryset(self.get_queryset())
         grouped_data = group_tests_by_bolt(filtered_tests)
         return Response(grouped_data)
 
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
+    """
+    Custom JWT serializer to include user profile information in the response payload.
+    """
     @classmethod
     def get_token(cls, user):
         token = super().get_token(user)
-        # 使用 getattr 防止 role 字段被简化删除后代码崩溃
+        # Fallback to is_staff logic if custom role field is not present
         token['role'] = getattr(user, 'role', 'ADMIN' if user.is_staff else 'VIEWER')
         token['username'] = user.username
         return token
@@ -119,4 +141,7 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
         return data
 
 class MyTokenObtainPairView(TokenObtainPairView):
+    """
+    Custom JWT login view utilizing the MyTokenObtainPairSerializer.
+    """
     serializer_class = MyTokenObtainPairSerializer
