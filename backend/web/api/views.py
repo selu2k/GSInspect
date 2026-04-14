@@ -7,14 +7,13 @@ from django_filters.rest_framework import DjangoFilterBackend
 from django_filters import BaseInFilter, FilterSet
 
 from .models import Bolt, Test, Supplier
-from .serializers import BoltSerializer, TestSerializer
+from .serializers import BoltSerializer, TestSerializer, MyTokenObtainPairSerializer
 from .utils import group_tests_by_bolt
 
 # Import permission class from permissions.py to follow DRY principles
 from .permissions import IsEngineerOrAdmin
 
 from rest_framework_simplejwt.views import TokenObtainPairView
-from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 class TestFilterSet(FilterSet):
     """
@@ -121,25 +120,6 @@ class TestListView(generics.ListAPIView):
         filtered_tests = self.filter_queryset(self.get_queryset())
         grouped_data = group_tests_by_bolt(filtered_tests)
         return Response(grouped_data)
-
-class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
-    """
-    Custom JWT serializer to include user profile information in the response payload.
-    """
-    @classmethod
-    def get_token(cls, user):
-        token = super().get_token(user)
-        # Fallback to is_staff logic if custom role field is not present
-        token['role'] = getattr(user, 'role', 'ADMIN' if user.is_staff else 'VIEWER')
-        token['username'] = user.username
-        return token
-
-    def validate(self, attrs):
-        data = super().validate(attrs)
-        data['role'] = getattr(self.user, 'role', 'ADMIN' if self.user.is_staff else 'VIEWER')
-        data['username'] = self.user.username
-        data['department'] = getattr(self.user, 'department', None)
-        return data
 
 class MyTokenObtainPairView(TokenObtainPairView):
     """
