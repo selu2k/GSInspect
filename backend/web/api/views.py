@@ -79,7 +79,14 @@ class FilterOptionsView(generics.GenericAPIView):
 
 class BoltPagination(PageNumberPagination):
     """
-    Standard pagination configuration for Bolt lists.
+    Public API endpoint for published bolts with filtering and pagination.
+    
+    Query parameters:
+    - category: Filter by category
+    - supplier: Filter by supplier ID
+    - length: Filter by bolt length
+    - page: Page number (default 1)
+    - limit: Items per page (default 20, max 100)
     """
     page_size = 20
     page_size_query_param = "limit"
