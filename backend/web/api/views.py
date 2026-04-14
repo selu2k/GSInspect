@@ -93,7 +93,8 @@ class BoltListView(generics.ListAPIView):
     queryset = Bolt.objects.select_related("supplier").filter(is_published=True).order_by("id")
     serializer_class = BoltSerializer
     pagination_class = BoltPagination
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    # Reverted to AllowAny as per reviewer's feedback for a public API
+    permission_classes = [permissions.AllowAny]
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ["category", "supplier", "length"]
 
