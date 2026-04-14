@@ -114,7 +114,7 @@ class TestListView(generics.ListAPIView):
         if not bolt_ids or not methodology:
             raise ValidationError({'detail': 'bolt_ids and methodology are required parameters.'})
         return queryset
-    
+    """Override to group tests by bolt and include per-bolt stats."""
     def list(self, request, *args, **kwargs):
         # Apply filters and group tests by bolt using utility helper
         filtered_tests = self.filter_queryset(self.get_queryset())
