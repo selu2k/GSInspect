@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Layers } from 'lucide-react';
+import { Layers, Gauge, Building2, TrendingUp } from 'lucide-react';
 import {
   CartesianGrid,
   Legend,
@@ -13,27 +13,16 @@ import {
 import { useAppContext } from '../context/AppContext';
 
 export default function Dashboard() {
-  const { filteredProductsList, filteredTests, filteredCurves, productColorMap, apiStats } = useAppContext();
-
-  const [chartProductIds, setChartProductIds] = useState([]);
-
-  useEffect(() => {
-    const allowedIds = new Set(filteredProductsList.map((product) => product.id));
-    setChartProductIds((prev) => prev.filter((productId) => allowedIds.has(productId)));
-  }, [filteredProductsList]);
-
-  const toggleProductInChart = (productId) => {
-    setChartProductIds((prev) => 
-      prev.includes(productId) 
-        ? prev.filter(id => id !== productId)
-        : [...prev, productId]
-    );
-  };
+  const { 
+    filteredProductsList, filteredTests, filteredCurves, productColorMap, apiStats,
+    selectedProductIds, setSelectedProductIds, toggleProductSelection, showAverage, setShowAverage,
+    methodology, setMethodology, selectedFacility, setSelectedFacility, facilities
+  } = useAppContext();
 
   const plottedTests = useMemo(() => {
-    if (chartProductIds.length === 0) return [];
-    return filteredTests.filter((test) => chartProductIds.includes(test.product_id));
-  }, [filteredTests, chartProductIds]);
+    if (selectedProductIds.length === 0) return [];
+    return filteredTests.filter((test) => selectedProductIds.includes(test.product_id));
+  }, [filteredTests, selectedProductIds]);
 
   const chartSeries = useMemo(() => {
     const seenProducts = new Set();
@@ -55,6 +44,26 @@ export default function Dashboard() {
       });
   }, [plottedTests, filteredProductsList, productColorMap]);
 
+  const chartSeriesData = useMemo(() => {
+    if (showAverage) {
+      // Show average curves per product
+      return selectedProductIds.map((productId) => {
+        const product = filteredProductsList.find((p) => p.id === productId);
+        const productName = product ? product.product_name : 'Unknown Product';
+        return {
+          testId: `avg_${productId}`,
+          dataKey: `avg_${productId}`,
+          productId: productId,
+          label: `${productName} (Avg)`,
+          color: productColorMap[productId]?.hex || '#64748b',
+          showInLegend: true,
+          isAverage: true
+        };
+      });
+    }
+    return chartSeries;
+  }, [showAverage, selectedProductIds, chartSeries, filteredProductsList, productColorMap]);
+
   const chartData = useMemo(() => {
     if (plottedTests.length === 0) return [];
 
@@ -67,7 +76,7 @@ export default function Dashboard() {
       return acc;
     }, {});
 
-    return uniqueDisplacements.map((disp) => {
+    const baseData = uniqueDisplacements.map((disp) => {
       const row = { disp };
       plottedTests.forEach((test) => {
         const key = `test_${test.test_id}`;
@@ -75,12 +84,39 @@ export default function Dashboard() {
       });
       return row;
     });
-  }, [plottedTests, filteredCurves]);
+
+    if (!showAverage) return baseData;
+
+    // Calculate average per product
+    return baseData.map((row) => {
+      const newRow = { ...row };
+      const productTests = new Map();
+      
+      plottedTests.forEach((test) => {
+        if (!productTests.has(test.product_id)) {
+          productTests.set(test.product_id, []);
+        }
+        const key = `test_${test.test_id}`;
+        if (row[key] != null) {
+          productTests.get(test.product_id).push(row[key]);
+        }
+      });
+
+      productTests.forEach((values, productId) => {
+        if (values.length > 0) {
+          const avg = values.reduce((a, b) => a + b, 0) / values.length;
+          newRow[`avg_${productId}`] = avg;
+        }
+      });
+      
+      return newRow;
+    });
+  }, [plottedTests, filteredCurves, showAverage]);
 
   const productStats = useMemo(() => {
-    if (chartProductIds.length === 0) return [];
+    if (selectedProductIds.length === 0) return [];
 
-    return chartProductIds.map(productId => {
+    return selectedProductIds.map(productId => {
       const product = filteredProductsList.find(p => p.id === productId);
       const stats = apiStats?.[productId] || {};
       
@@ -89,7 +125,7 @@ export default function Dashboard() {
         stats
       };
     });
-  }, [chartProductIds, apiStats, filteredProductsList]);
+  }, [selectedProductIds, apiStats, filteredProductsList]);
 
   return (
     <div className="flex flex-col gap-4 h-full overflow-y-auto pb-6">
@@ -99,9 +135,9 @@ export default function Dashboard() {
             <Layers className="w-4 h-4 text-blue-500" />
             <h2 className="text-sm font-semibold text-slate-700 uppercase tracking-wide">Products Matching Filters</h2>
           </div>
-          {chartProductIds.length > 0 && (
+          {selectedProductIds.length > 0 && (
             <button
-              onClick={() => setChartProductIds([])}
+              onClick={() => setSelectedProductIds([])}
               className="text-xs text-slate-500 hover:text-slate-700 underline"
             >
               Clear selection
@@ -114,13 +150,13 @@ export default function Dashboard() {
         ) : (
           <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
             {filteredProductsList.map((product) => {
-              const isSelected = chartProductIds.includes(product.id);
+              const isSelected = selectedProductIds.includes(product.id);
               const color = productColorMap[product.id]?.hex || '#3b82f6';
               return (
                 <button
                   key={product.id}
                   type="button"
-                  onClick={() => toggleProductInChart(product.id)}
+                  onClick={() => toggleProductSelection(product.id)}
                   style={
                     isSelected
                       ? {
@@ -142,10 +178,78 @@ export default function Dashboard() {
         )}
       </section>
 
+      <section className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 shrink-0">
+        <div className="flex items-center gap-2 mb-3 pb-3 border-b border-slate-100">
+          <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 p-2 rounded-lg shadow-md">
+            <Gauge className="w-4 h-4 text-white" />
+          </div>
+          <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider">Test Filters</h3>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-slate-700 uppercase tracking-widest flex items-center gap-1.5 px-0.5">
+              <Gauge className="w-3.5 h-3.5 text-slate-400" />
+              Methodology
+            </label>
+            <div className="flex bg-slate-100 p-1.5 rounded-lg gap-1">
+              <button 
+                onClick={() => setMethodology('static')}
+                className={`flex-1 text-xs py-1.5 px-2 rounded-md font-semibold transition-all ${
+                  methodology === 'static' 
+                    ? 'bg-blue-600 text-white shadow-md' 
+                    : 'text-slate-600 hover:text-slate-800 hover:bg-slate-200'
+                }`}
+              >
+                Static
+              </button>
+              <button 
+                onClick={() => setMethodology('dynamic')}
+                className={`flex-1 text-xs py-1.5 px-2 rounded-md font-semibold transition-all ${
+                  methodology === 'dynamic' 
+                    ? 'bg-blue-600 text-white shadow-md' 
+                    : 'text-slate-600 hover:text-slate-800 hover:bg-slate-200'
+                }`}
+              >
+                Dynamic
+              </button>
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-slate-700 uppercase tracking-widest flex items-center gap-1.5 px-0.5">
+              <Building2 className="w-3.5 h-3.5 text-slate-400" />
+              Facility
+            </label>
+            <select 
+              value={selectedFacility}
+              onChange={(e) => setSelectedFacility(e.target.value)}
+              className="w-full bg-white border border-slate-300 text-slate-700 text-sm rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent p-2.5 transition-all hover:border-slate-400"
+            >
+              {facilities.map((f, i) => <option key={f || i} value={f}>{f}</option>)}
+            </select>
+          </div>
+        </div>
+      </section>
+
       <section className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 md:p-5 flex-1 min-h-[400px] flex flex-col shrink-0">
         <div className="flex items-center justify-between gap-3 mb-3 shrink-0">
-          <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wide">Force-Displacement Chart</h3>
-          <span className="text-xs text-slate-500">{chartProductIds.length} product(s) plotted</span>
+          <div className="flex items-center gap-3">
+            <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wide">Force-Displacement Chart</h3>
+            <span className="text-xs text-slate-500">{selectedProductIds.length} product(s) plotted</span>
+          </div>
+          {selectedProductIds.length > 0 && (
+            <button
+              onClick={() => setShowAverage(!showAverage)}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                showAverage
+                  ? 'bg-emerald-600 text-white shadow-md'
+                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+              }`}
+            >
+              <TrendingUp className="w-3.5 h-3.5" />
+              {showAverage ? 'Average On' : 'Show Average'}
+            </button>
+          )}
         </div>
 
         {chartData.length === 0 ? (
@@ -185,20 +289,25 @@ export default function Dashboard() {
                 />
                 {/* <Legend iconType="circle" wrapperStyle={{ fontSize: '12px' }} /> */}
 
-                {chartSeries.map((series) => (
-                  <Line
-                    key={series.testId}
-                    type="monotone"
-                    dataKey={series.dataKey}
-                    name={series.label}
-                    legendType={series.showInLegend ? 'line' : 'none'}
-                    stroke={series.color}
-                    strokeWidth={2.25}
-                    dot={false}
-                    connectNulls={false}
-                    isAnimationActive={false}
-                  />
-                ))}
+                {chartSeriesData.map((series) => {
+                  const strokeDasharray = series.isAverage ? '5 5' : 'none';
+                  const strokeWidth = series.isAverage ? 3 : 2.25;
+                  return (
+                    <Line
+                      key={series.testId}
+                      type="monotone"
+                      dataKey={series.dataKey}
+                      name={series.label}
+                      legendType={series.showInLegend ? 'line' : 'none'}
+                      stroke={series.color}
+                      strokeWidth={strokeWidth}
+                      strokeDasharray={strokeDasharray}
+                      dot={false}
+                      connectNulls={false}
+                      isAnimationActive={false}
+                    />
+                  );
+                })}
               </LineChart>
             </ResponsiveContainer>
           </div>
