@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { Shield, Database, CheckSquare, UploadCloud } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import ManageDataPanel from '../components/admin/ManageDataPanel';
 import VettePublishPage from './VettePublishPage';
 import CSVUploadPage from './CSVUploadPage';
 
 export default function AdminPanel() {
   const navigate = useNavigate();
-  const [activePage, setActivePage] = useState('vette');
+  const [activePage, setActivePage] = useState('crud');
 
   const navItems = [
     { id: 'crud', label: 'Manage Data (CRUD)', icon: Database },
@@ -22,7 +23,7 @@ export default function AdminPanel() {
           <div className="bg-indigo-600 p-1.5 rounded-lg">
             <Shield className="w-5 h-5 text-white" />
           </div>
-          <span className="text-xl font-bold text-slate-800 tracking-tight">
+          <span className="text-xl font-bold text-slate--800 tracking-tight">
             GSInspect <span className="text-indigo-600 font-normal">Admin</span>
           </span>
         </div>
@@ -58,11 +59,7 @@ export default function AdminPanel() {
 
         {/* Main Content */}
         <main className="flex-1 overflow-y-auto p-8">
-          {activePage === 'crud' && (
-            <div className="flex items-center justify-center h-full">
-              <p className="text-slate-400 text-lg">CRUD page coming soon...</p>
-            </div>
-          )}
+          {activePage === 'crud' && <ManageDataPanel />}
           {activePage === 'vette' && <VettePublishPage />}
           {activePage === 'upload' && <CSVUploadPage />}
         </main>
