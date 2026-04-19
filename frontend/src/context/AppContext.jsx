@@ -1,40 +1,49 @@
 import React, { createContext, useState, useEffect, useMemo, useContext } from 'react';
 
-const MOCK_PRODUCTS = [
-  { id: 'p1', supplier: 'Supplier A', product_name: 'Hollow Core Bolt D28 x 2.4 m', bolt_length: '2.4', bolt_category: 'Encapsulated' },
-  { id: 'p2', supplier: 'Supplier A', product_name: 'Yielding Bolt B D20 mm x 3.0 m', bolt_length: '3.0', bolt_category: 'Friction' },
-  { id: 'p3', supplier: 'Supplier B', product_name: 'Resin Bolt A D20 mm x 2.4 m', bolt_length: '2.4', bolt_category: 'Encapsulated' },
-  { id: 'p4', supplier: 'Supplier C', product_name: 'Cable Bolt 6.0 m', bolt_length: '6.0', bolt_category: 'Cable' },
-];
-
-const MOCK_TESTS = [
-  { test_id: '10', product_id: 'p1', test_methodology: 'dynamic', test_facility: 'Facility A' },
-  { test_id: '11', product_id: 'p1', test_methodology: 'dynamic', test_facility: 'Facility A' },
-  { test_id: '17', product_id: 'p2', test_methodology: 'dynamic', test_facility: 'Facility B' },
-  { test_id: '18', product_id: 'p2', test_methodology: 'static', test_facility: 'Facility B' },
-  { test_id: '19', product_id: 'p3', test_methodology: 'dynamic', test_facility: 'Facility C' },
-  { test_id: '20', product_id: 'p3', test_methodology: 'dynamic', test_facility: 'Facility C' }
-];
-
-const MOCK_CURVES = [
-  { test_id: '10', disp: 0, load: 0 }, { test_id: '10', disp: 0.5, load: 186.8 }, { test_id: '10', disp: 2.0, load: 269.3 }, { test_id: '10', disp: 4.0, load: 303.1 },
-  { test_id: '11', disp: 0, load: 0 }, { test_id: '11', disp: 0.5, load: 180.0 }, { test_id: '11', disp: 2.0, load: 260.0 }, { test_id: '11', disp: 3.5, load: 295.4 },
-  { test_id: '17', disp: 0, load: 0 }, { test_id: '17', disp: 50, load: 30.0 }, { test_id: '17', disp: 100, load: 35.0 }, { test_id: '17', disp: 158, load: 37.6 },
-  { test_id: '19', disp: 0, load: 0 }, { test_id: '19', disp: 1.0, load: 150.0 }, { test_id: '19', disp: 3.0, load: 225.5 }, { test_id: '19', disp: 3.8, load: 230.1 },
-  { test_id: '20', disp: 0, load: 0 }, { test_id: '20', disp: 1.2, load: 145.0 }, { test_id: '20', disp: 2.8, load: 218.0 }, { test_id: '20', disp: 4.1, load: 242.6 }
-];
-
 // 
-const TAILWIND_COLORS = ['bg-blue-500', 'bg-emerald-500', 'bg-amber-500', 'bg-violet-500', 'bg-pink-500', 'bg-teal-500', 'bg-rose-500', 'bg-yellow-500'];
-const HEX_COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#14b8a6', '#f43f5e', '#eab308'];
+const TAILWIND_COLORS = [
+  'bg-blue-500', 'bg-emerald-500', 'bg-amber-500', 'bg-violet-500', 
+  'bg-pink-500', 'bg-teal-500', 'bg-rose-500', 'bg-yellow-500',
+  'bg-indigo-500', 'bg-cyan-500', 'bg-lime-500', 'bg-fuchsia-500',
+  'bg-red-500', 'bg-orange-500', 'bg-green-500', 'bg-sky-500'
+];
+const HEX_COLORS = [
+  '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', 
+  '#ec4899', '#14b8a6', '#f43f5e', '#eab308',
+  '#6366f1', '#06b6d4', '#84cc16', '#d946ef',
+  '#ef4444', '#f97316', '#22c55e', '#0ea5e9'
+];
 
 export const AppContext = createContext();
 
 export function AppProvider({ children }) {
   const [userRole, setUserRole] = useState('admin');
 
+  const [products, setProducts] = useState([]);
+  const [apiTests, setApiTests] = useState([]);
+  const [apiCurves, setApiCurves] = useState([]);
+  const [apiStats, setApiStats] = useState({});
+
+  // Filter Options Data from API
+  const [filterOptions, setFilterOptions] = useState({
+    categories: [],
+    suppliers: [],
+    facilities: [],
+    methodologies: [],
+    length_range: { min: 0, max: 10 }
+  });
+
+  useEffect(() => {
+    fetch('/api/public/filter-options/')
+      .then(res => res.json())
+      .then(data => {
+        setFilterOptions(data);
+      })
+      .catch(err => console.error("Error fetching filter options:", err));
+  }, []);
+
   // Filter State
-  const [supportType, setSupportType] = useState('Rockbolt'); 
+  const [supportType] = useState('rockbolt');
   const [methodology, setMethodology] = useState('dynamic');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedSupplier, setSelectedSupplier] = useState('All');
@@ -43,44 +52,115 @@ export function AppProvider({ children }) {
   const [selectedFacility, setSelectedFacility] = useState('All');
   const [showAverage, setShowAverage] = useState(false);
 
-  // Categories derived
-  const categories = ['All', ...new Set(MOCK_PRODUCTS.map(p => p.bolt_category))];
-  const suppliers = ['All', ...new Set(MOCK_PRODUCTS.map(p => p.supplier))];
-  const lengths = ['All', ...new Set(MOCK_PRODUCTS.map(p => p.bolt_length))];
-  const facilities = ['All', ...new Set(MOCK_TESTS.map(t => t.test_facility))];
+  const triggerSearch = (filters) => {
+    setSelectedCategory(filters.category);
+    setSelectedSupplier(filters.supplier);
+    setSelectedLength(filters.length);
 
-  const filteredProductsList = useMemo(() => {
-    return MOCK_PRODUCTS.filter(p => 
-      (selectedCategory === 'All' || p.bolt_category === selectedCategory) &&
-      (selectedSupplier === 'All' || p.supplier === selectedSupplier) &&
-      (selectedLength === 'All' || p.bolt_length === selectedLength)
-    );
-  }, [selectedCategory, selectedSupplier, selectedLength]);
+    const params = new URLSearchParams({ limit: 100 });
+    if (filters.category !== 'All') params.append('category', filters.category);
+    if (filters.supplier !== 'All') params.append('supplier', supplierNameToIdMap[filters.supplier]);
+    if (filters.length !== 'All') params.append('length', filters.length);
+
+    fetch(`/api/public/bolts/?${params.toString()}`)
+      .then(res => res.json())
+      .then(data => {
+        const bolts = (data.results || []).map(b => ({
+          id: b.id,
+          supplier: b.supplier.name,
+          product_name: b.name,
+          bolt_length: String(b.length),
+          bolt_category: b.category
+        }));
+        setProducts(bolts);
+        setSelectedProductIds([]); // Do not auto-select products
+      })
+      .catch(err => console.error("Error fetching bolts:", err));
+  };
+
+  // Categories derived from API data for dropdowns
+  const categories = useMemo(() => ['All', ...filterOptions.categories], [filterOptions.categories]);
+  const suppliers = useMemo(() => ['All', ...filterOptions.suppliers.map(s => s.name || s)], [filterOptions.suppliers]);
+  const supplierNameToIdMap = useMemo(() => {
+    const map = {};
+    filterOptions.suppliers.forEach(s => {
+      map[s.name] = s.id;
+    });
+    return map;
+  }, [filterOptions.suppliers]);
+  const facilities = useMemo(() => ['All', ...filterOptions.facilities], [filterOptions.facilities]);
+  const lengthRange = useMemo(() => filterOptions.length_range, [filterOptions.length_range]);
+  
+  const filteredProductsList = products;
 
   const productColorMap = useMemo(() => {
     const map = {};
-    filteredProductsList.forEach((p, index) => {
-      map[p.id] = { tailwind: TAILWIND_COLORS[index % 8], hex: HEX_COLORS[index % 8] };
+    // Assign colors based on the order of selected products, not filter position
+    selectedProductIds.forEach((productId, index) => {
+      map[productId] = { tailwind: TAILWIND_COLORS[index % 16], hex: HEX_COLORS[index % 16] };
     });
     return map;
-  }, [filteredProductsList]);
+  }, [selectedProductIds]);
 
   useEffect(() => {
-    setSelectedProductIds(filteredProductsList.map(p => p.id));
-  }, [filteredProductsList]);
+    if (selectedProductIds.length === 0) {
+      setApiTests([]);
+      setApiCurves([]);
+      setApiStats({});
+      return;
+    }
+    const idsParams = selectedProductIds.join(',');
+    fetch(`/api/public/tests/?bolt_ids=${idsParams}&methodology=${methodology}`)
+      .then(res => res.json())
+      .then(data => {
+        const nextTests = [];
+         const nextCurves = [];
+         const nextStats = {};
+         Object.entries(data).forEach(([boltId, boltData]) => {
+            const numBoltId = isNaN(boltId) ? boltId : Number(boltId);
+            boltData.tests.forEach(t => {
+               nextTests.push({
+                  test_id: t.id,
+                  product_id: numBoltId,
+                  test_methodology: t.methodology,
+                  test_facility: t.facility,
+                  peak_strength: t.peak_strength,
+                  yield_strength: t.yield_strength,
+                  ultimate_deformation: t.ultimate_deformation,
+                  energy_absorption: t.energy_absorption,
+                  bond_strength: t.bond_strength,
+                  stiffness: t.stiffness,
+                  installation_method: t.installation_method,
+                  encapsulation_method: t.encapsulation_method,
+                  loading_rate: t.loading_rate,
+                  number_of_drops: t.number_of_drops,
+               });
+               if (t.curve && t.curve.curve_pair) {
+                  t.curve.curve_pair.forEach(pt => {
+                     nextCurves.push({ test_id: t.id, disp: pt.displacement, load: pt.load });
+                  });
+               }
+            });
+            nextStats[numBoltId] = boltData.stats;
+         });
+         setApiTests(nextTests);
+         setApiCurves(nextCurves);
+         setApiStats(nextStats);
+      })
+      .catch(err => console.error("Error fetching tests:", err));
+  }, [selectedProductIds, methodology]);
 
   const filteredTests = useMemo(() => {
-    return MOCK_TESTS.filter(t => 
-      t.test_methodology === methodology &&
-      selectedProductIds.includes(t.product_id) &&
+    return apiTests.filter(t => 
       (selectedFacility === 'All' || t.test_facility === selectedFacility)
     );
-  }, [methodology, selectedProductIds, selectedFacility]);
+  }, [apiTests, selectedFacility]);
 
+  // When facility filter is applied, we only want curves from the filtered tests
   const filteredCurves = useMemo(() => {
-    const testIds = filteredTests.map(t => t.test_id);
-    return MOCK_CURVES.filter(c => testIds.includes(c.test_id));
-  }, [filteredTests]);
+    const testIds = new Set(filteredTests.map(t => t.test_id));
+    return apiCurves.filter(c => testIds.has(c.test_id));
+  }, [filteredTests, apiCurves]);
 
   const toggleProductSelection = (productId) => {
     setSelectedProductIds(prev => 
@@ -91,10 +171,11 @@ export function AppProvider({ children }) {
   const value = {
     userRole,
     setUserRole,
-    MOCK_PRODUCTS,
-    MOCK_TESTS,
-    MOCK_CURVES,
-    supportType, setSupportType,
+    products,
+    apiTests,
+    apiCurves,
+    apiStats,
+    supportType,
     methodology, setMethodology,
     selectedCategory, setSelectedCategory,
     selectedSupplier, setSelectedSupplier,
@@ -102,10 +183,10 @@ export function AppProvider({ children }) {
     selectedFacility, setSelectedFacility,
     showAverage, setShowAverage,
     selectedProductIds, setSelectedProductIds,
-    categories, suppliers, lengths, facilities,
+    categories, suppliers, lengthRange, facilities,
     filteredProductsList, productColorMap,
     filteredTests, filteredCurves,
-    toggleProductSelection
+    toggleProductSelection, triggerSearch
   };
 
   return (
