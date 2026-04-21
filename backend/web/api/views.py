@@ -8,6 +8,7 @@ from .models import Bolt, Test, Supplier
 from .serializers import BoltSerializer, TestSerializer
 from .utils import group_tests_by_bolt
 from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.permissions import IsAdminUser
 
 
 class TestFilterSet(FilterSet):
@@ -137,3 +138,43 @@ class TestListView(generics.ListAPIView):
         filtered_tests = self.filter_queryset(self.get_queryset())
         grouped_data = group_tests_by_bolt(filtered_tests)
         return Response(grouped_data)
+
+
+# Admin CRUD views for bolts
+
+# Admin Bolt List View (View all bolts)
+class AdminBoltListView(generics.ListAPIView):
+    queryset = Bolt.objects.all()
+    serializer_class = BoltSerializer
+    permission_classes = [IsAdminUser]  # Only admins can view bolts
+
+    def get_queryset(self):
+        # Optionally, you can filter by published/unpublished status
+        queryset = super().get_queryset()
+        is_published = self.request.query_params.get('is_published', None)
+        if is_published:
+            queryset = queryset.filter(is_published=is_published)
+        return queryset
+
+
+# Admin Bolt Create View (Add new bolt)
+class AdminBoltCreateView(generics.CreateAPIView):
+    serializer_class = BoltSerializer
+    permission_classes = [IsAdminUser]  # Only admins can create bolts
+
+    def perform_create(self, serializer):
+        # Optional: You can add custom logic before saving the bolt
+        serializer.save()
+
+
+# Admin Bolt Update View (Edit an existing bolt)
+class AdminBoltUpdateView(generics.UpdateAPIView):
+    queryset = Bolt.objects.all()
+    serializer_class = BoltSerializer
+    permission_classes = [IsAdminUser]  # Only admins can edit bolts
+
+
+# Admin Bolt Delete View (Delete an existing bolt)
+class AdminBoltDeleteView(generics.DestroyAPIView):
+    queryset = Bolt.objects.all()
+    permission_classes = [IsAdminUser]  # Only admins can delete bolts
