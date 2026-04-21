@@ -8,8 +8,15 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenObtainPairView
 
 from .models import Bolt, Test, Supplier
-from .serializers import BoltSerializer, TestSerializer, MyTokenObtainPairSerializer
+from .serializers import (
+    BoltSerializer, 
+    TestSerializer, 
+    MyTokenObtainPairSerializer, 
+    SupplierSerializer
+)
 from .utils import group_tests_by_bolt
+
+# --- Filter Configurations ---
 
 class TestFilterSet(FilterSet):
     """
@@ -21,6 +28,8 @@ class TestFilterSet(FilterSet):
         model = Test
         fields = ['methodology', 'facility']
 
+# --- System Views ---
+
 class HealthView(generics.GenericAPIView):
     """
     Service health check endpoint.
@@ -29,6 +38,14 @@ class HealthView(generics.GenericAPIView):
     
     def get(self, request, *args, **kwargs):
         return Response({"status": "ok"})
+
+class MyTokenObtainPairView(TokenObtainPairView):
+    """
+    JWT authentication endpoint using custom claims serializer.
+    """
+    serializer_class = MyTokenObtainPairSerializer
+
+# --- Public API Views ---
 
 class FilterOptionsView(generics.GenericAPIView):
     """
@@ -112,13 +129,27 @@ class TestListView(generics.ListAPIView):
         return queryset
 
     def list(self, request, *args, **kwargs):
-        # Apply filters and group results using the utility helper
         filtered_tests = self.filter_queryset(self.get_queryset())
         grouped_data = group_tests_by_bolt(filtered_tests)
         return Response(grouped_data)
 
-class MyTokenObtainPairView(TokenObtainPairView):
+# --- Admin API Views (Internal Management) ---
+
+class SupplierListCreateView(generics.ListCreateAPIView):
     """
-    JWT authentication endpoint using custom claims serializer.
+    API endpoint for supplier management.
+    Requires IsAuthenticated permission for write operations.
     """
-    serializer_class = MyTokenObtainPairSerializer
+    queryset = Supplier.objects.all().order_by("name")
+    serializer_class = SupplierSerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+
+class SupplierDetailView(generics.RetrieveUpdateDestroyAPIView):
+    """
+    API endpoint for individual supplier management.
+    """
+    queryset = Supplier.objects.all()
+    serializer_class = SupplierSerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    lookup_field = "id"

@@ -1,16 +1,16 @@
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-from .models import Bolt, Test, TestCurve
+from .models import Bolt, Test, TestCurve, Supplier
 
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
     """
-    Custom JWT serializer to include user profile information in the response payload.
+    Custom JWT serializer to include user profile information in the token and response.
     """
     @classmethod
     def get_token(cls, user):
         token = super().get_token(user)
         
-        # Fallback to is_staff logic if custom role field is not present
+        # Injects user role and metadata into the JWT payload
         token['role'] = getattr(user, 'role', 'ADMIN' if user.is_staff else 'VIEWER')
         token['username'] = user.username
         return token
@@ -18,16 +18,25 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):
         data = super().validate(attrs)
         
-        # Include extra user info in the JSON response body
+        # Includes user metadata in the initial login JSON response
         data['role'] = getattr(self.user, 'role', 'ADMIN' if self.user.is_staff else 'VIEWER')
         data['username'] = self.user.username
         data['department'] = getattr(self.user, 'department', None)
         
         return data
 
+class SupplierSerializer(serializers.ModelSerializer):
+    """
+    Serializer for Supplier information.
+    """
+    class Meta:
+        model = Supplier
+        fields = ["id", "name", "created_at", "updated_at"]
+        read_only_fields = ["id", "created_at", "updated_at"]
+
 class BoltSerializer(serializers.ModelSerializer):
     """
-    Serializer for Bolt model with nested supplier information.
+    Serializer for Bolt model with nested supplier details.
     """
     supplier = serializers.SerializerMethodField()
 
@@ -51,18 +60,15 @@ class BoltSerializer(serializers.ModelSerializer):
 
 class TestCurveSerializer(serializers.ModelSerializer):
     """
-    Serializer for TestCurve data points.
+    Serializer for raw TestCurve data points.
     """
     class Meta:
         model = TestCurve
-        fields = [
-            "id",
-            "curve_pair",
-        ]
+        fields = ["id", "curve_pair"]
 
 class TestSerializer(serializers.ModelSerializer):
     """
-    Serializer for Test with related curve and methodology display name.
+    Serializer for Test results including related curve data and methodology labels.
     """
     curve = TestCurveSerializer(read_only=True)
     methodology_display = serializers.CharField(source='get_methodology_display', read_only=True)
