@@ -1,12 +1,13 @@
 import json
 import csv
+import random
 from django.core.management.base import BaseCommand
 from api.models import Supplier, Bolt, Test, TestCurve
 from pathlib import Path
 
 
 class Command(BaseCommand):
-    help = 'Seed the database with bolt test data from JSON and CSV files'
+    help = 'Seed the database with bolt test data from JSON and CSV files, plus additional mock data'
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -90,8 +91,8 @@ class Command(BaseCommand):
                     'load': float(load_str) if load_str else None
                 })
         
-        # Create tests
-        self.stdout.write(self.style.SUCCESS("Creating tests..."))
+        # Create tests from JSON/CSV
+        self.stdout.write(self.style.SUCCESS("Creating tests from files..."))
         test_map = {}
         for test_data in tests_data:
             test_id = int(test_data['test_id'])
@@ -134,4 +135,178 @@ class Command(BaseCommand):
                     is_published=True
                 )
         
-        self.stdout.write(self.style.SUCCESS('Successfully seeded database'))
+        # Add additional mock data
+        self.stdout.write(self.style.SUCCESS("Creating additional suppliers and bolts..."))
+        
+        # Create additional suppliers
+        suppliers = [supplier]
+        supplier_names = ["Supplier B", "Supplier C", "Supplier D", "Supplier E"]
+        for name in supplier_names:
+            s = Supplier.objects.create(name=name)
+            suppliers.append(s)
+        
+        # Define fixed options
+        CATEGORIES = [
+            "Encapsulated",
+            "Grouted",
+            "Resin",
+            "Mechanical",
+            "Hybrid",
+            "Split Set"
+        ]
+        
+        EQUIPMENT_COMPATIBILITY = [
+            "Multi-OEM",
+            "Handheld",
+            "Boltec"
+        ]
+        
+        FACILITIES = [
+            "Lab A",
+            "Lab B",
+            "Test Center 1",
+            "Test Center 2",
+            "Research Facility",
+            "Field Site A",
+            "Field Site B"
+        ]
+        
+        METHODOLOGIES = ["static", "dynamic"]
+        INSTALLATION_METHODS = ["Manual or Handheld", "Mechanized"]
+        ENCAPSULATION_METHODS = ["Capsule", "Cartridge", "Tube"]
+        
+        # Create additional bolts for new suppliers
+        bolts = list(bolt_map.values())
+        
+        # Create ~100 bolts across all suppliers
+        bolt_count = len(bolts)
+        target_bolts = 100
+        bolts_to_create = target_bolts - bolt_count
+        bolts_per_supplier = bolts_to_create // len(suppliers[1:])
+        
+        for supplier in suppliers[1:]:
+            for i in range(bolts_per_supplier):
+                category = random.choice(CATEGORIES)
+                diameter = random.choice([16, 20, 22, 25, 28, 32])
+                equipment_compat = random.sample(EQUIPMENT_COMPATIBILITY, k=random.randint(1, 3))
+                bolt = Bolt.objects.create(
+                    supplier=supplier,
+                    name=f"{category} Bolt D{diameter}mm x 2.4m - {supplier.name} - {i+1}",
+                    length=round(random.uniform(1.5, 3.5), 1),
+                    diameter=diameter,
+                    category=category,
+                    equipment_compatibility=equipment_compat,
+                    is_published=True
+                )
+                bolts.append(bolt)
+        
+        # Create additional tests across all bolts
+        self.stdout.write(self.style.SUCCESS("Creating additional tests..."))
+        additional_test_count = 0
+        
+        # Create ~1000 tests
+        target_tests = 1000
+        tests_per_bolt = target_tests // len(bolts)
+        extra_tests = target_tests % len(bolts)
+        
+        for idx, bolt in enumerate(bolts):
+            # Distribute extra tests among first bolts
+            num_tests = tests_per_bolt + (1 if idx < extra_tests else 0)
+            
+            for _ in range(num_tests):
+                methodology = random.choice(METHODOLOGIES)
+                facility = random.choice(FACILITIES)
+                
+                # Generate realistic test data
+                peak_strength = round(random.uniform(25, 45), 2)
+                bond_strength = round(random.uniform(100, 200), 2) if random.random() > 0.3 else None
+                yield_strength = round(random.uniform(140, 180), 2)
+                ultimate_deformation = round(random.uniform(150, 250), 2)
+                stiffness = round(random.uniform(300, 500), 2) if random.random() > 0.4 else None
+                loading_rate = round(random.uniform(1, 10), 2) if methodology == "static" else None
+                energy_absorption = round(random.uniform(50, 150), 2) if methodology == "dynamic" else None
+                number_of_drops = random.randint(1, 20) if methodology == "dynamic" else None
+                
+                test = Test.objects.create(
+                    bolt=bolt,
+                    methodology=methodology,
+                    facility=facility,
+                    installation_method=random.choice(INSTALLATION_METHODS),
+                    encapsulation_method=random.choice(ENCAPSULATION_METHODS),
+                    peak_strength=peak_strength,
+                    bond_strength=bond_strength,
+                    yield_strength=yield_strength,
+                    ultimate_deformation=ultimate_deformation,
+                    stiffness=stiffness,
+                    loading_rate=loading_rate,
+                    energy_absorption=energy_absorption,
+                    number_of_drops=number_of_drops,
+                    is_published=True
+                )
+                additional_test_count += 1
+                
+                # Create test curve with realistic displacement/load data
+                # Displacement increments by 0.5 from 0 to 230
+                # Pattern based on CSV: rapid rise, high plateau with noise, slow variations
+                curve_points = []
+                displacement = 0.0
+                peak_load = peak_strength * 10 + random.uniform(50, 100)
+                
+                # Define characteristic points (displacement, load_ratio)
+                # These define the overall shape, noise is added later
+                keypoints = [
+                    (0, 0),                    # Start
+                    (2, 0.70),                 # Early rise
+                    (5, 0.95),                 # Near peak
+                    (7, 1.0),                  # Peak
+                    (15, 0.88),                # High plateau
+                    (50, 0.85),                # Plateau continues
+                    (100, 0.87),               # Slow drift upward
+                    (150, 0.82),               # Slight decline
+                    (200, 0.75),               # Gradual decline
+                    (230, 0.70),               # End
+                ]
+                
+                while displacement <= 230:
+                    # Interpolate base load from keypoints
+                    base_ratio = 0
+                    for i in range(len(keypoints) - 1):
+                        d1, r1 = keypoints[i]
+                        d2, r2 = keypoints[i + 1]
+                        if d1 <= displacement <= d2:
+                            # Linear interpolation between keypoints
+                            t = (displacement - d1) / (d2 - d1)
+                            base_ratio = r1 + (r2 - r1) * t
+                            break
+                    
+                    base_load = peak_load * base_ratio
+                    
+                    # Add realistic noise (smaller values for smoother curves)
+                    noise_magnitude = 3 + (displacement / 230) * 4
+                    noise = random.uniform(-noise_magnitude, noise_magnitude)
+                    
+                    load_value = round(base_load + noise, 2)
+                    curve_points.append({
+                        "displacement": round(displacement, 1),
+                        "load": max(0, load_value)
+                    })
+                    displacement += 0.5
+                
+                TestCurve.objects.create(
+                    test=test,
+                    curve_pair=curve_points,
+                    is_published=True
+                )
+                
+                # Print progress every 100 tests
+                if additional_test_count % 100 == 0:
+                    self.stdout.write(f"  Created {additional_test_count} tests...")
+        
+        total_tests = len(test_map) + additional_test_count
+        self.stdout.write(self.style.SUCCESS(f'Successfully seeded database'))
+        self.stdout.write(f'  Suppliers: {len(suppliers)}')
+        self.stdout.write(f'  Bolts: {len(bolts)}')
+        self.stdout.write(f'  Tests from files: {len(test_map)}')
+        self.stdout.write(f'  Additional tests: {additional_test_count}')
+        self.stdout.write(f'  Total tests: {total_tests}')
+        self.stdout.write(f'  Facilities: {len(FACILITIES)} unique locations')

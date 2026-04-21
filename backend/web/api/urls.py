@@ -14,6 +14,7 @@ from .views import (
 
 urlpatterns = [
     # Health check
+    # Health check
     path("health/", HealthView.as_view(), name="health"),
 
     # Public API endpoints

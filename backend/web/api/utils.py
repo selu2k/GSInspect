@@ -1,6 +1,6 @@
 from statistics import median, quantiles
 from collections import defaultdict
-from .serializers import TestSerializer
+from .serializers import PublicTestSerializer
 
 def calculate_stats_for_tests(tests):
     """
@@ -99,7 +99,7 @@ def group_tests_by_bolt(tests):
     # Build response
     result = {}
     for bolt_id, bolt_tests in grouped.items():
-        serializer = TestSerializer(bolt_tests, many=True)
+        serializer = PublicTestSerializer(bolt_tests, many=True)
         stats = calculate_stats_for_tests(bolt_tests)
         
         result[str(bolt_id)] = {
