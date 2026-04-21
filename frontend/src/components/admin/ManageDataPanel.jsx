@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, X, Check, Database, Package, Building2 } from 'lucide-react';
 
-const API_BASE = 'http://localhost:8000/api';
+const API_BASE = '/api';
 
 // --- Mock Data (Products and Tests - keep until backend is ready) ---
 const INIT_PRODUCTS = [
