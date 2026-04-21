@@ -1,12 +1,31 @@
 from django.urls import path
-from .views import HealthView, BoltListView, TestListView, FilterOptionsView, AdminBoltListView, AdminBoltCreateView, AdminBoltUpdateView, AdminBoltDeleteView
+from .views import (
+    HealthView,
+    PublicBoltListView,
+    PublicTestListView,
+    PublicFilterOptionsView,
+    SupplierListCreateView,
+    SupplierDetailView,
+    AdminBoltListView,
+    AdminBoltCreateView,
+    AdminBoltUpdateView,
+    AdminBoltDeleteView,
+)
 
 urlpatterns = [
+    # Health check
     path("health/", HealthView.as_view(), name="health"),
-    path("public/filter-options/", FilterOptionsView.as_view(), name="filter-options"),
-    path("public/bolts/", BoltListView.as_view(), name="bolt-list"),
-    path("public/tests/", TestListView.as_view(), name="test-list"),
-    # Admin endpoints
+
+    # Public API endpoints
+    path("public/filter-options/", PublicFilterOptionsView.as_view(), name="filter-options"),
+    path("public/bolts/", PublicBoltListView.as_view(), name="bolt-list"),
+    path("public/tests/", PublicTestListView.as_view(), name="test-list"),
+
+    # Admin API - Supplier CRUD
+    path("admin/suppliers/", SupplierListCreateView.as_view(), name="supplier-list-create"),
+    path("admin/suppliers/<int:id>/", SupplierDetailView.as_view(), name="supplier-detail"),
+
+    # Admin API - Bolt CRUD
     path("admin/bolts/", AdminBoltListView.as_view(), name="admin-bolt-list"),
     path("admin/bolts/create/", AdminBoltCreateView.as_view(), name="admin-bolt-create"),
     path("admin/bolts/<int:pk>/", AdminBoltUpdateView.as_view(), name="admin-bolt-update"),

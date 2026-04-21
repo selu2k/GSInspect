@@ -1,5 +1,5 @@
 from rest_framework.response import Response
-from rest_framework import generics, permissions
+from rest_framework import generics, permissions, serializers
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.exceptions import ValidationError
 from django_filters import BaseInFilter, FilterSet
@@ -9,6 +9,12 @@ from .serializers import BoltSerializer, TestSerializer
 from .utils import group_tests_by_bolt
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.permissions import IsAdminUser
+
+
+class SupplierSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Supplier
+        fields = ["id", "name", "created_at", "updated_at"]
 
 
 class TestFilterSet(FilterSet):
@@ -74,6 +80,10 @@ class FilterOptionsView(generics.GenericAPIView):
         })
 
 
+class PublicFilterOptionsView(FilterOptionsView):
+    pass
+
+
 class BoltPagination(PageNumberPagination):
     page_size = 20
     page_size_query_param = "limit"
@@ -97,6 +107,10 @@ class BoltListView(generics.ListAPIView):
     permission_classes = [permissions.AllowAny]
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ["category", "supplier", "length"]
+
+
+class PublicBoltListView(BoltListView):
+    pass
 
 
 class TestListView(generics.ListAPIView):
@@ -140,41 +154,62 @@ class TestListView(generics.ListAPIView):
         return Response(grouped_data)
 
 
-# Admin CRUD views for bolts
+class PublicTestListView(TestListView):
+    pass
 
-# Admin Bolt List View (View all bolts)
+
+class SupplierListCreateView(generics.ListCreateAPIView):
+    """
+    Admin API endpoint for supplier management.
+    
+    GET: List all suppliers
+    POST: Create a new supplier
+    """
+    queryset = Supplier.objects.all().order_by("name")
+    serializer_class = SupplierSerializer
+    permission_classes = [permissions.AllowAny]
+
+
+class SupplierDetailView(generics.RetrieveUpdateDestroyAPIView):
+    """
+    Admin API endpoint for individual supplier management.
+    
+    GET: Retrieve supplier details
+    PUT/PATCH: Update supplier
+    DELETE: Delete supplier
+    """
+    queryset = Supplier.objects.all()
+    serializer_class = SupplierSerializer
+    permission_classes = [permissions.AllowAny]
+    lookup_field = "id"
+
+
 class AdminBoltListView(generics.ListAPIView):
     queryset = Bolt.objects.all()
     serializer_class = BoltSerializer
-    permission_classes = [IsAdminUser]  # Only admins can view bolts
+    permission_classes = [IsAdminUser]
 
     def get_queryset(self):
-        # Optionally, you can filter by published/unpublished status
         queryset = super().get_queryset()
-        is_published = self.request.query_params.get('is_published', None)
+        is_published = self.request.query_params.get("is_published", None)
         if is_published:
             queryset = queryset.filter(is_published=is_published)
         return queryset
 
 
-# Admin Bolt Create View (Add new bolt)
 class AdminBoltCreateView(generics.CreateAPIView):
     serializer_class = BoltSerializer
-    permission_classes = [IsAdminUser]  # Only admins can create bolts
+    permission_classes = [IsAdminUser]
 
     def perform_create(self, serializer):
-        # Optional: You can add custom logic before saving the bolt
         serializer.save()
 
 
-# Admin Bolt Update View (Edit an existing bolt)
 class AdminBoltUpdateView(generics.UpdateAPIView):
     queryset = Bolt.objects.all()
     serializer_class = BoltSerializer
-    permission_classes = [IsAdminUser]  # Only admins can edit bolts
+    permission_classes = [IsAdminUser]
 
-
-# Admin Bolt Delete View (Delete an existing bolt)
 class AdminBoltDeleteView(generics.DestroyAPIView):
     queryset = Bolt.objects.all()
-    permission_classes = [IsAdminUser]  # Only admins can delete bolts
+    permission_classes = [IsAdminUser]
