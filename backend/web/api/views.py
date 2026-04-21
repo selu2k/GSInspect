@@ -1,23 +1,19 @@
-from rest_framework.response import Response
-from rest_framework import generics, permissions
-from rest_framework.pagination import PageNumberPagination
-from rest_framework.exceptions import ValidationError
 from django.db.models import Min, Max
-from django_filters.rest_framework import DjangoFilterBackend
 from django_filters import BaseInFilter, FilterSet
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import generics, permissions
+from rest_framework.exceptions import ValidationError
+from rest_framework.pagination import PageNumberPagination
+from rest_framework.response import Response
+from rest_framework_simplejwt.views import TokenObtainPairView
 
 from .models import Bolt, Test, Supplier
 from .serializers import BoltSerializer, TestSerializer, MyTokenObtainPairSerializer
 from .utils import group_tests_by_bolt
 
-# Import permission class from permissions.py to follow DRY principles
-from .permissions import IsEngineerOrAdmin
-
-from rest_framework_simplejwt.views import TokenObtainPairView
-
 class TestFilterSet(FilterSet):
     """
-    Filter set for Test model to support multi-id filtering via comma-separated strings.
+    Filter set for Test model supporting multi-ID filtering via comma-separated strings.
     """
     bolt_ids = BaseInFilter(field_name='bolt_id')
     
@@ -27,7 +23,7 @@ class TestFilterSet(FilterSet):
 
 class HealthView(generics.GenericAPIView):
     """
-    Health check endpoint for monitoring system status.
+    Service health check endpoint.
     """
     permission_classes = [permissions.AllowAny]
     
@@ -36,7 +32,7 @@ class HealthView(generics.GenericAPIView):
 
 class FilterOptionsView(generics.GenericAPIView):
     """
-    Public API endpoint to provide dynamic options for frontend filter dropdowns.
+    Provides dynamic metadata for frontend filter components (dropdowns, ranges).
     """
     permission_classes = [permissions.AllowAny]
 
@@ -79,14 +75,7 @@ class FilterOptionsView(generics.GenericAPIView):
 
 class BoltPagination(PageNumberPagination):
     """
-    Public API endpoint for published bolts with filtering and pagination.
-    
-    Query parameters:
-    - category: Filter by category
-    - supplier: Filter by supplier ID
-    - length: Filter by bolt length
-    - page: Page number (default 1)
-    - limit: Items per page (default 20, max 100)
+    Custom pagination settings for Bolt listings.
     """
     page_size = 20
     page_size_query_param = "limit"
@@ -94,31 +83,19 @@ class BoltPagination(PageNumberPagination):
 
 class BoltListView(generics.ListAPIView):
     """
-    Public API endpoint for retrieving published bolts with filtering and pagination.
+    Retrieves a list of published bolts with filtering and pagination.
     """
     queryset = Bolt.objects.select_related("supplier").filter(is_published=True).order_by("id")
     serializer_class = BoltSerializer
     pagination_class = BoltPagination
-    # Reverted to AllowAny as per reviewer's feedback for a public API
     permission_classes = [permissions.AllowAny]
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ["category", "supplier", "length"]
 
 class TestListView(generics.ListAPIView):
     """
-    Public API endpoint for published tests with associated curve and calculated stats.
-    
-    Query parameters (both required):
-    - bolt_ids: Filter by bolt IDs (comma-separated, e.g., ?bolt_ids=1,2,3)
-    - methodology: Filter by methodology (static or dynamic)
-    
-    Optional:
-    - facility: Filter by facility name
-    
-    Response includes:
-    - Test details with all measurements
-    - Associated TestCurve with displacement/load data points
-    - Calculated stats (min/max/mean/median/quartiles/std dev) for filtered results only
+    Retrieves tests grouped by bolt with statistical calculations.
+    Requires 'bolt_ids' and 'methodology' as query parameters.
     """
     queryset = Test.objects.select_related("curve").filter(is_published=True).order_by("-created_at")
     serializer_class = TestSerializer
@@ -133,15 +110,15 @@ class TestListView(generics.ListAPIView):
         if not bolt_ids or not methodology:
             raise ValidationError({'detail': 'bolt_ids and methodology are required parameters.'})
         return queryset
-    """Override to group tests by bolt and include per-bolt stats."""
+
     def list(self, request, *args, **kwargs):
-        # Apply filters and group tests by bolt using utility helper
+        # Apply filters and group results using the utility helper
         filtered_tests = self.filter_queryset(self.get_queryset())
         grouped_data = group_tests_by_bolt(filtered_tests)
         return Response(grouped_data)
 
 class MyTokenObtainPairView(TokenObtainPairView):
     """
-    Custom JWT login view utilizing the MyTokenObtainPairSerializer.
+    JWT authentication endpoint using custom claims serializer.
     """
     serializer_class = MyTokenObtainPairSerializer
