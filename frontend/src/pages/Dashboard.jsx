@@ -429,6 +429,147 @@ export default function Dashboard() {
           </div>
         </section>
       )}
+
+      {/* Distribution Box Plot Section */}
+      {plottedTests.length > 0 && productStats.length > 0 && (
+        <section className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 md:p-5 shrink-0 flex flex-col">
+          <div className="flex items-center justify-between gap-3 mb-4 shrink-0">
+            <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wide">Distribution Analysis</h3>
+            <p className="text-xs text-slate-500">Viewing: {selectedProperty.replace(/_/g, ' ')}</p>
+          </div>
+          
+          <div className="overflow-x-auto flex-1">
+            {(() => {
+              const numProducts = productStats.length;
+              const spacing = 65;
+              const lastProductYPos = 80 + (numProducts - 1) * spacing;
+              const lastProductBottom = lastProductYPos + 25;
+              const axisLabelPadding = 40;
+              const xAxisY = lastProductBottom + axisLabelPadding;
+              const svgHeight = xAxisY + 80; // space for axis labels and title below
+              return (
+                <svg width="100%" height={svgHeight} viewBox={`0 0 1000 ${svgHeight}`} className="w-full">
+                  {/* Background */}
+                  <rect width="1000" height={svgHeight} fill="#fafafa" />
+                  
+                  {/* Y-axis line */}
+                  <line x1="80" y1="30" x2="80" y2={xAxisY} stroke="#94a3b8" strokeWidth="2" />
+                  
+                  {/* X-axis line */}
+                  <line x1="80" y1={xAxisY} x2="950" y2={xAxisY} stroke="#94a3b8" strokeWidth="2" />
+              
+              {productStats.map(({ product, stats }, idx) => {
+                const propertyStats = stats[selectedProperty];
+                if (!propertyStats) return null;
+                
+                const { min, q25, median, q75, max } = propertyStats;
+                const colorMap = productColorMap[product?.id];
+                const color = colorMap?.hex || '#cbd5e1';
+                
+                // Calculate scale
+                const dataMin = Math.min(...productStats.map(p => p.stats[selectedProperty]?.min || 0));
+                const dataMax = Math.max(...productStats.map(p => p.stats[selectedProperty]?.max || 100));
+                const range = dataMax - dataMin || 1;
+                const scale = (value) => ((value - dataMin) / range) * 850 + 95;
+                
+                const yPos = 80 + idx * 65;
+                
+                return (
+                  <g key={product?.id}>
+                    {/* Whisker line */}
+                    <line x1={scale(min)} y1={yPos} x2={scale(max)} y2={yPos} stroke={color} strokeWidth="1" opacity="0.5" />
+                    
+                    {/* Min cap */}
+                    <line x1={scale(min)} y1={yPos - 10} x2={scale(min)} y2={yPos + 10} stroke={color} strokeWidth="2" />
+                    
+                    {/* Max cap */}
+                    <line x1={scale(max)} y1={yPos - 10} x2={scale(max)} y2={yPos + 10} stroke={color} strokeWidth="2" />
+                    
+                    {/* Q25-Q75 box */}
+                    <rect
+                      x={scale(q25)}
+                      y={yPos - 25}
+                      width={Math.max(2, scale(q75) - scale(q25))}
+                      height={50}
+                      fill={color}
+                      opacity="0.25"
+                      stroke={color}
+                      strokeWidth="2"
+                    />
+                    
+                    {/* Median line */}
+                    <line
+                      x1={scale(median)}
+                      y1={yPos - 25}
+                      x2={scale(median)}
+                      y2={yPos + 25}
+                      stroke={color}
+                      strokeWidth="3"
+                    />
+                    
+                    {/* Product label*/}
+                    <text
+                      x="15"
+                      y={yPos + 6}
+                      fontSize="10"
+                      fontWeight="600"
+                      fill="#334155"
+                      textAnchor="start"
+                    >
+                      {product?.product_name}
+                    </text>
+                  </g>
+                );
+              })}
+              
+              {/* X-axis title */}
+              <text
+                x="500"
+                y={xAxisY + 50}
+                fontSize="13"
+                fontWeight="600"
+                fill="#475569"
+                textAnchor="middle"
+              >
+                {selectedProperty.replace(/_/g, ' ').toUpperCase()}
+              </text>
+              
+              {/* X-axis min label */}
+              <text
+                x="95"
+                y={xAxisY + 25}
+                fontSize="11"
+                fill="#64748b"
+                fontWeight="500"
+                textAnchor="start"
+              >
+                {Math.min(...productStats.filter(p => p.stats[selectedProperty]).map(p => p.stats[selectedProperty].min)).toFixed(1)}
+              </text>
+              
+              {/* X-axis max label */}
+              <text
+                x="935"
+                y={xAxisY + 25}
+                fontSize="11"
+                fill="#64748b"
+                fontWeight="500"
+                textAnchor="end"
+              >
+                {Math.max(...productStats.filter(p => p.stats[selectedProperty]).map(p => p.stats[selectedProperty].max)).toFixed(1)}
+              </text>
+                </svg>
+              );
+            })()}
+          </div>
+          
+          <div className="mt-4 pt-4 border-t border-slate-100 text-xs text-slate-500 space-y-1">
+            <p className="font-medium text-slate-600">Box Plot Legend:</p>
+            <p>• <span className="inline-block w-4 h-4 bg-slate-300 align-middle mr-2"></span>Box shows 25th-75th percentile (IQR)</p>
+            <p>• <span className="inline-block w-1 h-4 bg-slate-600 align-middle mr-2"></span>Bold line inside box is the median</p>
+            <p>• Whiskers extend from minimum to maximum values</p>
+          </div>
+        </section>
+      )}
     </div>
   );
 }
