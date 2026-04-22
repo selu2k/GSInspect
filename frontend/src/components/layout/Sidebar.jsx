@@ -13,8 +13,19 @@ export default function Sidebar() {
     triggerSearch
   } = useAppContext();
 
-  const [draftCategory, setDraftCategory] = useState(selectedCategory);
-  const [draftSupplier, setDraftSupplier] = useState(selectedSupplier);
+  // Guard against null/undefined API data
+  if (!categories || !suppliers || !lengthRange) {
+    return (
+      <aside className="w-80 bg-gradient-to-b from-white to-slate-50 shadow-2xl flex flex-col z-10 border-r border-slate-200 flex-shrink-0">
+        <div className="p-4 flex items-center justify-center h-full">
+          <p className="text-slate-500 italic">Loading filters...</p>
+        </div>
+      </aside>
+    );
+  }
+
+  const [draftCategory, setDraftCategory] = useState(selectedCategory || 'All');
+  const [draftSupplier, setDraftSupplier] = useState(selectedSupplier || 'All');
   const [draftLengthValue, setDraftLengthValue] = useState(selectedLength === 'All' ? lengthRange.min : parseFloat(selectedLength) || lengthRange.min);
 
   useEffect(() => {
@@ -48,7 +59,7 @@ export default function Sidebar() {
             Support Type
           </label>
           <div className="flex items-center gap-2 bg-slate-100 border border-slate-200 p-2.5 rounded-lg cursor-not-allowed hover:bg-slate-100 transition-colors">
-            <span className="text-sm font-medium text-slate-600 capitalize">{supportType}</span>
+            <span className="text-sm font-medium text-slate-600 capitalize">{supportType || 'Loading...'}</span>
             <span className="text-xs text-slate-400 ml-auto">(Locked)</span>
           </div>
         </div>
@@ -61,7 +72,10 @@ export default function Sidebar() {
             onChange={(e) => setDraftCategory(e.target.value)}
             className="w-full bg-white border border-slate-300 text-slate-700 text-sm rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent block p-2.5 transition-all hover:border-slate-400"
           >
-            {categories.map(c => <option key={c} value={c}>{c}</option>)}
+            {categories && categories.length > 0 ? 
+              categories.map(c => <option key={c} value={c}>{c}</option>) 
+              : <option value="All">Loading...</option>
+            }
           </select>
         </div>
 
@@ -73,7 +87,10 @@ export default function Sidebar() {
             onChange={(e) => setDraftSupplier(e.target.value)}
             className="w-full bg-white border border-slate-300 text-slate-700 text-sm rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent block p-2.5 transition-all hover:border-slate-400"
           >
-            {suppliers.map(s => <option key={s} value={s}>{s}</option>)}
+            {suppliers && suppliers.length > 0 ? 
+              suppliers.map(s => <option key={s} value={s}>{s}</option>) 
+              : <option value="All">Loading...</option>
+            }
           </select>
         </div>
 

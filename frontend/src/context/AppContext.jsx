@@ -37,9 +37,27 @@ export function AppProvider({ children }) {
     fetch('/api/public/filter-options/')
       .then(res => res.json())
       .then(data => {
-        setFilterOptions(data);
+        // Ensure data has expected structure with defaults
+        const normalizedData = {
+          categories: data?.categories || [],
+          suppliers: data?.suppliers || [],
+          facilities: data?.facilities || [],
+          methodologies: data?.methodologies || [],
+          length_range: data?.length_range || { min: 0, max: 10 }
+        };
+        setFilterOptions(normalizedData);
       })
-      .catch(err => console.error("Error fetching filter options:", err));
+      .catch(err => {
+        console.error("Error fetching filter options:", err);
+        // Set safe defaults on error
+        setFilterOptions({
+          categories: [],
+          suppliers: [],
+          facilities: [],
+          methodologies: [],
+          length_range: { min: 0, max: 10 }
+        });
+      });
   }, []);
 
   // Filter State
@@ -65,17 +83,20 @@ export function AppProvider({ children }) {
     fetch(`/api/public/bolts/?${params.toString()}`)
       .then(res => res.json())
       .then(data => {
-        const bolts = (data.results || []).map(b => ({
-          id: b.id,
-          supplier: b.supplier.name,
-          product_name: b.name,
-          bolt_length: String(b.length),
-          bolt_category: b.category
+        const bolts = (data?.results || []).map(b => ({
+          id: b?.id,
+          supplier: b?.supplier?.name || 'Unknown',
+          product_name: b?.name || 'Unknown Product',
+          bolt_length: String(b?.length || 0),
+          bolt_category: b?.category || 'Unknown'
         }));
         setProducts(bolts);
         setSelectedProductIds([]); // Do not auto-select products
       })
-      .catch(err => console.error("Error fetching bolts:", err));
+      .catch(err => {
+        console.error("Error fetching bolts:", err);
+        setProducts([]); // Set empty array on error
+      });
   };
 
   // Categories derived from API data for dropdowns
@@ -113,53 +134,80 @@ export function AppProvider({ children }) {
     fetch(`/api/public/tests/?bolt_ids=${idsParams}&methodology=${methodology}`)
       .then(res => res.json())
       .then(data => {
+        if (!data || typeof data !== 'object') {
+          console.warn("Invalid data structure from tests API");
+          setApiTests([]);
+          setApiCurves([]);
+          setApiStats({});
+          return;
+        }
+        
         const nextTests = [];
-         const nextCurves = [];
-         const nextStats = {};
-         Object.entries(data).forEach(([boltId, boltData]) => {
-            const numBoltId = isNaN(boltId) ? boltId : Number(boltId);
-            boltData.tests.forEach(t => {
-               nextTests.push({
-                  test_id: t.id,
-                  product_id: numBoltId,
-                  test_methodology: t.methodology,
-                  test_facility: t.facility,
-                  peak_strength: t.peak_strength,
-                  yield_strength: t.yield_strength,
-                  ultimate_deformation: t.ultimate_deformation,
-                  energy_absorption: t.energy_absorption,
-                  bond_strength: t.bond_strength,
-                  stiffness: t.stiffness,
-                  installation_method: t.installation_method,
-                  encapsulation_method: t.encapsulation_method,
-                  loading_rate: t.loading_rate,
-                  number_of_drops: t.number_of_drops,
-               });
-               if (t.curve && t.curve.curve_pair) {
-                  t.curve.curve_pair.forEach(pt => {
-                     nextCurves.push({ test_id: t.id, disp: pt.displacement, load: pt.load });
-                  });
-               }
+        const nextCurves = [];
+        const nextStats = {};
+        
+        Object.entries(data).forEach(([boltId, boltData]) => {
+          if (!boltData) return;
+          
+          const numBoltId = isNaN(boltId) ? boltId : Number(boltId);
+          const tests = boltData?.tests || [];
+          
+          tests.forEach(t => {
+            if (!t?.id) return;
+            
+            nextTests.push({
+              test_id: t.id,
+              product_id: numBoltId,
+              test_methodology: t.methodology,
+              test_facility: t.facility,
+              peak_strength: t.peak_strength,
+              yield_strength: t.yield_strength,
+              ultimate_deformation: t.ultimate_deformation,
+              energy_absorption: t.energy_absorption,
+              bond_strength: t.bond_strength,
+              stiffness: t.stiffness,
+              installation_method: t.installation_method,
+              encapsulation_method: t.encapsulation_method,
+              loading_rate: t.loading_rate,
+              number_of_drops: t.number_of_drops,
             });
-            nextStats[numBoltId] = boltData.stats;
-         });
-         setApiTests(nextTests);
-         setApiCurves(nextCurves);
-         setApiStats(nextStats);
+            
+            if (t.curve?.curve_pair && Array.isArray(t.curve.curve_pair)) {
+              t.curve.curve_pair.forEach(pt => {
+                if (pt?.displacement != null && pt?.load != null) {
+                  nextCurves.push({ test_id: t.id, disp: pt.displacement, load: pt.load });
+                }
+              });
+            }
+          });
+          
+          nextStats[numBoltId] = boltData.stats || {};
+        });
+        
+        setApiTests(nextTests);
+        setApiCurves(nextCurves);
+        setApiStats(nextStats);
       })
-      .catch(err => console.error("Error fetching tests:", err));
+      .catch(err => {
+        console.error("Error fetching tests:", err);
+        setApiTests([]);
+        setApiCurves([]);
+        setApiStats({});
+      });
   }, [selectedProductIds, methodology]);
 
   const filteredTests = useMemo(() => {
+    if (!apiTests || !Array.isArray(apiTests)) return [];
     return apiTests.filter(t => 
-      (selectedFacility === 'All' || t.test_facility === selectedFacility)
+      (selectedFacility === 'All' || t?.test_facility === selectedFacility)
     );
   }, [apiTests, selectedFacility]);
 
   // When facility filter is applied, we only want curves from the filtered tests
   const filteredCurves = useMemo(() => {
-    const testIds = new Set(filteredTests.map(t => t.test_id));
-    return apiCurves.filter(c => testIds.has(c.test_id));
+    if (!filteredTests || !Array.isArray(filteredTests) || !apiCurves || !Array.isArray(apiCurves)) return [];
+    const testIds = new Set(filteredTests.map(t => t?.test_id));
+    return apiCurves.filter(c => testIds.has(c?.test_id));
   }, [filteredTests, apiCurves]);
 
   const toggleProductSelection = (productId) => {

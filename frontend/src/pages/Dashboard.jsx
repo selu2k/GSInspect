@@ -21,12 +21,22 @@ export default function Dashboard() {
 
   const [selectedProperty, setSelectedProperty] = useState('peak_strength');
 
+  // Guard against null/undefined API data
+  if (!filteredProductsList || !filteredTests || !filteredCurves || !productColorMap || !apiStats) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <p className="text-slate-500 italic">Loading data...</p>
+      </div>
+    );
+  }
+
   const plottedTests = useMemo(() => {
-    if (selectedProductIds.length === 0) return [];
+    if (!filteredTests || selectedProductIds.length === 0) return [];
     return filteredTests.filter((test) => selectedProductIds.includes(test.product_id));
   }, [filteredTests, selectedProductIds]);
 
   const chartSeries = useMemo(() => {
+    if (!plottedTests || plottedTests.length === 0 || !filteredProductsList || !productColorMap) return [];
     const seenProducts = new Set();
     return plottedTests
       .map((test) => {
@@ -47,6 +57,7 @@ export default function Dashboard() {
   }, [plottedTests, filteredProductsList, productColorMap]);
 
   const chartSeriesData = useMemo(() => {
+    if (!selectedProductIds || !filteredProductsList || !productColorMap) return [];
     if (showAverage) {
       // Show average curves per product
       return selectedProductIds.map((productId) => {
@@ -67,7 +78,7 @@ export default function Dashboard() {
   }, [showAverage, selectedProductIds, chartSeries, filteredProductsList, productColorMap]);
 
   const chartData = useMemo(() => {
-    if (plottedTests.length === 0) return [];
+    if (!plottedTests || plottedTests.length === 0 || !filteredCurves) return [];
 
     const selectedTestIds = new Set(plottedTests.map((test) => test.test_id));
     const relevantCurves = filteredCurves.filter((point) => selectedTestIds.has(point.test_id));
@@ -116,7 +127,7 @@ export default function Dashboard() {
   }, [plottedTests, filteredCurves, showAverage]);
 
   const productStats = useMemo(() => {
-    if (selectedProductIds.length === 0) return [];
+    if (!selectedProductIds || selectedProductIds.length === 0 || !filteredProductsList || !apiStats) return [];
 
     return selectedProductIds.map(productId => {
       const product = filteredProductsList.find(p => p.id === productId);
