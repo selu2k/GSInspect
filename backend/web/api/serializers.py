@@ -19,7 +19,7 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
         data = super().validate(attrs)
         
         # Includes user metadata in the initial login JSON response
-        data['role'] = getattr(self.user, 'role', 'ADMIN' if self.user.is_staff else 'VIEWER')
+        data['role'] = getattr(self.user, 'role', 'VIEWER')
         data['username'] = self.user.username
         data['department'] = getattr(self.user, 'department', None)
         
@@ -66,7 +66,7 @@ class TestCurveSerializer(serializers.ModelSerializer):
         model = TestCurve
         fields = ["id", "curve_pair"]
 
-class TestSerializer(serializers.ModelSerializer):
+class PublicTestSerializer(serializers.ModelSerializer):
     """
     Serializer for Test results including related curve data and methodology labels.
     """
@@ -91,4 +91,30 @@ class TestSerializer(serializers.ModelSerializer):
             "energy_absorption",
             "number_of_drops",
             "curve",
+        ]
+
+class TestSerializer(serializers.ModelSerializer):
+    """
+    Serializer for Test results including related curve data and methodology labels.
+    """
+    curve = TestCurveSerializer(read_only=True)
+    methodology_display = serializers.CharField(source='get_methodology_display', read_only=True)
+    
+    class Meta:
+        model = Test
+        fields = [
+            "id",
+            "methodology",
+            "methodology_display",
+            "facility",
+            "installation_method",
+            "encapsulation_method",
+            "peak_strength",
+            "bond_strength",
+            "yield_strength",
+            "ultimate_deformation",
+            "stiffness",
+            "loading_rate",
+            "energy_absorption",
+            "number_of_drops",
         ]
