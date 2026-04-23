@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from .models import Bolt, Test, TestCurve, Supplier
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from .models import Bolt, Test, TestCurve, Supplier
 
@@ -25,19 +26,22 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
         
         return data
 
+
 class SupplierSerializer(serializers.ModelSerializer):
-    """
-    Serializer for Supplier information.
-    """
+    """Serializer for Supplier admin operations."""
+    
     class Meta:
         model = Supplier
-        fields = ["id", "name", "created_at", "updated_at"]
+        fields = [
+            "id",
+            "name",
+            "created_at",
+            "updated_at",
+        ]
         read_only_fields = ["id", "created_at", "updated_at"]
 
-class BoltSerializer(serializers.ModelSerializer):
-    """
-    Serializer for Bolt model with nested supplier details.
-    """
+
+class PublicBoltSerializer(serializers.ModelSerializer):
     supplier = serializers.SerializerMethodField()
 
     class Meta:
@@ -58,19 +62,21 @@ class BoltSerializer(serializers.ModelSerializer):
             "name": obj.supplier.name,
         }
 
-class TestCurveSerializer(serializers.ModelSerializer):
-    """
-    Serializer for raw TestCurve data points.
-    """
+
+class PublicTestCurveSerializer(serializers.ModelSerializer):
+    """Serializer for TestCurve data points."""
+    
     class Meta:
         model = TestCurve
-        fields = ["id", "curve_pair"]
+        fields = [
+            "id",
+            "curve_pair",
+        ]
+
 
 class PublicTestSerializer(serializers.ModelSerializer):
-    """
-    Serializer for Test results including related curve data and methodology labels.
-    """
-    curve = TestCurveSerializer(read_only=True)
+    """Serializer for Test with related curve."""
+    curve = PublicTestCurveSerializer(read_only=True)
     methodology_display = serializers.CharField(source='get_methodology_display', read_only=True)
     
     class Meta:
@@ -93,28 +99,3 @@ class PublicTestSerializer(serializers.ModelSerializer):
             "curve",
         ]
 
-class TestSerializer(serializers.ModelSerializer):
-    """
-    Serializer for Test results including related curve data and methodology labels.
-    """
-    curve = TestCurveSerializer(read_only=True)
-    methodology_display = serializers.CharField(source='get_methodology_display', read_only=True)
-    
-    class Meta:
-        model = Test
-        fields = [
-            "id",
-            "methodology",
-            "methodology_display",
-            "facility",
-            "installation_method",
-            "encapsulation_method",
-            "peak_strength",
-            "bond_strength",
-            "yield_strength",
-            "ultimate_deformation",
-            "stiffness",
-            "loading_rate",
-            "energy_absorption",
-            "number_of_drops",
-        ]
