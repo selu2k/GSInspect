@@ -63,22 +63,44 @@ export function AppProvider({ children }) {
   // Filter State
   const [supportType] = useState('rockbolt');
   const [methodology, setMethodology] = useState('dynamic');
-  const [selectedCategory, setSelectedCategory] = useState('All');
-  const [selectedSupplier, setSelectedSupplier] = useState('All');
-  const [selectedLength, setSelectedLength] = useState('All');
+  const [selectedCategories, setSelectedCategories] = useState([]);
+  const [selectedSuppliers, setSelectedSuppliers] = useState([]);
+  const [selectedLengthRange, setSelectedLengthRange] = useState(null);
   const [selectedProductIds, setSelectedProductIds] = useState([]);
-  const [selectedFacility, setSelectedFacility] = useState('All');
+  const [selectedFacilities, setSelectedFacilities] = useState([]);
   const [showAverage, setShowAverage] = useState(false);
 
   const triggerSearch = (filters) => {
-    setSelectedCategory(filters.category);
-    setSelectedSupplier(filters.supplier);
-    setSelectedLength(filters.length);
+    setSelectedCategories(filters.categories || []);
+    setSelectedSuppliers(filters.suppliers || []);
+    setSelectedLengthRange(filters.lengthRange || null);
 
     const params = new URLSearchParams({ limit: 100 });
-    if (filters.category !== 'All') params.append('category', filters.category);
-    if (filters.supplier !== 'All') params.append('supplier', supplierNameToIdMap[filters.supplier]);
-    if (filters.length !== 'All') params.append('length', filters.length);
+    
+    // Add categories (multi-select - comma-separated)
+    if (filters.categories && filters.categories.length > 0) {
+      params.append('categories', filters.categories.join(','));
+    }
+    
+    // Add suppliers (multi-select - use supplier IDs, comma-separated)
+    if (filters.suppliers && filters.suppliers.length > 0) {
+      const supplierIds = filters.suppliers
+        .map(supplier => supplierNameToIdMap[supplier])
+        .filter(id => id !== undefined);
+      if (supplierIds.length > 0) {
+        params.append('suppliers', supplierIds.join(','));
+      }
+    }
+    
+    // Add length range (min/max)
+    if (filters.lengthRange) {
+      if (filters.lengthRange.min !== undefined && filters.lengthRange.min !== null) {
+        params.append('min_length', filters.lengthRange.min);
+      }
+      if (filters.lengthRange.max !== undefined && filters.lengthRange.max !== null) {
+        params.append('max_length', filters.lengthRange.max);
+      }
+    }
 
     fetch(`/api/public/bolts/?${params.toString()}`)
       .then(res => res.json())
@@ -131,7 +153,15 @@ export function AppProvider({ children }) {
       return;
     }
     const idsParams = selectedProductIds.join(',');
-    fetch(`/api/public/tests/?bolt_ids=${idsParams}&methodology=${methodology}`)
+    let testsUrl = `/api/public/tests/?bolt_ids=${idsParams}&methodology=${methodology}`;
+    
+    // Add facilities filter if any are selected
+    if (selectedFacilities && selectedFacilities.length > 0) {
+      const facilitiesParam = selectedFacilities.join(',');
+      testsUrl += `&facilities=${encodeURIComponent(facilitiesParam)}`;
+    }
+    
+    fetch(testsUrl)
       .then(res => res.json())
       .then(data => {
         if (!data || typeof data !== 'object') {
@@ -194,14 +224,15 @@ export function AppProvider({ children }) {
         setApiCurves([]);
         setApiStats({});
       });
-  }, [selectedProductIds, methodology]);
+  }, [selectedProductIds, methodology, selectedFacilities]);
 
   const filteredTests = useMemo(() => {
     if (!apiTests || !Array.isArray(apiTests)) return [];
-    return apiTests.filter(t => 
-      (selectedFacility === 'All' || t?.test_facility === selectedFacility)
-    );
-  }, [apiTests, selectedFacility]);
+    // If no facilities selected, show all tests
+    if (selectedFacilities.length === 0) return apiTests;
+    // Otherwise, filter to only include tests from selected facilities
+    return apiTests.filter(t => selectedFacilities.includes(t?.test_facility));
+  }, [apiTests, selectedFacilities]);
 
   // When facility filter is applied, we only want curves from the filtered tests
   const filteredCurves = useMemo(() => {
@@ -225,10 +256,10 @@ export function AppProvider({ children }) {
     apiStats,
     supportType,
     methodology, setMethodology,
-    selectedCategory, setSelectedCategory,
-    selectedSupplier, setSelectedSupplier,
-    selectedLength, setSelectedLength,
-    selectedFacility, setSelectedFacility,
+    selectedCategories, setSelectedCategories,
+    selectedSuppliers, setSelectedSuppliers,
+    selectedLengthRange, setSelectedLengthRange,
+    selectedFacilities, setSelectedFacilities,
     showAverage, setShowAverage,
     selectedProductIds, setSelectedProductIds,
     categories, suppliers, lengthRange, facilities,

@@ -11,12 +11,13 @@ import {
   YAxis
 } from 'recharts';
 import { useAppContext } from '../context/AppContext';
+import MultiSelect from '../components/filters/MultiSelect';
 
 export default function Dashboard() {
   const { 
     filteredProductsList, filteredTests, filteredCurves, productColorMap, apiStats,
     selectedProductIds, setSelectedProductIds, toggleProductSelection, showAverage, setShowAverage,
-    methodology, setMethodology, selectedFacility, setSelectedFacility, facilities
+    methodology, setMethodology, selectedFacilities, setSelectedFacilities, facilities
   } = useAppContext();
 
   const [selectedProperty, setSelectedProperty] = useState('peak_strength');
@@ -228,19 +229,14 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-700 uppercase tracking-widest flex items-center gap-1.5 px-0.5">
-              <Building2 className="w-3.5 h-3.5 text-slate-400" />
-              Facility
-            </label>
-            <select 
-              value={selectedFacility}
-              onChange={(e) => setSelectedFacility(e.target.value)}
-              className="w-full bg-white border border-slate-300 text-slate-700 text-sm rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent p-2.5 transition-all hover:border-slate-400"
-            >
-              {facilities.map((f, i) => <option key={f || i} value={f}>{f}</option>)}
-            </select>
-          </div>
+          <MultiSelect
+            label="Facility"
+            options={facilities.filter(f => f !== 'All')}
+            selectedValues={selectedFacilities}
+            onChange={setSelectedFacilities}
+            placeholder="Select facilities..."
+            icon={Building2}
+          />
         </div>
       </section>
 

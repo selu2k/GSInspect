@@ -1,13 +1,15 @@
 import React, { useEffect, useState } from 'react';
-import { Filter, ShieldAlert, Zap } from 'lucide-react';
+import { Filter, ShieldAlert, Zap, Package, Building2 } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
+import MultiSelect from '../filters/MultiSelect';
+import RangeSlider from '../filters/RangeSlider';
 
 export default function Sidebar() {
   const {
     supportType,
-    selectedCategory, setSelectedCategory,
-    selectedSupplier, setSelectedSupplier,
-    selectedLength, setSelectedLength,
+    selectedCategories, setSelectedCategories,
+    selectedSuppliers, setSelectedSuppliers,
+    selectedLengthRange, setSelectedLengthRange,
     categories, suppliers, lengthRange,
     filteredProductsList, filteredTests, filteredCurves,
     triggerSearch
@@ -24,21 +26,25 @@ export default function Sidebar() {
     );
   }
 
-  const [draftCategory, setDraftCategory] = useState(selectedCategory || 'All');
-  const [draftSupplier, setDraftSupplier] = useState(selectedSupplier || 'All');
-  const [draftLengthValue, setDraftLengthValue] = useState(selectedLength === 'All' ? lengthRange.min : parseFloat(selectedLength) || lengthRange.min);
+  const [draftCategories, setDraftCategories] = useState(selectedCategories || []);
+  const [draftSuppliers, setDraftSuppliers] = useState(selectedSuppliers || []);
+  const [draftLengthRange, setDraftLengthRange] = useState(
+    selectedLengthRange || { min: lengthRange.min, max: lengthRange.max }
+  );
 
   useEffect(() => {
-    setDraftCategory(selectedCategory);
-    setDraftSupplier(selectedSupplier);
-    setDraftLengthValue(selectedLength === 'All' ? lengthRange.min : parseFloat(selectedLength) || lengthRange.min);
-  }, [selectedCategory, selectedSupplier, selectedLength, lengthRange]);
+    setDraftCategories(selectedCategories || []);
+    setDraftSuppliers(selectedSuppliers || []);
+    setDraftLengthRange(
+      selectedLengthRange || { min: lengthRange.min, max: lengthRange.max }
+    );
+  }, [selectedCategories, selectedSuppliers, selectedLengthRange, lengthRange]);
 
   const applyFilters = () => {
     triggerSearch({
-      category: draftCategory,
-      supplier: draftSupplier,
-      length: draftLengthValue === lengthRange.min ? 'All' : String(draftLengthValue)
+      categories: draftCategories,
+      suppliers: draftSuppliers,
+      lengthRange: draftLengthRange
     });
   };
 
@@ -65,73 +71,37 @@ export default function Sidebar() {
         </div>
 
         {/* Category */}
-        <div className="space-y-1.5">
-          <label className="text-xs font-semibold text-slate-700 uppercase tracking-widest block">Bolt Category</label>
-          <select 
-            value={draftCategory}
-            onChange={(e) => setDraftCategory(e.target.value)}
-            className="w-full bg-white border border-slate-300 text-slate-700 text-sm rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent block p-2.5 transition-all hover:border-slate-400"
-          >
-            {categories && categories.length > 0 ? 
-              categories.map(c => <option key={c} value={c}>{c}</option>) 
-              : <option value="All">Loading...</option>
-            }
-          </select>
-        </div>
+        <MultiSelect
+          label="Bolt Category"
+          options={categories.filter(c => c !== 'All')}
+          selectedValues={draftCategories}
+          onChange={setDraftCategories}
+          placeholder="Select categories..."
+          icon={Package}
+        />
 
         {/* Supplier */}
-        <div className="space-y-1.5">
-          <label className="text-xs font-semibold text-slate-700 uppercase tracking-widest block">Supplier</label>
-          <select 
-            value={draftSupplier}
-            onChange={(e) => setDraftSupplier(e.target.value)}
-            className="w-full bg-white border border-slate-300 text-slate-700 text-sm rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent block p-2.5 transition-all hover:border-slate-400"
-          >
-            {suppliers && suppliers.length > 0 ? 
-              suppliers.map(s => <option key={s} value={s}>{s}</option>) 
-              : <option value="All">Loading...</option>
-            }
-          </select>
-        </div>
+        <MultiSelect
+          label="Supplier"
+          options={suppliers.filter(s => s !== 'All')}
+          selectedValues={draftSuppliers}
+          onChange={setDraftSuppliers}
+          placeholder="Select suppliers..."
+          icon={Building2}
+        />
 
-        {/* Length Slider */}
-        <div className="space-y-2 pt-1">
-          <div className="flex items-baseline justify-between">
-            <label className="text-xs font-semibold text-slate-700 uppercase tracking-widest">Bolt Length (m)</label>
-            <div className="flex items-center gap-2">
-              {draftLengthValue !== lengthRange.min && (
-                <button
-                  onClick={() => setDraftLengthValue(lengthRange.min)}
-                  className="text-xs text-blue-600 hover:text-blue-700 font-semibold underline"
-                >
-                  Clear
-                </button>
-              )}
-              <div className="text-right">
-                <span className="text-md  text-blue-600">{draftLengthValue === lengthRange.min ? 'Any' : draftLengthValue.toFixed(2)}</span>
-                {draftLengthValue !== lengthRange.min && <span className="text-xs text-slate-400 ml-1">m</span>}
-              </div>
-            </div>
-          </div>
-          <div className="relative px-1 py-1">
-            <input 
-              type="range"
-              min={lengthRange.min}
-              max={lengthRange.max}
-              step="0.1"
-              value={draftLengthValue}
-              onChange={(e) => setDraftLengthValue(parseFloat(e.target.value))}
-              className="w-full h-2 bg-gradient-to-r from-slate-200 to-slate-300 rounded-lg appearance-none cursor-pointer accent-blue-500"
-              style={{
-                background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${((draftLengthValue - lengthRange.min) / (lengthRange.max - lengthRange.min)) * 100}%, #e2e8f0 ${((draftLengthValue - lengthRange.min) / (lengthRange.max - lengthRange.min)) * 100}%, #e2e8f0 100%)`
-              }}
-            />
-          </div>
-          <div className="flex justify-between text-xs text-slate-400 font-medium px-1">
-            <span>{lengthRange.min.toFixed(1)}</span>
-            <span>{lengthRange.max.toFixed(1)}</span>
-          </div>
-        </div>
+        {/* Length Range Slider */}
+        <RangeSlider
+          label="Bolt Length"
+          min={lengthRange.min}
+          max={lengthRange.max}
+          step={0.1}
+          selectedMin={draftLengthRange.min}
+          selectedMax={draftLengthRange.max}
+          onChange={setDraftLengthRange}
+          unit="m"
+          icon={Package}
+        />
 
         {/* Search Button */}
         <button
