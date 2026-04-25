@@ -39,9 +39,9 @@ jobs:
             cat .env.temp | grep -E "^(DB_|MARIADB_|APP_ENV)" > .env
             rm .env.temp
             
-            # Stop and redeploycontainers (keep database volume)
+            # Stop and redeploy containers (keep database volume)
             docker-compose down
-            docker-compose up -d
+            docker-compose up --build -d
             sleep 15
             # Health check from VM itself
             for i in {1..30}; do
