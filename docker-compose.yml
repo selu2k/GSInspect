@@ -39,9 +39,11 @@ services:
       target: ${APP_ENV:-dev}
     restart: unless-stopped
     volumes:
+      - /etc/letsencrypt:/etc/letsencrypt:ro  # SSL certificates
       - ./frontend/src:/app/src      # only mounted in dev, ignored in prod
     ports:
       - "80:80"                      # prod (Nginx)
+      - "443:443"                    # HTTPS
       - "5173:5173"                  # dev (Vite HMR)
     environment:
       - APP_ENV=${APP_ENV:-dev}
