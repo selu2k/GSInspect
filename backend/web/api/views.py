@@ -143,7 +143,6 @@ class PublicTestListView(generics.ListAPIView):
         return queryset
 
     def list(self, request, *args, **kwargs):
-        """Override to group tests by bolt and include per-bolt stats."""
         filtered_tests = self.filter_queryset(self.get_queryset())
         grouped_data = group_tests_by_bolt(filtered_tests)
         return Response(grouped_data)
