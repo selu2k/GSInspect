@@ -393,6 +393,7 @@ export default function Dashboard() {
               <option value="bond_strength">Bond Strength</option>
               <option value="stiffness">Stiffness</option>
               <option value="number_of_drops">Number of Drops</option>
+              <option value="loading_rate">Loading Rate</option>
             </select>
           </div>
           <div className="overflow-x-auto">

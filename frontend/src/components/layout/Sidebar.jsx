@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { Filter, ShieldAlert, Zap, Package, Building2 } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
 import MultiSelect from '../filters/MultiSelect';
-import RangeSlider from '../filters/RangeSlider';
 
 export default function Sidebar() {
   const {
@@ -39,6 +38,38 @@ export default function Sidebar() {
       selectedLengthRange || { min: lengthRange.min, max: lengthRange.max }
     );
   }, [selectedCategories, selectedSuppliers, selectedLengthRange, lengthRange]);
+
+  const handleLengthMinChange = (e) => {
+    const val = e.target.value;
+    // Allow empty string or valid numbers with up to 2 decimal places
+    if (val === '' || /^(\d+\.?\d{0,2}|\d*)$/.test(val)) {
+      setDraftLengthRange({ ...draftLengthRange, min: val });
+    }
+  };
+
+  const handleLengthMaxChange = (e) => {
+    const val = e.target.value;
+    // Allow empty string or valid numbers with up to 2 decimal places
+    if (val === '' || /^(\d+\.?\d{0,2}|\d*)$/.test(val)) {
+      setDraftLengthRange({ ...draftLengthRange, max: val });
+    }
+  };
+
+  const handleLengthMinBlur = () => {
+    let numVal = parseFloat(draftLengthRange.min);
+    if (isNaN(numVal) || numVal < lengthRange.min || numVal > draftLengthRange.max) {
+      numVal = lengthRange.min;
+    }
+    setDraftLengthRange({ ...draftLengthRange, min: Math.round(numVal * 100) / 100 });
+  };
+
+  const handleLengthMaxBlur = () => {
+    let numVal = parseFloat(draftLengthRange.max);
+    if (isNaN(numVal) || numVal > lengthRange.max || numVal < draftLengthRange.min) {
+      numVal = lengthRange.max;
+    }
+    setDraftLengthRange({ ...draftLengthRange, max: Math.round(numVal * 100) / 100 });
+  };
 
   const applyFilters = () => {
     triggerSearch({
@@ -90,18 +121,41 @@ export default function Sidebar() {
           icon={Building2}
         />
 
-        {/* Length Range Slider */}
-        <RangeSlider
-          label="Bolt Length"
-          min={lengthRange.min}
-          max={lengthRange.max}
-          step={0.1}
-          selectedMin={draftLengthRange.min}
-          selectedMax={draftLengthRange.max}
-          onChange={setDraftLengthRange}
-          unit="m"
-          icon={Package}
-        />
+        {/* Length Range */}
+        <div className="space-y-2 pt-1">
+          <label className="text-xs font-semibold text-slate-700 uppercase tracking-widest flex items-center gap-2">
+            <Package className="w-3.5 h-3.5 text-slate-400" />
+            Bolt Length (m)
+          </label>
+          <div className="flex gap-2 items-end">
+            <div className="flex-1">
+              <label className="text-xs text-slate-500 font-medium mb-1 block">Min</label>
+              <input
+                type="text"
+                value={draftLengthRange.min}
+                onChange={handleLengthMinChange}
+                onBlur={handleLengthMinBlur}
+                placeholder={lengthRange.min.toFixed(2)}
+                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
+            <div className="flex-1">
+              <label className="text-xs text-slate-500 font-medium mb-1 block">Max</label>
+              <input
+                type="text"
+                value={draftLengthRange.max}
+                onChange={handleLengthMaxChange}
+                onBlur={handleLengthMaxBlur}
+                placeholder={lengthRange.max.toFixed(2)}
+                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
+          </div>
+          <div className="flex justify-between text-xs text-slate-400 font-medium px-1 mt-2">
+            <span>{lengthRange.min.toFixed(1)}</span>
+            <span>{lengthRange.max.toFixed(1)}</span>
+          </div>
+        </div>
 
         {/* Search Button */}
         <button
