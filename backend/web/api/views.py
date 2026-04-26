@@ -2,7 +2,7 @@ from rest_framework.response import Response
 from rest_framework import generics, permissions, serializers
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.exceptions import ValidationError
-from django_filters import BaseInFilter, FilterSet
+from django_filters import BaseInFilter, NumberFilter, FilterSet
 from django.db.models import Min, Max
 from .models import Bolt, Test, Supplier
 from .serializers import BoltSerializer, TestSerializer
@@ -19,10 +19,11 @@ class SupplierSerializer(serializers.ModelSerializer):
 
 class TestFilterSet(FilterSet):
     bolt_ids = BaseInFilter(field_name='bolt_id')
+    facilities = BaseInFilter(field_name='facility')
     
     class Meta:
         model = Test
-        fields = ['methodology', 'facility']
+        fields = ['methodology']
 
 
 class HealthView(generics.GenericAPIView):
@@ -82,6 +83,15 @@ class FilterOptionsView(generics.GenericAPIView):
 
 class PublicFilterOptionsView(FilterOptionsView):
     pass
+class BoltFilterSet(FilterSet):
+    categories = BaseInFilter(field_name='category')
+    suppliers = BaseInFilter(field_name='supplier')
+    min_length = NumberFilter(field_name='length', lookup_expr='gte')
+    max_length = NumberFilter(field_name='length', lookup_expr='lte')
+    
+    class Meta:
+        model = Bolt
+        fields = []
 
 
 class BoltPagination(PageNumberPagination):
@@ -91,12 +101,24 @@ class BoltPagination(PageNumberPagination):
 
 
 class BoltListView(generics.ListAPIView):
+class PublicBoltListView(generics.ListAPIView):
+    """
+    Public API endpoint for published bolts with filtering and pagination.
+    
+    Query parameters:
+    - categories: Comma-separated category names (e.g., M16,M20,M24)
+    - suppliers: Comma-separated supplier IDs (e.g., 1,2,3)
+    - min_length: Minimum bolt length
+    - max_length: Maximum bolt length
+    - page: Page number (default 1)
+    - limit: Items per page (default 20, max 100)
+    """
     queryset = Bolt.objects.select_related("supplier").filter(is_published=True).order_by("id")
     serializer_class = BoltSerializer
     pagination_class = BoltPagination
     permission_classes = [permissions.AllowAny]
     filter_backends = [DjangoFilterBackend]
-    filterset_fields = ["category", "supplier", "length"]
+    filterset_class = BoltFilterSet
 
 
 class PublicBoltListView(BoltListView):
@@ -104,6 +126,22 @@ class PublicBoltListView(BoltListView):
 
 
 class TestListView(generics.ListAPIView):
+class PublicTestListView(generics.ListAPIView):
+    """
+    Public API endpoint for published tests with associated curve and calculated stats.
+    
+    Query parameters (both required):
+    - bolt_ids: Filter by bolt IDs (comma-separated, e.g., ?bolt_ids=1,2,3)
+    - methodology: Filter by methodology (static or dynamic)
+    
+    Optional:
+    - facilities: Filter by facility names (comma-separated, e.g., ?facilities=Lab%20A,Lab%20B)
+    
+    Response includes:
+    - Test details with all measurements
+    - Associated TestCurve with displacement/load data points
+    - Calculated stats (min/max/mean/median/quartiles/std dev) for filtered results only
+    """
     queryset = Test.objects.select_related("curve").filter(is_published=True).order_by("-created_at")
     serializer_class = TestSerializer
     permission_classes = [permissions.AllowAny]
