@@ -23,7 +23,7 @@ class TestFilterSet(FilterSet):
 
     class Meta:
         model = Test
-        fields = ["methodology", "facility"]
+        fields = ["methodology"]
 
 
 class HealthView(generics.GenericAPIView):
