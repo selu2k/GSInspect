@@ -4,11 +4,17 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.exceptions import ValidationError
 from django_filters import BaseInFilter, FilterSet, NumberFilter
 from django.db.models import Min, Max
-from .models import Bolt, Test, Supplier
-from .serializers import PublicBoltSerializer, PublicTestSerializer, SupplierSerializer, BoltSerializer
-from .utils import group_tests_by_bolt
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.permissions import IsAdminUser
+
+from .models import Bolt, Test, Supplier
+from .serializers import (
+    PublicBoltSerializer,
+    PublicTestSerializer,
+    SupplierSerializer,
+    BoltSerializer,
+)
+from .utils import group_tests_by_bolt
 
 
 class TestFilterSet(FilterSet):
@@ -27,7 +33,7 @@ class HealthView(generics.GenericAPIView):
         return Response({"status": "ok"})
 
 
-class FilterOptionsView(generics.GenericAPIView):
+class PublicFilterOptionsView(generics.GenericAPIView):
     """Public API endpoint for filter dropdown options."""
     permission_classes = [permissions.AllowAny]
 
@@ -74,10 +80,6 @@ class FilterOptionsView(generics.GenericAPIView):
         })
 
 
-class PublicFilterOptionsView(FilterOptionsView):
-    pass
-
-
 class BoltFilterSet(FilterSet):
     categories = BaseInFilter(field_name="category")
     suppliers = BaseInFilter(field_name="supplier")
@@ -95,19 +97,19 @@ class BoltPagination(PageNumberPagination):
     max_page_size = 100
 
 
-class BoltListView(generics.ListAPIView):
+class PublicBoltListView(generics.ListAPIView):
     """
     Public API endpoint for published bolts with filtering and pagination.
 
     Query parameters:
-    - categories: Comma-separated category names (e.g., M16,M20,M24)
-    - suppliers: Comma-separated supplier IDs (e.g., 1,2,3)
+    - categories: Comma-separated category names
+    - suppliers: Comma-separated supplier IDs
     - min_length: Minimum bolt length
     - max_length: Maximum bolt length
-    - page: Page number (default 1)
-    - limit: Items per page (default 20, max 100)
     """
-    queryset = Bolt.objects.select_related("supplier").filter(is_published=True).order_by("id")
+    queryset = Bolt.objects.select_related("supplier").filter(
+        is_published=True
+    ).order_by("id")
     serializer_class = PublicBoltSerializer
     pagination_class = BoltPagination
     permission_classes = [permissions.AllowAny]
@@ -115,23 +117,13 @@ class BoltListView(generics.ListAPIView):
     filterset_class = BoltFilterSet
 
 
-class TestListView(generics.ListAPIView):
+class PublicTestListView(generics.ListAPIView):
     """
-    Public API endpoint for published tests with associated curve and calculated stats.
-
-    Query parameters (both required):
-    - bolt_ids: Filter by bolt IDs (comma-separated, e.g., ?bolt_ids=1,2,3)
-    - methodology: Filter by methodology (static or dynamic)
-
-    Optional:
-    - facility: Filter by facility name
-
-    Response includes:
-    - Test details with all measurements
-    - Associated TestCurve with displacement/load data points
-    - Calculated stats (min/max/mean/median/quartiles/std dev) for filtered results only
+    Public API endpoint for published tests with associated curve data.
     """
-    queryset = Test.objects.select_related("curve").filter(is_published=True).order_by("-created_at")
+    queryset = Test.objects.select_related("curve").filter(
+        is_published=True
+    ).order_by("-created_at")
     serializer_class = PublicTestSerializer
     permission_classes = [permissions.AllowAny]
     filter_backends = [DjangoFilterBackend]
@@ -139,6 +131,7 @@ class TestListView(generics.ListAPIView):
 
     def get_queryset(self):
         queryset = super().get_queryset()
+
         bolt_ids = self.request.query_params.get("bolt_ids")
         methodology = self.request.query_params.get("methodology")
 
@@ -165,7 +158,9 @@ class SupplierListCreateView(generics.ListCreateAPIView):
     """
     queryset = Supplier.objects.all().order_by("name")
     serializer_class = SupplierSerializer
-    # CHANGE THIS TO IS_AUTHENTICATED, THIS IS ONLY HERE BECAUSE AUTHENTICATION IS NOT SET UP YET
+
+    # CHANGE THIS TO IS_AUTHENTICATED,
+    # THIS IS ONLY HERE BECAUSE AUTHENTICATION IS NOT SET UP YET
     permission_classes = [permissions.AllowAny]
 
 
@@ -179,9 +174,11 @@ class SupplierDetailView(generics.RetrieveUpdateDestroyAPIView):
     """
     queryset = Supplier.objects.all()
     serializer_class = SupplierSerializer
-    # CHANGE THIS TO IS_AUTHENTICATED, THIS IS ONLY HERE BECAUSE AUTHENTICATION IS NOT SET UP YET
-    permission_classes = [permissions.AllowAny]
     lookup_field = "id"
+
+    # CHANGE THIS TO IS_AUTHENTICATED,
+    # THIS IS ONLY HERE BECAUSE AUTHENTICATION IS NOT SET UP YET
+    permission_classes = [permissions.AllowAny]
 
 
 class AdminBoltListCreateView(generics.ListCreateAPIView):
