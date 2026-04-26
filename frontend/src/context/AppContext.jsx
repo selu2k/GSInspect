@@ -38,12 +38,15 @@ export function AppProvider({ children }) {
       .then(res => res.json())
       .then(data => {
         // Ensure data has expected structure with defaults
+        const lengthRangeData = data?.length_range;
         const normalizedData = {
           categories: data?.categories || [],
           suppliers: data?.suppliers || [],
           facilities: data?.facilities || [],
           methodologies: data?.methodologies || [],
-          length_range: data?.length_range || { min: 0, max: 10 }
+          length_range: (lengthRangeData && lengthRangeData.min != null && lengthRangeData.max != null) 
+            ? lengthRangeData 
+            : { min: 0, max: 10 }
         };
         setFilterOptions(normalizedData);
       })
