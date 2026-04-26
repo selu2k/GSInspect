@@ -11,6 +11,8 @@ from .views import (
     PublicFilterOptionsView,
     SupplierListCreateView,
     SupplierDetailView,
+    AdminBoltListCreateView,
+    AdminBoltDetailView,
 )
 
 urlpatterns = [
@@ -26,8 +28,12 @@ urlpatterns = [
     path("public/filter-options/", PublicFilterOptionsView.as_view(), name="filter-options"),
     path("public/bolts/", PublicBoltListView.as_view(), name="bolt-list"),
     path("public/tests/", PublicTestListView.as_view(), name="test-list"),
-    
+
     # Admin API - Supplier CRUD
     path("admin/suppliers/", SupplierListCreateView.as_view(), name="supplier-list-create"),
     path("admin/suppliers/<int:id>/", SupplierDetailView.as_view(), name="supplier-detail"),
+
+    # Admin API - Bolt CRUD
+    path("admin/bolts/", AdminBoltListCreateView.as_view(), name="admin-bolt-list-create"),
+    path("admin/bolts/<int:id>/", AdminBoltDetailView.as_view(), name="admin-bolt-detail"),
 ]
