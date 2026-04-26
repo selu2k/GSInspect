@@ -19,6 +19,7 @@ from .utils import group_tests_by_bolt
 
 class TestFilterSet(FilterSet):
     bolt_ids = BaseInFilter(field_name="bolt_id")
+    facilities = BaseInFilter(field_name="facility")
 
     class Meta:
         model = Test
@@ -106,6 +107,8 @@ class PublicBoltListView(generics.ListAPIView):
     - suppliers: Comma-separated supplier IDs
     - min_length: Minimum bolt length
     - max_length: Maximum bolt length
+    - page: Page number (default 1)
+    - limit: Items per page (default 20, max 100)
     """
     queryset = Bolt.objects.select_related("supplier").filter(
         is_published=True
@@ -119,7 +122,19 @@ class PublicBoltListView(generics.ListAPIView):
 
 class PublicTestListView(generics.ListAPIView):
     """
-    Public API endpoint for published tests with associated curve data.
+    Public API endpoint for published tests with associated curve and calculated stats.
+
+    Query parameters (both required):
+    - bolt_ids: Filter by bolt IDs (comma-separated, e.g., ?bolt_ids=1,2,3)
+    - methodology: Filter by methodology (static or dynamic)
+
+    Optional:
+    - facilities: Filter by facility names (comma-separated, e.g., ?facilities=Lab%20A,Lab%20B)
+
+    Response includes:
+    - Test details with all measurements
+    - Associated TestCurve with displacement/load data points
+    - Calculated stats (min/max/mean/median/quartiles/std dev) for filtered results only
     """
     queryset = Test.objects.select_related("curve").filter(
         is_published=True
