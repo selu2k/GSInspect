@@ -11,14 +11,11 @@ from .views import (
     PublicFilterOptionsView,
     SupplierListCreateView,
     SupplierDetailView,
-    AdminBoltListView,
-    AdminBoltCreateView,
-    AdminBoltUpdateView,
-    AdminBoltDeleteView,
+    AdminBoltListCreateView,
+    AdminBoltDetailView,
 )
 
 urlpatterns = [
-    # Health check
     # Health check
     path("health/", HealthView.as_view(), name="health"),
     
@@ -37,8 +34,6 @@ urlpatterns = [
     path("admin/suppliers/<int:id>/", SupplierDetailView.as_view(), name="supplier-detail"),
 
     # Admin API - Bolt CRUD
-    path("admin/bolts/", AdminBoltListView.as_view(), name="admin-bolt-list"),
-    path("admin/bolts/create/", AdminBoltCreateView.as_view(), name="admin-bolt-create"),
-    path("admin/bolts/<int:pk>/", AdminBoltUpdateView.as_view(), name="admin-bolt-update"),
-    path("admin/bolts/<int:pk>/delete/", AdminBoltDeleteView.as_view(), name="admin-bolt-delete"),
+    path("admin/bolts/", AdminBoltListCreateView.as_view(), name="admin-bolt-list-create"),
+    path("admin/bolts/<int:id>/", AdminBoltDetailView.as_view(), name="admin-bolt-detail"),
 ]
