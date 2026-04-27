@@ -6,6 +6,7 @@ from django_filters import BaseInFilter, FilterSet, NumberFilter
 from django.db.models import Min, Max
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.permissions import IsAdminUser
+from rest_framework_simplejwt.views import TokenObtainPairView
 
 from .models import Bolt, Test, Supplier
 from .serializers import (
@@ -13,24 +14,9 @@ from .serializers import (
     PublicTestSerializer,
     SupplierSerializer,
     BoltSerializer,
+    MyTokenObtainPairSerializer
 )
 from .utils import group_tests_by_bolt
-
-from .serializers import (
-    BoltSerializer, 
-    TestSerializer, 
-    MyTokenObtainPairSerializer, 
-    SupplierSerializer
-)
-
-class TestFilterSet(FilterSet):
-    bolt_ids = BaseInFilter(field_name="bolt_id")
-    facilities = BaseInFilter(field_name="facility")
-
-    class Meta:
-        model = Test
-        fields = ["methodology"]
-
 
 class HealthView(generics.GenericAPIView):
     """Health check endpoint."""
@@ -130,6 +116,14 @@ class PublicBoltListView(generics.ListAPIView):
     filter_backends = [DjangoFilterBackend]
     filterset_class = BoltFilterSet
 
+
+class TestFilterSet(FilterSet):
+    bolt_ids = BaseInFilter(field_name="bolt_id")
+    facilities = BaseInFilter(field_name="facility")
+
+    class Meta:
+        model = Test
+        fields = ["methodology"]
 
 class PublicTestListView(generics.ListAPIView):
     """
