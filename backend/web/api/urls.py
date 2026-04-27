@@ -1,5 +1,10 @@
 from django.urls import path
 from rest_framework_simplejwt.views import TokenRefreshView
+from drf_spectacular.views import (
+    SpectacularAPIView,
+    SpectacularSwaggerView,
+    SpectacularRedocView,
+)
 from .views import (
     HealthView,
     PublicBoltListView,
@@ -7,6 +12,9 @@ from .views import (
     PublicFilterOptionsView,
     MyTokenObtainPairView,
     SupplierListCreateView,
+    SupplierDetailView,
+    AdminBoltListCreateView,
+    AdminBoltDetailView,
 )
 
 urlpatterns = [
@@ -17,6 +25,11 @@ urlpatterns = [
     path("auth/login/", MyTokenObtainPairView.as_view(), name="token_obtain_pair"),
     path("auth/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
     
+    # API Schema & Documentation
+    path("schema/", SpectacularAPIView.as_view(), name="schema"),
+    path("docs/", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
+    path("redoc/", SpectacularRedocView.as_view(url_name="schema"), name="redoc"),
+    
     # Public API endpoints
     path("public/filter-options/", PublicFilterOptionsView.as_view(), name="filter-options"),
     path("public/bolts/", PublicBoltListView.as_view(), name="bolt-list"),
@@ -25,4 +38,8 @@ urlpatterns = [
     # Admin API - Supplier CRUD
     path("admin/suppliers/", SupplierListCreateView.as_view(), name="supplier-list-create"),
     path("admin/suppliers/<int:id>/", SupplierDetailView.as_view(), name="supplier-detail"),
+
+    # Admin API - Bolt CRUD
+    path("admin/bolts/", AdminBoltListCreateView.as_view(), name="admin-bolt-list-create"),
+    path("admin/bolts/<int:id>/", AdminBoltDetailView.as_view(), name="admin-bolt-detail"),
 ]

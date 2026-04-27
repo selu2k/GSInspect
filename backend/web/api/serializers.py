@@ -99,3 +99,22 @@ class PublicTestSerializer(serializers.ModelSerializer):
             "curve",
         ]
 
+
+class BoltSerializer(serializers.ModelSerializer):
+    """Serializer for Bolt admin operations."""
+
+    class Meta:
+        model = Bolt
+        fields = [
+            "id",
+            "name",
+            "supplier",
+            "length",
+            "diameter",
+            "category",
+            "equipment_compatibility",
+            "is_published",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["id", "created_at", "updated_at"]

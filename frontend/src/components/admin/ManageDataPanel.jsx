@@ -1,12 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, X, Check, Database, Package, Building2 } from 'lucide-react';
 
-// --- Mock Data ---
-const INIT_SUPPLIERS = [
-  { id: 's1', name: 'Supplier A', contact: 'supplier_a@example.com' },
-  { id: 's2', name: 'Supplier B', contact: 'supplier_b@example.com' },
-];
+const API_BASE = '/api';
 
+// --- Mock Data (Products and Tests - keep until backend is ready) ---
 const INIT_PRODUCTS = [
   { id: 'p1', supplier: 'Supplier A', product_name: 'Hollow Core Bolt D28 x 2.4 m', bolt_length: '2.4', bolt_diameter: '28', bolt_category: 'Encapsulated' },
   { id: 'p2', supplier: 'Supplier A', product_name: 'Yielding Bolt B D20 mm x 3.0 m', bolt_length: '3.0', bolt_diameter: '20', bolt_category: 'Friction' },
@@ -36,31 +33,57 @@ function Modal({ title, onClose, children }) {
   );
 }
 
-// --- Suppliers Tab ---
+// --- Suppliers Tab (connected to real API) ---
 function SuppliersTab() {
-  const [suppliers, setSuppliers] = useState(INIT_SUPPLIERS);
-  const [modal, setModal] = useState(null); // null | 'add' | 'edit'
+  const [suppliers, setSuppliers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [modal, setModal] = useState(null);
   const [editing, setEditing] = useState(null);
-  const [form, setForm] = useState({ name: '', contact: '' });
+  const [form, setForm] = useState({ name: '' });
   const [deleteId, setDeleteId] = useState(null);
 
-  const openAdd = () => { setForm({ name: '', contact: '' }); setModal('add'); };
-  const openEdit = (s) => { setEditing(s); setForm({ name: s.name, contact: s.contact }); setModal('edit'); };
+  // Fetch all suppliers on load
+  useEffect(() => {
+    fetchSuppliers();
+  }, []);
 
-  const handleSave = () => {
+  const fetchSuppliers = async () => {
+    setLoading(true);
+    const res = await fetch(`${API_BASE}/admin/suppliers/`);
+    const data = await res.json();
+    setSuppliers(data.results || data);
+    setLoading(false);
+  };
+
+  const openAdd = () => { setForm({ name: '' }); setModal('add'); };
+  const openEdit = (s) => { setEditing(s); setForm({ name: s.name }); setModal('edit'); };
+
+  const handleSave = async () => {
     if (!form.name.trim()) return;
     if (modal === 'add') {
-      setSuppliers([...suppliers, { id: 's' + Date.now(), ...form }]);
+      await fetch(`${API_BASE}/admin/suppliers/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: form.name }),
+      });
     } else {
-      setSuppliers(suppliers.map(s => s.id === editing.id ? { ...s, ...form } : s));
+      await fetch(`${API_BASE}/admin/suppliers/${editing.id}/`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: form.name }),
+      });
     }
     setModal(null);
+    fetchSuppliers();
   };
 
-  const handleDelete = () => {
-    setSuppliers(suppliers.filter(s => s.id !== deleteId));
+  const handleDelete = async () => {
+    await fetch(`${API_BASE}/admin/suppliers/${deleteId}/`, { method: 'DELETE' });
     setDeleteId(null);
+    fetchSuppliers();
   };
+
+  if (loading) return <p className="text-sm text-slate-500">Loading suppliers...</p>;
 
   return (
     <div className="space-y-4">
@@ -76,7 +99,6 @@ function SuppliersTab() {
           <thead className="bg-slate-50 border-b border-slate-200">
             <tr>
               <th className="px-5 py-3 font-semibold text-slate-600">Name</th>
-              <th className="px-5 py-3 font-semibold text-slate-600">Contact</th>
               <th className="px-5 py-3 font-semibold text-slate-600 text-right">Actions</th>
             </tr>
           </thead>
@@ -84,7 +106,6 @@ function SuppliersTab() {
             {suppliers.map(s => (
               <tr key={s.id} className="hover:bg-slate-50">
                 <td className="px-5 py-3 font-medium text-slate-800">{s.name}</td>
-                <td className="px-5 py-3 text-slate-500">{s.contact}</td>
                 <td className="px-5 py-3 text-right space-x-2">
                   <button onClick={() => openEdit(s)} className="text-indigo-600 hover:text-indigo-900 bg-indigo-50 px-3 py-1 rounded-md text-xs font-medium inline-flex items-center gap-1">
                     <Edit className="w-3 h-3" /> Edit
@@ -107,11 +128,6 @@ function SuppliersTab() {
               <input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })}
                 className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="e.g. Supplier C" />
             </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Contact Email</label>
-              <input value={form.contact} onChange={e => setForm({ ...form, contact: e.target.value })}
-                className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="e.g. contact@supplier.com" />
-            </div>
             <div className="flex justify-end gap-2 pt-2">
               <button onClick={() => setModal(null)} className="px-4 py-2 text-sm border border-slate-300 rounded-lg hover:bg-slate-50">Cancel</button>
               <button onClick={handleSave} className="px-4 py-2 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 flex items-center gap-1">
@@ -124,7 +140,7 @@ function SuppliersTab() {
 
       {deleteId && (
         <Modal title="Confirm Delete" onClose={() => setDeleteId(null)}>
-          <p className="text-sm text-slate-600 mb-4">Are you sure you want to delete this supplier? This action cannot be undone.</p>
+          <p className="text-sm text-slate-600 mb-4">Are you sure you want to delete this supplier?</p>
           <div className="flex justify-end gap-2">
             <button onClick={() => setDeleteId(null)} className="px-4 py-2 text-sm border border-slate-300 rounded-lg hover:bg-slate-50">Cancel</button>
             <button onClick={handleDelete} className="px-4 py-2 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700">Delete</button>
