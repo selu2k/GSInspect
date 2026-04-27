@@ -6,6 +6,7 @@ from .views import (
     PublicTestListView,
     PublicFilterOptionsView,
     MyTokenObtainPairView,
+    SupplierListCreateView,
 )
 
 urlpatterns = [
