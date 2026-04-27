@@ -16,6 +16,12 @@ from .serializers import (
 )
 from .utils import group_tests_by_bolt
 
+from .serializers import (
+    BoltSerializer, 
+    TestSerializer, 
+    MyTokenObtainPairSerializer, 
+    SupplierSerializer
+)
 
 class TestFilterSet(FilterSet):
     bolt_ids = BaseInFilter(field_name="bolt_id")
@@ -33,6 +39,11 @@ class HealthView(generics.GenericAPIView):
     def get(self, request, *args, **kwargs):
         return Response({"status": "ok"})
 
+class MyTokenObtainPairView(TokenObtainPairView):
+    """
+    JWT authentication endpoint using custom claims serializer.
+    """
+    serializer_class = MyTokenObtainPairSerializer
 
 class PublicFilterOptionsView(generics.GenericAPIView):
     """Public API endpoint for filter dropdown options."""
@@ -103,8 +114,8 @@ class PublicBoltListView(generics.ListAPIView):
     Public API endpoint for published bolts with filtering and pagination.
 
     Query parameters:
-    - categories: Comma-separated category names
-    - suppliers: Comma-separated supplier IDs
+    - categories: Comma-separated category names (e.g., M16,M20,M24)
+    - suppliers: Comma-separated supplier IDs (e.g., 1,2,3)
     - min_length: Minimum bolt length
     - max_length: Maximum bolt length
     - page: Page number (default 1)
@@ -130,7 +141,7 @@ class PublicTestListView(generics.ListAPIView):
 
     Optional:
     - facilities: Filter by facility names (comma-separated, e.g., ?facilities=Lab%20A,Lab%20B)
-
+    
     Response includes:
     - Test details with all measurements
     - Associated TestCurve with displacement/load data points

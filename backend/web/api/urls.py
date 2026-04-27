@@ -1,4 +1,5 @@
 from django.urls import path
+from rest_framework_simplejwt.views import TokenRefreshView
 from drf_spectacular.views import (
     SpectacularAPIView,
     SpectacularSwaggerView,
@@ -9,6 +10,7 @@ from .views import (
     PublicBoltListView,
     PublicTestListView,
     PublicFilterOptionsView,
+    MyTokenObtainPairView,
     SupplierListCreateView,
     SupplierDetailView,
     AdminBoltListCreateView,
@@ -18,6 +20,10 @@ from .views import (
 urlpatterns = [
     # Health check
     path("health/", HealthView.as_view(), name="health"),
+
+     # JWT Authentication (Replacement for Session Login)
+    path("auth/login/", MyTokenObtainPairView.as_view(), name="token_obtain_pair"),
+    path("auth/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
     
     # API Schema & Documentation
     path("schema/", SpectacularAPIView.as_view(), name="schema"),

@@ -1,5 +1,30 @@
 from rest_framework import serializers
 from .models import Bolt, Test, TestCurve, Supplier
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from .models import Bolt, Test, TestCurve, Supplier
+
+class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
+    """
+    Custom JWT serializer to include user profile information in the token and response.
+    """
+    @classmethod
+    def get_token(cls, user):
+        token = super().get_token(user)
+        
+        # Injects user role and metadata into the JWT payload
+        token['role'] = getattr(user, 'role', 'ADMIN' if user.is_staff else 'VIEWER')
+        token['username'] = user.username
+        return token
+
+    def validate(self, attrs):
+        data = super().validate(attrs)
+        
+        # Includes user metadata in the initial login JSON response
+        data['role'] = getattr(self.user, 'role', 'VIEWER')
+        data['username'] = self.user.username
+        data['department'] = getattr(self.user, 'department', None)
+        
+        return data
 
 
 class SupplierSerializer(serializers.ModelSerializer):
