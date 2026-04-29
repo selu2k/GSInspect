@@ -35,10 +35,8 @@ class SupplierSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "name",
-            "created_at",
-            "updated_at",
         ]
-        read_only_fields = ["id", "created_at", "updated_at"]
+        read_only_fields = ["id"]
 
 
 class PublicBoltSerializer(serializers.ModelSerializer):
@@ -100,8 +98,9 @@ class PublicTestSerializer(serializers.ModelSerializer):
         ]
 
 
-class BoltSerializer(serializers.ModelSerializer):
+class AdminBoltSerializer(serializers.ModelSerializer):
     """Serializer for Bolt admin operations."""
+    supplier = SupplierSerializer(read_only=True)
 
     class Meta:
         model = Bolt
@@ -114,7 +113,90 @@ class BoltSerializer(serializers.ModelSerializer):
             "category",
             "equipment_compatibility",
             "is_published",
-            "created_at",
-            "updated_at",
         ]
-        read_only_fields = ["id", "created_at", "updated_at"]
+        read_only_fields = ["id", "is_published"]
+
+
+class AdminTestCurveSerializer(serializers.ModelSerializer):
+    """Serializer for TestCurve admin operations."""
+    
+    class Meta:
+        model = TestCurve
+        fields = [
+            "id",
+            "test",
+            "curve_pair",
+            "is_published",
+        ]
+        read_only_fields = ["id", "is_published"]
+
+
+class AdminTestSerializer(serializers.ModelSerializer):
+    """Serializer for Test admin operations."""
+    methodology_display = serializers.CharField(source='get_methodology_display', read_only=True)
+    curve = AdminTestCurveSerializer(read_only=True)
+    bolt = AdminBoltSerializer(read_only=True)
+    
+    class Meta:
+        model = Test
+        fields = [
+            "id",
+            "bolt",
+            "methodology",
+            "methodology_display",
+            "facility",
+            "installation_method",
+            "encapsulation_method",
+            "peak_strength",
+            "bond_strength",
+            "yield_strength",
+            "ultimate_deformation",
+            "stiffness",
+            "loading_rate",
+            "energy_absorption",
+            "number_of_drops",
+            "is_published",
+            "curve",
+        ]
+        read_only_fields = ["id", "is_published"]
+
+
+class AdminTestListSerializer(serializers.ModelSerializer):
+    """Serializer for Test list operations - minimal fields for performance."""
+    
+    class Meta:
+        model = Test
+        fields = [
+            "id",
+            "bolt",
+            "methodology",
+            "facility",
+        ]
+        read_only_fields = ["id"]
+
+
+class BoltPublishSerializer(serializers.ModelSerializer):
+    """Serializer for publishing/unpublishing bolts - only accepts is_published field."""
+    
+    class Meta:
+        model = Bolt
+        fields = ["is_published"]
+
+
+class TestPublishSerializer(serializers.ModelSerializer):
+    """Serializer for publishing/unpublishing tests - only accepts is_published field."""
+    
+    class Meta:
+        model = Test
+        fields = ["is_published"]
+
+
+class TestCurvePublishSerializer(serializers.ModelSerializer):
+    """Serializer for publishing/unpublishing test curves - only accepts is_published field."""
+    
+    class Meta:
+        model = TestCurve
+        fields = ["is_published"]
+
+
+
