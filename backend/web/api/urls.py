@@ -11,10 +11,17 @@ from .views import (
     PublicTestListView,
     PublicFilterOptionsView,
     MyTokenObtainPairView,
-    SupplierListCreateView,
-    SupplierDetailView,
+    AdminSupplierListCreateView,
+    AdminSupplierDetailView,
     AdminBoltListCreateView,
     AdminBoltDetailView,
+    AdminBoltPublishView,
+    AdminTestListCreateView,
+    AdminTestDetailView,
+    AdminTestPublishView,
+    AdminTestCurveCreateView,
+    AdminTestCurveDetailView,
+    AdminTestCurvePublishView,
 )
 
 urlpatterns = [
@@ -36,10 +43,21 @@ urlpatterns = [
     path("public/tests/", PublicTestListView.as_view(), name="test-list"),
 
     # Admin API - Supplier CRUD
-    path("admin/suppliers/", SupplierListCreateView.as_view(), name="supplier-list-create"),
-    path("admin/suppliers/<int:id>/", SupplierDetailView.as_view(), name="supplier-detail"),
+    path("admin/suppliers/", AdminSupplierListCreateView.as_view(), name="admin-supplier-list-create"),
+    path("admin/suppliers/<int:id>/", AdminSupplierDetailView.as_view(), name="admin-supplier-detail"),
 
     # Admin API - Bolt CRUD
     path("admin/bolts/", AdminBoltListCreateView.as_view(), name="admin-bolt-list-create"),
     path("admin/bolts/<int:id>/", AdminBoltDetailView.as_view(), name="admin-bolt-detail"),
+    path("admin/bolts/<int:id>/publish/", AdminBoltPublishView.as_view(), name="admin-bolt-publish"),
+
+    # Admin API - Test CRUD
+    path("admin/tests/", AdminTestListCreateView.as_view(), name="admin-test-list-create"),
+    path("admin/tests/<int:id>/", AdminTestDetailView.as_view(), name="admin-test-detail"),
+    path("admin/tests/<int:id>/publish/", AdminTestPublishView.as_view(), name="admin-test-publish"),
+
+    # Admin API - TestCurve operations
+    path("admin/test-curves/<int:id>/publish/", AdminTestCurvePublishView.as_view(), name="admin-test-curve-publish"),
+    path("admin/test-curves/<int:id>/", AdminTestCurveDetailView.as_view(), name="admin-test-curve-detail"),
+    path("admin/test-curves/", AdminTestCurveCreateView.as_view(), name="admin-test-curve-create"),
 ]

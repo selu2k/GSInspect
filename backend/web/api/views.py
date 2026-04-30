@@ -1,20 +1,30 @@
 from rest_framework.response import Response
-from rest_framework import generics, permissions
+from rest_framework import generics, permissions, status
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.exceptions import ValidationError
+from rest_framework.parsers import JSONParser, MultiPartParser, FormParser
 from django_filters import BaseInFilter, FilterSet, NumberFilter
 from django.db.models import Min, Max
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.permissions import IsAdminUser
 from rest_framework_simplejwt.views import TokenObtainPairView
+import csv
+import json
+import io
 
-from .models import Bolt, Test, Supplier
+from .models import Bolt, Test, TestCurve, Supplier
 from .serializers import (
     PublicBoltSerializer,
     PublicTestSerializer,
     SupplierSerializer,
-    BoltSerializer,
-    MyTokenObtainPairSerializer
+    AdminBoltSerializer,
+    AdminTestSerializer,
+    AdminTestListSerializer,
+    AdminTestCurveSerializer,
+    MyTokenObtainPairSerializer,
+    BoltPublishSerializer,
+    TestPublishSerializer,
+    TestCurvePublishSerializer,
 )
 from .utils import group_tests_by_bolt
 
@@ -95,6 +105,13 @@ class BoltPagination(PageNumberPagination):
     max_page_size = 100
 
 
+class AdminPagination(PageNumberPagination):
+    """Pagination for admin list endpoints."""
+    page_size = 20
+    page_size_query_param = "limit"
+    max_page_size = 100
+
+
 class PublicBoltListView(generics.ListAPIView):
     """
     Public API endpoint for published bolts with filtering and pagination.
@@ -143,7 +160,7 @@ class PublicTestListView(generics.ListAPIView):
     """
     queryset = Test.objects.select_related("curve").filter(
         is_published=True
-    ).order_by("-created_at")
+    ).order_by("-id")
     serializer_class = PublicTestSerializer
     permission_classes = [permissions.AllowAny]
     filter_backends = [DjangoFilterBackend]
@@ -169,22 +186,20 @@ class PublicTestListView(generics.ListAPIView):
         return Response(grouped_data)
 
 
-class SupplierListCreateView(generics.ListCreateAPIView):
+class AdminSupplierListCreateView(generics.ListCreateAPIView):
     """
     Admin API endpoint for supplier management.
 
     GET: List all suppliers
     POST: Create a new supplier
     """
-    queryset = Supplier.objects.all().order_by("name")
+    queryset = Supplier.objects.all().order_by("id")
     serializer_class = SupplierSerializer
-
-    # CHANGE THIS TO IS_AUTHENTICATED,
-    # THIS IS ONLY HERE BECAUSE AUTHENTICATION IS NOT SET UP YET
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [IsAdminUser]
+    pagination_class = AdminPagination
 
 
-class SupplierDetailView(generics.RetrieveUpdateDestroyAPIView):
+class AdminSupplierDetailView(generics.RetrieveUpdateDestroyAPIView):
     """
     Admin API endpoint for individual supplier management.
 
@@ -194,11 +209,8 @@ class SupplierDetailView(generics.RetrieveUpdateDestroyAPIView):
     """
     queryset = Supplier.objects.all()
     serializer_class = SupplierSerializer
+    permission_classes = [IsAdminUser]
     lookup_field = "id"
-
-    # CHANGE THIS TO IS_AUTHENTICATED,
-    # THIS IS ONLY HERE BECAUSE AUTHENTICATION IS NOT SET UP YET
-    permission_classes = [permissions.AllowAny]
 
 
 class AdminBoltListCreateView(generics.ListCreateAPIView):
@@ -206,11 +218,13 @@ class AdminBoltListCreateView(generics.ListCreateAPIView):
     Admin API endpoint for bolt management.
 
     GET: List all bolts
-    POST: Create a new bolt
+    POST: Create a new bolt (cannot set is_published, use /api/admin/bolts/{id}/publish/)
     """
     queryset = Bolt.objects.select_related("supplier").all().order_by("id")
-    serializer_class = BoltSerializer
+    serializer_class = AdminBoltSerializer
     permission_classes = [IsAdminUser]
+    pagination_class = AdminPagination
+
 
 
 class AdminBoltDetailView(generics.RetrieveUpdateDestroyAPIView):
@@ -218,10 +232,199 @@ class AdminBoltDetailView(generics.RetrieveUpdateDestroyAPIView):
     Admin API endpoint for individual bolt management.
 
     GET: Retrieve bolt details
-    PUT/PATCH: Update bolt
+    PUT/PATCH: Update bolt (cannot change is_published, use /api/admin/bolts/{id}/publish/)
     DELETE: Delete bolt
     """
     queryset = Bolt.objects.select_related("supplier").all()
-    serializer_class = BoltSerializer
+    serializer_class = AdminBoltSerializer
     permission_classes = [IsAdminUser]
     lookup_field = "id"
+
+
+
+class AdminBoltPublishView(generics.UpdateAPIView):
+    """
+    Admin API endpoint to publish/unpublish a bolt.
+
+    PATCH: Toggle is_published status
+    """
+    queryset = Bolt.objects.all()
+    serializer_class = BoltPublishSerializer
+    permission_classes = [IsAdminUser]
+    lookup_field = "id"
+
+
+class AdminTestListCreateView(generics.ListCreateAPIView):
+    """
+    Admin API endpoint for test management.
+
+    GET: List all tests
+    POST: Create a new test (cannot set is_published, use /api/admin/tests/{id}/publish/)
+    """
+    queryset = Test.objects.select_related("bolt").all().order_by("-id")
+    permission_classes = [IsAdminUser]
+    pagination_class = AdminPagination
+
+    def get_serializer_class(self):
+        if self.request.method == 'GET':
+            return AdminTestListSerializer
+        return AdminTestSerializer
+
+
+class AdminTestDetailView(generics.RetrieveUpdateDestroyAPIView):
+    """
+    Admin API endpoint for individual test management.
+
+    GET: Retrieve test details (includes associated curve)
+    PUT/PATCH: Update test (cannot change is_published, use /api/admin/tests/{id}/publish/)
+    DELETE: Delete test (cascade deletes associated curve)
+    """
+    queryset = Test.objects.select_related("bolt", "curve").all()
+    serializer_class = AdminTestSerializer
+    permission_classes = [IsAdminUser]
+    lookup_field = "id"
+
+
+
+class AdminTestPublishView(generics.UpdateAPIView):
+    """
+    Admin API endpoint to publish/unpublish a test.
+
+    PATCH: Toggle is_published status
+    """
+    queryset = Test.objects.all()
+    serializer_class = TestPublishSerializer
+    permission_classes = [IsAdminUser]
+    lookup_field = "id"
+
+
+class AdminTestCurveDetailView(generics.RetrieveUpdateDestroyAPIView):
+    """
+    Admin API endpoint for individual test curve management.
+
+    GET: Retrieve test curve details
+    PUT/PATCH: Update test curve (cannot change is_published, use /api/admin/test-curves/{id}/publish/)
+    DELETE: Delete test curve
+    """
+    queryset = TestCurve.objects.select_related("test").all()
+    serializer_class = AdminTestCurveSerializer
+    permission_classes = [IsAdminUser]
+    lookup_field = "id"
+
+
+
+class AdminTestCurvePublishView(generics.UpdateAPIView):
+    """
+    Admin API endpoint to publish/unpublish a test curve.
+
+    PATCH: Toggle is_published status
+    """
+    queryset = TestCurve.objects.all()
+    serializer_class = TestCurvePublishSerializer
+    permission_classes = [IsAdminUser]
+    lookup_field = "id"
+
+
+class AdminTestCurveCreateView(generics.CreateAPIView):
+    """
+    Admin API endpoint to create test curves.
+
+    POST: Create curves from JSON or CSV file
+    
+    JSON single curve:
+    {
+        "test": 1,
+        "curve_pair": [
+            {"displacement": 0.5, "load": 186.86, "energy_absorbed": 0.093},
+            ...
+        ]
+    }
+    
+    JSON bulk (array):
+    [
+        {"test": 1, "curve_pair": [...]},
+        {"test": 2, "curve_pair": [...]},
+        ...
+    ]
+    
+    CSV file upload (multipart/form-data):
+    File parameter: 'file'
+    CSV columns: test_id, displacement, load, energy_absorbed
+    (Rows grouped by test_id to create curve_pair arrays)
+    """
+    serializer_class = AdminTestCurveSerializer
+    permission_classes = [IsAdminUser]
+    parser_classes = (JSONParser, MultiPartParser, FormParser)
+
+    def post(self, request, *args, **kwargs):
+        # Check if CSV file is uploaded
+        if 'file' in request.FILES:
+            return self._handle_csv_upload(request)
+        else:
+            return self._handle_json_upload(request)
+
+    def _handle_csv_upload(self, request):
+        """Parse CSV file and create test curves."""
+        csv_file = request.FILES['file']
+        
+        try:
+            # Read CSV content
+            stream = io.TextIOWrapper(csv_file.file, encoding='utf-8')
+            reader = csv.DictReader(stream)
+            
+            # Group rows by test_id
+            grouped_data = {}
+            for row in reader:
+                test_id = int(row['test_id'])
+                if test_id not in grouped_data:
+                    grouped_data[test_id] = []
+                
+                # Create data point from CSV row
+                data_point = {
+                    'displacement': float(row['displacement']),
+                    'load': float(row['load']),
+                    'energy_absorbed': float(row['energy_absorbed']),
+                }
+                grouped_data[test_id].append(data_point)
+            
+            # Convert to expected format
+            data = [
+                {'test': test_id, 'curve_pair': curve_pair}
+                for test_id, curve_pair in grouped_data.items()
+            ]
+        except Exception as e:
+            return Response(
+                {'error': f'CSV parsing error: {str(e)}'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Process like normal JSON bulk upload
+        return self._process_data(data)
+
+    def _handle_json_upload(self, request):
+        """Process JSON (single or bulk) upload."""
+        data = request.data if isinstance(request.data, list) else [request.data]
+        return self._process_data(data)
+
+    def _process_data(self, data):
+        """Process array of curve data and create instances."""
+        errors = []
+        created_count = 0
+
+        for idx, item in enumerate(data):
+            serializer = self.get_serializer(data=item)
+            if serializer.is_valid():
+                try:
+                    serializer.save()
+                    created_count += 1
+                except Exception as e:
+                    errors.append({"row": idx, "error": str(e)})
+            else:
+                errors.append({"row": idx, "errors": serializer.errors})
+
+        return Response({
+            "created": created_count,
+            "errors": errors,
+            "total": len(data)
+        }, status=status.HTTP_201_CREATED)
+

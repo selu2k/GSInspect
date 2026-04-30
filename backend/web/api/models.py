@@ -161,9 +161,11 @@ class Test(models.Model):
 class TestCurve(models.Model):
     test         = models.OneToOneField(
                      Test,
-                     on_delete=models.PROTECT,
+                     on_delete=models.CASCADE,
                      related_name="curve",
-                     db_index=True
+                     db_index=True,
+                     null=True,
+                     blank=True
                    )
     curve_pair   = models.JSONField(
                      default=list,
