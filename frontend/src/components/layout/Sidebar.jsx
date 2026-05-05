@@ -16,7 +16,9 @@ export default function Sidebar() {
   const [draftCategories, setDraftCategories] = useState(selectedCategories || []);
   const [draftSuppliers, setDraftSuppliers] = useState(selectedSuppliers || []);
   const [draftLengthRange, setDraftLengthRange] = useState(
-    selectedLengthRange || { min: lengthRange.min, max: lengthRange.max }
+    selectedLengthRange && selectedLengthRange.min != null && selectedLengthRange.max != null
+      ? selectedLengthRange
+      : { min: '', max: '' }
   );
 
   // Guard against null/undefined API data
@@ -123,10 +125,9 @@ export default function Sidebar() {
               <label className="text-xs text-slate-500 font-medium mb-1 block">Min</label>
               <input
                 type="text"
-                value={draftLengthRange.min}
+                value={draftLengthRange.min || lengthRange.min.toFixed(2)}
                 onChange={handleLengthMinChange}
                 onBlur={handleLengthMinBlur}
-                placeholder={lengthRange.min.toFixed(2)}
                 className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
@@ -134,10 +135,9 @@ export default function Sidebar() {
               <label className="text-xs text-slate-500 font-medium mb-1 block">Max</label>
               <input
                 type="text"
-                value={draftLengthRange.max}
+                value={draftLengthRange.max || lengthRange.max.toFixed(2)}
                 onChange={handleLengthMaxChange}
                 onBlur={handleLengthMaxBlur}
-                placeholder={lengthRange.max.toFixed(2)}
                 className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
