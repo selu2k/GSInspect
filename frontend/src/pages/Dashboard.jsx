@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Layers, Gauge, Building2, TrendingUp } from 'lucide-react';
 import {
   CartesianGrid,
@@ -24,15 +24,6 @@ export default function Dashboard() {
   } = useAppContext();
 
   const [selectedProperty, setSelectedProperty] = useState('peak_strength');
-
-  // Guard against null/undefined API data
-  if (!filteredProductsList || !filteredTests || !filteredCurves || !productColorMap || !apiStats) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <p className="text-slate-500 italic">Loading data...</p>
-      </div>
-    );
-  }
 
   const plottedTests = useMemo(() => {
     if (!filteredTests || selectedProductIds.length === 0) return [];
@@ -148,7 +139,7 @@ export default function Dashboard() {
     if (!plottedTests || plottedTests.length === 0 || !selectedProperty) return [];
     
     return plottedTests
-      .map((test, idx) => {
+      .map((test) => {
         const product = filteredProductsList.find(p => p.id === test.product_id);
         const propertyValue = test[selectedProperty];
         
@@ -168,6 +159,15 @@ export default function Dashboard() {
       })
       .filter(Boolean);
   }, [plottedTests, selectedProperty, filteredProductsList, selectedProductIds, productColorMap]);
+
+  // Guard against null/undefined API data
+  if (!filteredProductsList || !filteredTests || !filteredCurves || !productColorMap || !apiStats) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <p className="text-slate-500 italic">Loading data...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-4 h-full overflow-y-auto pb-6">
