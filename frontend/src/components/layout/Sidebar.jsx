@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Filter, ShieldAlert, Zap, Package, Building2 } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
 import MultiSelect from '../filters/MultiSelect';
@@ -6,13 +6,18 @@ import MultiSelect from '../filters/MultiSelect';
 export default function Sidebar() {
   const {
     supportType,
-    selectedCategories, setSelectedCategories,
-    selectedSuppliers, setSelectedSuppliers,
-    selectedLengthRange, setSelectedLengthRange,
+    selectedCategories,
+    selectedSuppliers,
+    selectedLengthRange,
     categories, suppliers, lengthRange,
-    filteredProductsList, filteredTests, filteredCurves,
     triggerSearch
   } = useAppContext();
+
+  const [draftCategories, setDraftCategories] = useState(selectedCategories || []);
+  const [draftSuppliers, setDraftSuppliers] = useState(selectedSuppliers || []);
+  const [draftLengthRange, setDraftLengthRange] = useState(
+    selectedLengthRange || { min: lengthRange.min, max: lengthRange.max }
+  );
 
   // Guard against null/undefined API data
   if (!categories || !suppliers || !lengthRange) {
@@ -24,20 +29,6 @@ export default function Sidebar() {
       </aside>
     );
   }
-
-  const [draftCategories, setDraftCategories] = useState(selectedCategories || []);
-  const [draftSuppliers, setDraftSuppliers] = useState(selectedSuppliers || []);
-  const [draftLengthRange, setDraftLengthRange] = useState(
-    selectedLengthRange || { min: lengthRange.min, max: lengthRange.max }
-  );
-
-  useEffect(() => {
-    setDraftCategories(selectedCategories || []);
-    setDraftSuppliers(selectedSuppliers || []);
-    setDraftLengthRange(
-      selectedLengthRange || { min: lengthRange.min, max: lengthRange.max }
-    );
-  }, [selectedCategories, selectedSuppliers, selectedLengthRange, lengthRange]);
 
   const handleLengthMinChange = (e) => {
     const val = e.target.value;
