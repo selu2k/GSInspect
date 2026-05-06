@@ -24,6 +24,22 @@ export default function Dashboard() {
   } = useAppContext();
 
   const [selectedProperty, setSelectedProperty] = useState('peak_strength');
+  const [colorBy, setColorBy] = useState('product'); // 'product' or 'facility'
+
+  // Generate facility colors (cycling through a palette)
+  const facilityColorPalette = [
+    '#ef4444', '#f97316', '#eab308', '#22c55e', '#06b6d4',
+    '#3b82f6', '#8b5cf6', '#ec4899', '#6366f1', '#14b8a6'
+  ];
+  const facilityColorMap = useMemo(() => {
+    const map = {};
+    if (facilities) {
+      facilities.forEach((facility, index) => {
+        map[facility] = facilityColorPalette[index % facilityColorPalette.length];
+      });
+    }
+    return map;
+  }, [facilities]);
 
   const plottedTests = useMemo(() => {
     if (!filteredTests || selectedProductIds.length === 0) return [];
@@ -32,24 +48,42 @@ export default function Dashboard() {
 
   const chartSeries = useMemo(() => {
     if (!plottedTests || plottedTests.length === 0 || !filteredProductsList || !productColorMap) return [];
-    const seenProducts = new Set();
+    const seenItems = new Set();
     return plottedTests
       .map((test) => {
         const product = filteredProductsList.find((item) => item.id === test.product_id);
         const productName = product ? product.product_name : 'Unknown Product';
-        const isFirst = !seenProducts.has(test.product_id);
-        if (isFirst) seenProducts.add(test.product_id);
-
-        return {
-          testId: test.test_id,
-          dataKey: `test_${test.test_id}`,
-          productId: test.product_id,
-          label: productName,
-          color: productColorMap[test.product_id]?.hex || '#64748b',
-          showInLegend: isFirst
-        };
+        
+        let label, color, key;
+        if (colorBy === 'facility') {
+          label = test.test_facility || 'Unknown Facility';
+          const isFirst = !seenItems.has(label);
+          if (isFirst) seenItems.add(label);
+          color = facilityColorMap[label] || '#64748b';
+          return {
+            testId: test.test_id,
+            dataKey: `test_${test.test_id}`,
+            productId: test.product_id,
+            facility: label,
+            label: label,
+            color: color,
+            showInLegend: isFirst
+          };
+        } else {
+          const isFirst = !seenItems.has(test.product_id);
+          if (isFirst) seenItems.add(test.product_id);
+          color = productColorMap[test.product_id]?.hex || '#64748b';
+          return {
+            testId: test.test_id,
+            dataKey: `test_${test.test_id}`,
+            productId: test.product_id,
+            label: productName,
+            color: color,
+            showInLegend: isFirst
+          };
+        }
       });
-  }, [plottedTests, filteredProductsList, productColorMap]);
+  }, [plottedTests, filteredProductsList, productColorMap, colorBy, facilityColorMap]);
 
   const chartSeriesData = useMemo(() => {
     if (!selectedProductIds || !filteredProductsList || !productColorMap) return [];
@@ -145,20 +179,37 @@ export default function Dashboard() {
         
         if (propertyValue == null || isNaN(propertyValue)) return null;
         
-        const productIndex = selectedProductIds.indexOf(test.product_id);
-        const color = productColorMap[test.product_id]?.hex || '#cbd5e1';
-        
-        return {
-          x: propertyValue,
-          y: productIndex,
-          productName: product?.product_name || 'Unknown',
-          testId: test.test_id,
-          color: color,
-          productId: test.product_id
-        };
+        if (colorBy === 'facility') {
+          const facilityList = facilities.filter(f => f !== 'All');
+          const facilityIndex = facilityList.indexOf(test.test_facility || 'Unknown Facility');
+          const color = facilityColorMap[test.test_facility] || '#cbd5e1';
+          
+          return {
+            x: propertyValue,
+            y: facilityIndex,
+            productName: product?.product_name || 'Unknown',
+            facility: test.test_facility || 'Unknown Facility',
+            testId: test.test_id,
+            color: color,
+            productId: test.product_id,
+            yLabel: test.test_facility || 'Unknown Facility'
+          };
+        } else {
+          const productIndex = selectedProductIds.indexOf(test.product_id);
+          const color = productColorMap[test.product_id]?.hex || '#cbd5e1';
+          
+          return {
+            x: propertyValue,
+            y: productIndex,
+            productName: product?.product_name || 'Unknown',
+            testId: test.test_id,
+            color: color,
+            productId: test.product_id
+          };
+        }
       })
       .filter(Boolean);
-  }, [plottedTests, selectedProperty, filteredProductsList, selectedProductIds, productColorMap]);
+  }, [plottedTests, selectedProperty, filteredProductsList, selectedProductIds, productColorMap, colorBy, facilityColorMap, facilities]);
 
   // Guard against null/undefined API data
   if (!filteredProductsList || !filteredTests || !filteredCurves || !productColorMap || !apiStats) {
@@ -275,17 +326,41 @@ export default function Dashboard() {
             <span className="text-xs text-slate-500">{selectedProductIds.length} product(s) plotted</span>
           </div>
           {selectedProductIds.length > 0 && (
-            <button
-              onClick={() => setShowAverage(!showAverage)}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                showAverage
-                  ? 'bg-emerald-600 text-white shadow-md'
-                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-              }`}
-            >
-              <TrendingUp className="w-3.5 h-3.5" />
-              {showAverage ? 'Average On' : 'Show Average'}
-            </button>
+            <div className="flex items-center gap-2">
+              <div className="flex bg-slate-100 p-1 rounded-lg gap-1">
+                <button
+                  onClick={() => setColorBy('product')}
+                  className={`text-xs py-1.5 px-2.5 rounded-md font-semibold transition-all ${
+                    colorBy === 'product'
+                      ? 'bg-blue-600 text-white shadow-md'
+                      : 'text-slate-600 hover:text-slate-800'
+                  }`}
+                >
+                  By Product
+                </button>
+                <button
+                  onClick={() => setColorBy('facility')}
+                  className={`text-xs py-1.5 px-2.5 rounded-md font-semibold transition-all ${
+                    colorBy === 'facility'
+                      ? 'bg-blue-600 text-white shadow-md'
+                      : 'text-slate-600 hover:text-slate-800'
+                  }`}
+                >
+                  By Facility
+                </button>
+              </div>
+              <button
+                onClick={() => setShowAverage(!showAverage)}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                  showAverage
+                    ? 'bg-emerald-600 text-white shadow-md'
+                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                }`}
+              >
+                <TrendingUp className="w-3.5 h-3.5" />
+                {showAverage ? 'Average On' : 'Show Average'}
+              </button>
+            </div>
           )}
         </div>
 
@@ -469,8 +544,30 @@ export default function Dashboard() {
       {/* Distribution Scatter Plot Section */}
       {plottedTests.length > 0 && scatterData.length > 0 && (
         <section className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 md:p-5 shrink-0 flex flex-col min-h-[400px]">
-          <div className="flex items-center gap-3 mb-4 shrink-0">
+          <div className="flex items-center justify-between gap-3 mb-4 shrink-0">
             <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wide">Distribution Analysis</h3>
+            <div className="flex bg-slate-100 p-1 rounded-lg gap-1">
+              <button
+                onClick={() => setColorBy('product')}
+                className={`text-xs py-1.5 px-2.5 rounded-md font-semibold transition-all ${
+                  colorBy === 'product'
+                    ? 'bg-blue-600 text-white shadow-md'
+                    : 'text-slate-600 hover:text-slate-800'
+                }`}
+              >
+                By Product
+              </button>
+              <button
+                onClick={() => setColorBy('facility')}
+                className={`text-xs py-1.5 px-2.5 rounded-md font-semibold transition-all ${
+                  colorBy === 'facility'
+                    ? 'bg-blue-600 text-white shadow-md'
+                    : 'text-slate-600 hover:text-slate-800'
+                }`}
+              >
+                By Facility
+              </button>
+            </div>
           </div>
           
           <div className="flex-1 min-h-0 w-full relative">
@@ -489,15 +586,20 @@ export default function Dashboard() {
                 <YAxis
                   dataKey="y"
                   type="number"
-                  name="Product"
-                  domain={[-0.5, Math.max(...selectedProductIds.map((_, i) => i) || [0]) + 0.5]}
+                  name={colorBy === 'facility' ? 'Facility' : 'Product'}
+                  domain={[-0.5, (colorBy === 'facility' ? facilities.filter(f => f !== 'All').length : selectedProductIds.length) - 0.5]}
                   tick={{
                     fill: '#475569',
                     fontSize: 12,
                     formatter: (value) => {
-                      const productId = selectedProductIds[value];
-                      const product = filteredProductsList.find(p => p.id === productId);
-                      return product?.product_name || '';
+                      if (colorBy === 'facility') {
+                        const facilityList = facilities.filter(f => f !== 'All');
+                        return facilityList[value] || '';
+                      } else {
+                        const productId = selectedProductIds[value];
+                        const product = filteredProductsList.find(p => p.id === productId);
+                        return product?.product_name || '';
+                      }
                     }
                   }}
                   tickLine={false}
@@ -518,6 +620,7 @@ export default function Dashboard() {
                       return (
                         <div className="bg-white p-2 border border-slate-300 rounded-md shadow-lg text-xs">
                           <p className="font-semibold text-slate-700">{data.productName}</p>
+                          {colorBy === 'facility' && <p className="text-slate-600">Facility: {data.facility || 'Unknown'}</p>}
                           <p className="text-slate-600">Test ID: {data.testId}</p>
                           <p className="text-slate-600">{selectedProperty.replace(/_/g, ' ')}: {Number(data.x).toFixed(2)}</p>
                         </div>
