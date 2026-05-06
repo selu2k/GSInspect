@@ -250,6 +250,14 @@ export function AppProvider({ children }) {
     );
   };
 
+  const resetFilters = () => {
+    setSelectedCategories([]);
+    setSelectedSuppliers([]);
+    setSelectedLengthRange(null);
+    setSelectedFacilities([]);
+    setSelectedProductIds([]);
+  };
+
   const value = {
     userRole,
     setUserRole,
@@ -268,7 +276,7 @@ export function AppProvider({ children }) {
     categories, suppliers, lengthRange, facilities,
     filteredProductsList, productColorMap,
     filteredTests, filteredCurves,
-    toggleProductSelection, triggerSearch
+    toggleProductSelection, triggerSearch, resetFilters
   };
 
   return (

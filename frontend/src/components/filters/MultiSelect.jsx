@@ -36,6 +36,16 @@ export default function MultiSelect({
     onChange([]);
   };
 
+  const handleSelectAll = () => {
+    if (selectedValues.length === options.length) {
+      // All selected, so deselect all
+      onChange([]);
+    } else {
+      // Not all selected, so select all
+      onChange([...options]);
+    }
+  };
+
   const displayText = selectedValues.length === 0 
     ? placeholder 
     : selectedValues.length === 1 
@@ -84,20 +94,33 @@ export default function MultiSelect({
 
             <div className="p-1">
               {options && options.length > 0 ? (
-                options.map((option) => (
+                <>
                   <label
-                    key={option}
-                    className="flex items-center gap-2 px-3 py-2 hover:bg-slate-50 rounded cursor-pointer transition-colors"
+                    className="flex items-center gap-2 px-3 py-2 hover:bg-blue-50 rounded cursor-pointer transition-colors bg-blue-50 border-b border-blue-100"
                   >
                     <input
                       type="checkbox"
-                      checked={selectedValues.includes(option)}
-                      onChange={() => handleToggleOption(option)}
+                      checked={selectedValues.length === options.length}
+                      onChange={handleSelectAll}
                       className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
                     />
-                    <span className="text-sm text-slate-700">{option}</span>
+                    <span className="text-sm font-semibold text-slate-700">Select All</span>
                   </label>
-                ))
+                  {options.map((option) => (
+                    <label
+                      key={option}
+                      className="flex items-center gap-2 px-3 py-2 hover:bg-slate-50 rounded cursor-pointer transition-colors"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selectedValues.includes(option)}
+                        onChange={() => handleToggleOption(option)}
+                        className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                      />
+                      <span className="text-sm text-slate-700">{option}</span>
+                    </label>
+                  ))}
+                </>
               ) : (
                 <div className="px-3 py-2 text-sm text-slate-500 italic">
                   No options available

@@ -10,7 +10,7 @@ export default function Sidebar() {
     selectedSuppliers,
     selectedLengthRange,
     categories, suppliers, lengthRange,
-    triggerSearch
+    triggerSearch, resetFilters
   } = useAppContext();
 
   const [draftCategories, setDraftCategories] = useState(selectedCategories || []);
@@ -70,6 +70,13 @@ export default function Sidebar() {
       suppliers: draftSuppliers,
       lengthRange: draftLengthRange
     });
+  };
+
+  const clearAllFilters = () => {
+    setDraftCategories([]);
+    setDraftSuppliers([]);
+    setDraftLengthRange({ min: lengthRange.min, max: lengthRange.max });
+    resetFilters();
   };
 
   return (
@@ -149,13 +156,21 @@ export default function Sidebar() {
         </div>
 
         {/* Search Button */}
-        <button
-          onClick={applyFilters}
-          className="w-full mt-4 inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 px-4 py-2.5 text-sm font-bold text-white shadow-lg hover:from-blue-700 hover:to-blue-800 transition-all hover:shadow-xl active:scale-95 duration-150"
-        >
-          <Zap className="w-4 h-4" />
-          Apply Filters
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={applyFilters}
+            className="flex-1 inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 px-4 py-2.5 text-sm font-bold text-white shadow-lg hover:from-blue-700 hover:to-blue-800 transition-all hover:shadow-xl active:scale-95 duration-150"
+          >
+            <Zap className="w-4 h-4" />
+            Apply
+          </button>
+          <button
+            onClick={clearAllFilters}
+            className="flex-1 inline-flex items-center justify-center gap-2 rounded-lg bg-slate-200 text-slate-700 px-4 py-2.5 text-sm font-bold shadow hover:bg-slate-300 transition-all active:scale-95 duration-150"
+          >
+            Clear All
+          </button>
+        </div>
       </div>
 
     </aside>
