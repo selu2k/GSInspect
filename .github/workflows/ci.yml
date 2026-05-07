@@ -212,6 +212,7 @@ jobs:
       
       - name: Run integration test script
         run: |
+          pip install requests
           # Create a simple integration test
           python -c "
           import requests
