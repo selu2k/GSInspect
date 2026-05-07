@@ -5,15 +5,20 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('api', '0002_user'),
+        ("api", "0002_user"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='testcurve',
-            name='test',
-            field=models.OneToOneField(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='curve', to='api.test'),
+            model_name="testcurve",
+            name="test",
+            field=models.OneToOneField(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="curve",
+                to="api.test",
+            ),
         ),
     ]

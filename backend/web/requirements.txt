@@ -10,3 +10,13 @@ mysqlclient==2.2.8
 packaging==26.0
 sqlparse==0.5.5
 typing_extensions==4.15.0
+
+# Testing
+pytest==7.4.3
+pytest-django==4.7.0
+pytest-cov==4.1.0
+factory-boy==3.3.0
+
+# Linting & Code Quality
+flake8==6.1.0
+black==23.12.1

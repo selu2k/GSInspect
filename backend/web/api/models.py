@@ -1,10 +1,9 @@
-from django.db import models
-from django.core.exceptions import ValidationError
-
 from django.contrib.auth.models import AbstractUser
+from django.core.exceptions import ValidationError
+from django.db import models
+
 
 class User(AbstractUser):
-
     phone = models.CharField(max_length=20, blank=True, null=True)
     department = models.CharField(max_length=100, blank=True, null=True)
     position = models.CharField(max_length=100, blank=True, null=True)
@@ -18,8 +17,9 @@ class User(AbstractUser):
     def __str__(self):
         return self.username
 
+
 class Supplier(models.Model):
-    name       = models.CharField(max_length=255, db_index=True)
+    name = models.CharField(max_length=255, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -31,42 +31,37 @@ class Supplier(models.Model):
 
 
 class Bolt(models.Model):
-    supplier                = models.ForeignKey(
-                                Supplier,
-                                on_delete=models.PROTECT,
-                                related_name="bolts",
-                                db_index=True
-                              )
-    name                    = models.CharField(max_length=255)
-    length                  = models.FloatField(db_index=True)
-    diameter                = models.FloatField()
-    category                = models.CharField(max_length=255, db_index=True)
+    supplier = models.ForeignKey(
+        Supplier, on_delete=models.PROTECT, related_name="bolts", db_index=True
+    )
+    name = models.CharField(max_length=255)
+    length = models.FloatField(db_index=True)
+    diameter = models.FloatField()
+    category = models.CharField(max_length=255, db_index=True)
     equipment_compatibility = models.JSONField(
-                                default=list,
-                                help_text="List of equipment names e.g. ['Handheld', 'Boltec', 'Multi-OEM']"
-                              )
-    is_published            = models.BooleanField(default=False, db_index=True)
-    created_at              = models.DateTimeField(auto_now_add=True)
-    updated_at              = models.DateTimeField(auto_now=True)
+        default=list,
+        help_text="List of equipment names e.g. ['Handheld', 'Boltec', 'Multi-OEM']",
+    )
+    is_published = models.BooleanField(default=False, db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = "bolts"
         indexes = [
             models.Index(
                 fields=["supplier", "category", "is_published"],
-                name="bolt_sup_cat_pub_idx"
+                name="bolt_sup_cat_pub_idx",
             ),
         ]
 
     def clean(self):
         if not self.equipment_compatibility:
-            raise ValidationError({
-                "equipment_compatibility": "At least one equipment type is required."
-            })
+            raise ValidationError(
+                {"equipment_compatibility": "At least one equipment type is required."}
+            )
         if not isinstance(self.equipment_compatibility, list):
-            raise ValidationError({
-                "equipment_compatibility": "Must be a list of equipment names."
-            })
+            raise ValidationError({"equipment_compatibility": "Must be a list of equipment names."})
 
     def save(self, *args, **kwargs):
         self.full_clean()
@@ -77,60 +72,48 @@ class Bolt(models.Model):
 
 
 class Test(models.Model):
-
     class Methodology(models.TextChoices):
-        STATIC  = "static",  "Static"
+        STATIC = "static", "Static"
         DYNAMIC = "dynamic", "Dynamic"
 
     # required fields
-    bolt                 = models.ForeignKey(
-                             Bolt,
-                             on_delete=models.PROTECT,
-                             related_name="tests",
-                             db_index=True
-                           )
-    methodology          = models.CharField(
-                             max_length=10,
-                             choices=Methodology.choices,
-                             db_index=True
-                           )
-    facility             = models.CharField(max_length=255, db_index=True)
+    bolt = models.ForeignKey(Bolt, on_delete=models.PROTECT, related_name="tests", db_index=True)
+    methodology = models.CharField(max_length=10, choices=Methodology.choices, db_index=True)
+    facility = models.CharField(max_length=255, db_index=True)
 
     # optional shared fields
-    installation_method  = models.CharField(max_length=255, null=True, blank=True)
+    installation_method = models.CharField(max_length=255, null=True, blank=True)
     encapsulation_method = models.CharField(max_length=255, null=True, blank=True)
-    peak_strength        = models.FloatField(null=True, blank=True)
-    bond_strength        = models.FloatField(null=True, blank=True)
-    yield_strength       = models.FloatField(null=True, blank=True)
+    peak_strength = models.FloatField(null=True, blank=True)
+    bond_strength = models.FloatField(null=True, blank=True)
+    yield_strength = models.FloatField(null=True, blank=True)
     ultimate_deformation = models.FloatField(null=True, blank=True)
-    stiffness            = models.FloatField(null=True, blank=True)
+    stiffness = models.FloatField(null=True, blank=True)
 
     # static-only
-    loading_rate         = models.FloatField(
-                             null=True, blank=True,
-                             help_text="Required for static tests"
-                           )
+    loading_rate = models.FloatField(null=True, blank=True, help_text="Required for static tests")
 
     # dynamic-only
-    energy_absorption    = models.FloatField(
-                             null=True, blank=True,
-                             help_text="Required for dynamic tests"
-                           )
-    number_of_drops      = models.PositiveIntegerField(
-                             null=True, blank=True,
-                             help_text="Required for dynamic tests"
-                           )
+    energy_absorption = models.FloatField(
+        null=True, blank=True, help_text="Required for dynamic tests"
+    )
+    number_of_drops = models.PositiveIntegerField(
+        null=True, blank=True, help_text="Required for dynamic tests"
+    )
 
-    is_published         = models.BooleanField(default=False, db_index=True)
-    created_at           = models.DateTimeField(auto_now_add=True)
-    updated_at           = models.DateTimeField(auto_now=True)
+    is_published = models.BooleanField(default=False, db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = "tests"
         indexes = [
-            models.Index(fields=["bolt", "is_published"],        name="test_bolt_published_idx"),
-            models.Index(fields=["facility", "is_published"],    name="test_facility_published_idx"),
-            models.Index(fields=["methodology", "is_published"], name="test_methodology_published_idx"),
+            models.Index(fields=["bolt", "is_published"], name="test_bolt_published_idx"),
+            models.Index(fields=["facility", "is_published"], name="test_facility_published_idx"),
+            models.Index(
+                fields=["methodology", "is_published"],
+                name="test_methodology_published_idx",
+            ),
         ]
 
     def clean(self):
@@ -159,26 +142,26 @@ class Test(models.Model):
 
 
 class TestCurve(models.Model):
-    test         = models.OneToOneField(
-                     Test,
-                     on_delete=models.CASCADE,
-                     related_name="curve",
-                     db_index=True,
-                     null=True,
-                     blank=True
-                   )
-    curve_pair   = models.JSONField(
-                     default=list,
-                     help_text=(
-                         "List of data points, each with displacement (mm), load (kN), "
-                         "and energy_absorbed (kJ). Null values are allowed where data "
-                         "was not recorded. "
-                         "e.g. [{'displacement': 0.5, 'load': 186.86, 'energy_absorbed': 0.093}, ...]"
-                     )
-                   )
+    test = models.OneToOneField(
+        Test,
+        on_delete=models.CASCADE,
+        related_name="curve",
+        db_index=True,
+        null=True,
+        blank=True,
+    )
+    curve_pair = models.JSONField(
+        default=list,
+        help_text=(
+            "List of data points, each with displacement (mm), load (kN), "
+            "and energy_absorbed (kJ). Null values are allowed where data "
+            "was not recorded. "
+            "e.g. [{'displacement': 0.5, 'load': 186.86, 'energy_absorbed': 0.093}, ...]"
+        ),
+    )
     is_published = models.BooleanField(default=False, db_index=True)
-    created_at   = models.DateTimeField(auto_now_add=True)
-    updated_at   = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = "test_curves"
