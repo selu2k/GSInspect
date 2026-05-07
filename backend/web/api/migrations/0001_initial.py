@@ -5,96 +5,193 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
-            name='Supplier',
+            name="Supplier",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(db_index=True, max_length=255)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("name", models.CharField(db_index=True, max_length=255)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
             ],
             options={
-                'db_table': 'suppliers',
+                "db_table": "suppliers",
             },
         ),
         migrations.CreateModel(
-            name='Bolt',
+            name="Bolt",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(max_length=255)),
-                ('length', models.FloatField(db_index=True)),
-                ('diameter', models.FloatField()),
-                ('category', models.CharField(db_index=True, max_length=255)),
-                ('equipment_compatibility', models.JSONField(default=list, help_text="List of equipment names e.g. ['Handheld', 'Boltec', 'Multi-OEM']")),
-                ('is_published', models.BooleanField(db_index=True, default=False)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('supplier', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='bolts', to='api.supplier')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("name", models.CharField(max_length=255)),
+                ("length", models.FloatField(db_index=True)),
+                ("diameter", models.FloatField()),
+                ("category", models.CharField(db_index=True, max_length=255)),
+                (
+                    "equipment_compatibility",
+                    models.JSONField(
+                        default=list,
+                        help_text="List of equipment names e.g. ['Handheld', 'Boltec', 'Multi-OEM']",
+                    ),
+                ),
+                ("is_published", models.BooleanField(db_index=True, default=False)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                (
+                    "supplier",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.PROTECT,
+                        related_name="bolts",
+                        to="api.supplier",
+                    ),
+                ),
             ],
             options={
-                'db_table': 'bolts',
+                "db_table": "bolts",
             },
         ),
         migrations.CreateModel(
-            name='Test',
+            name="Test",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('methodology', models.CharField(choices=[('static', 'Static'), ('dynamic', 'Dynamic')], db_index=True, max_length=10)),
-                ('facility', models.CharField(db_index=True, max_length=255)),
-                ('installation_method', models.CharField(blank=True, max_length=255, null=True)),
-                ('encapsulation_method', models.CharField(blank=True, max_length=255, null=True)),
-                ('peak_strength', models.FloatField(blank=True, null=True)),
-                ('bond_strength', models.FloatField(blank=True, null=True)),
-                ('yield_strength', models.FloatField(blank=True, null=True)),
-                ('ultimate_deformation', models.FloatField(blank=True, null=True)),
-                ('stiffness', models.FloatField(blank=True, null=True)),
-                ('loading_rate', models.FloatField(blank=True, help_text='Required for static tests', null=True)),
-                ('energy_absorption', models.FloatField(blank=True, help_text='Required for dynamic tests', null=True)),
-                ('number_of_drops', models.PositiveIntegerField(blank=True, help_text='Required for dynamic tests', null=True)),
-                ('is_published', models.BooleanField(db_index=True, default=False)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('bolt', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='tests', to='api.bolt')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "methodology",
+                    models.CharField(
+                        choices=[("static", "Static"), ("dynamic", "Dynamic")],
+                        db_index=True,
+                        max_length=10,
+                    ),
+                ),
+                ("facility", models.CharField(db_index=True, max_length=255)),
+                (
+                    "installation_method",
+                    models.CharField(blank=True, max_length=255, null=True),
+                ),
+                (
+                    "encapsulation_method",
+                    models.CharField(blank=True, max_length=255, null=True),
+                ),
+                ("peak_strength", models.FloatField(blank=True, null=True)),
+                ("bond_strength", models.FloatField(blank=True, null=True)),
+                ("yield_strength", models.FloatField(blank=True, null=True)),
+                ("ultimate_deformation", models.FloatField(blank=True, null=True)),
+                ("stiffness", models.FloatField(blank=True, null=True)),
+                (
+                    "loading_rate",
+                    models.FloatField(blank=True, help_text="Required for static tests", null=True),
+                ),
+                (
+                    "energy_absorption",
+                    models.FloatField(
+                        blank=True, help_text="Required for dynamic tests", null=True
+                    ),
+                ),
+                (
+                    "number_of_drops",
+                    models.PositiveIntegerField(
+                        blank=True, help_text="Required for dynamic tests", null=True
+                    ),
+                ),
+                ("is_published", models.BooleanField(db_index=True, default=False)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                (
+                    "bolt",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.PROTECT,
+                        related_name="tests",
+                        to="api.bolt",
+                    ),
+                ),
             ],
             options={
-                'db_table': 'tests',
+                "db_table": "tests",
             },
         ),
         migrations.CreateModel(
-            name='TestCurve',
+            name="TestCurve",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('curve_pair', models.JSONField(default=list, help_text="List of data points, each with displacement (mm), load (kN), and energy_absorbed (kJ). Null values are allowed where data was not recorded. e.g. [{'displacement': 0.5, 'load': 186.86, 'energy_absorbed': 0.093}, ...]")),
-                ('is_published', models.BooleanField(db_index=True, default=False)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('test', models.OneToOneField(on_delete=django.db.models.deletion.PROTECT, related_name='curve', to='api.test')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "curve_pair",
+                    models.JSONField(
+                        default=list,
+                        help_text="List of data points, each with displacement (mm), load (kN), and energy_absorbed (kJ). Null values are allowed where data was not recorded. e.g. [{'displacement': 0.5, 'load': 186.86, 'energy_absorbed': 0.093}, ...]",
+                    ),
+                ),
+                ("is_published", models.BooleanField(db_index=True, default=False)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                (
+                    "test",
+                    models.OneToOneField(
+                        on_delete=django.db.models.deletion.PROTECT,
+                        related_name="curve",
+                        to="api.test",
+                    ),
+                ),
             ],
             options={
-                'db_table': 'test_curves',
+                "db_table": "test_curves",
             },
         ),
         migrations.AddIndex(
-            model_name='bolt',
-            index=models.Index(fields=['supplier', 'category', 'is_published'], name='bolt_sup_cat_pub_idx'),
+            model_name="bolt",
+            index=models.Index(
+                fields=["supplier", "category", "is_published"],
+                name="bolt_sup_cat_pub_idx",
+            ),
         ),
         migrations.AddIndex(
-            model_name='test',
-            index=models.Index(fields=['bolt', 'is_published'], name='test_bolt_published_idx'),
+            model_name="test",
+            index=models.Index(fields=["bolt", "is_published"], name="test_bolt_published_idx"),
         ),
         migrations.AddIndex(
-            model_name='test',
-            index=models.Index(fields=['facility', 'is_published'], name='test_facility_published_idx'),
+            model_name="test",
+            index=models.Index(
+                fields=["facility", "is_published"], name="test_facility_published_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='test',
-            index=models.Index(fields=['methodology', 'is_published'], name='test_methodology_published_idx'),
+            model_name="test",
+            index=models.Index(
+                fields=["methodology", "is_published"],
+                name="test_methodology_published_idx",
+            ),
         ),
     ]
