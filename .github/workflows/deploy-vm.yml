@@ -12,10 +12,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Create .env file
+      - name: Create .env files
         run: |
           mkdir -p backend/web
           echo "${{ secrets.ENV_FILE }}" > backend/web/.env
+          # Create root .env for docker-compose to know it's production
+          echo "APP_ENV=prod" > .env
 
       - name: Copy files to VM
         uses: appleboy/scp-action@master
@@ -34,31 +36,25 @@ jobs:
           key: ${{ secrets.VM_SSH_PRIVATE_KEY }}
           script: |
             cd ~/gsinspect
-            # Create root .env from backend .env (for docker-compose)
-            cp backend/web/.env .env.temp
-            cat .env.temp | grep -E "^(DB_|MARIADB_|APP_ENV)" > .env
-            rm .env.temp
-            
-            # Stop and redeploy containers (keep database volume)
-            docker-compose down
-            docker-compose up --build -d
+            docker-compose down || true
+            docker-compose up -d
             sleep 15
             # Health check from VM itself
             for i in {1..30}; do
               if curl -f http://localhost/api/health/ > /dev/null 2>&1; then
-                echo "App is healthy"
+                echo "✅ App is healthy"
                 exit 0
               fi
               echo "Waiting for app... ($i/30)"
               sleep 2
             done
-            echo "App health check failed"
+            echo "❌ App health check failed"
             exit 1
 
       - name: Deployment Status
         if: success()
-        run: echo "Deployment successful! App is running at http://${{ secrets.VM_IP_ADDRESS }}"
+        run: echo "✅ Deployment successful! App is running at http://${{ secrets.VM_IP_ADDRESS }}"
 
       - name: Deployment Failed
         if: failure()
-        run: echo "Deployment failed. Check logs above."
+        run: echo "❌ Deployment failed. Check logs above."

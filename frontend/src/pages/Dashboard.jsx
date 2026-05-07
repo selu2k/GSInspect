@@ -11,20 +11,33 @@ import {
   YAxis
 } from 'recharts';
 import { useAppContext } from '../context/AppContext';
+import MultiSelect from '../components/filters/MultiSelect';
 
 export default function Dashboard() {
   const { 
     filteredProductsList, filteredTests, filteredCurves, productColorMap, apiStats,
     selectedProductIds, setSelectedProductIds, toggleProductSelection, showAverage, setShowAverage,
-    methodology, setMethodology, selectedFacility, setSelectedFacility, facilities
+    methodology, setMethodology, selectedFacilities, setSelectedFacilities, facilities
   } = useAppContext();
 
+  const [selectedProperty, setSelectedProperty] = useState('peak_strength');
+
+  // Guard against null/undefined API data
+  if (!filteredProductsList || !filteredTests || !filteredCurves || !productColorMap || !apiStats) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <p className="text-slate-500 italic">Loading data...</p>
+      </div>
+    );
+  }
+
   const plottedTests = useMemo(() => {
-    if (selectedProductIds.length === 0) return [];
+    if (!filteredTests || selectedProductIds.length === 0) return [];
     return filteredTests.filter((test) => selectedProductIds.includes(test.product_id));
   }, [filteredTests, selectedProductIds]);
 
   const chartSeries = useMemo(() => {
+    if (!plottedTests || plottedTests.length === 0 || !filteredProductsList || !productColorMap) return [];
     const seenProducts = new Set();
     return plottedTests
       .map((test) => {
@@ -45,6 +58,7 @@ export default function Dashboard() {
   }, [plottedTests, filteredProductsList, productColorMap]);
 
   const chartSeriesData = useMemo(() => {
+    if (!selectedProductIds || !filteredProductsList || !productColorMap) return [];
     if (showAverage) {
       // Show average curves per product
       return selectedProductIds.map((productId) => {
@@ -65,7 +79,7 @@ export default function Dashboard() {
   }, [showAverage, selectedProductIds, chartSeries, filteredProductsList, productColorMap]);
 
   const chartData = useMemo(() => {
-    if (plottedTests.length === 0) return [];
+    if (!plottedTests || plottedTests.length === 0 || !filteredCurves) return [];
 
     const selectedTestIds = new Set(plottedTests.map((test) => test.test_id));
     const relevantCurves = filteredCurves.filter((point) => selectedTestIds.has(point.test_id));
@@ -114,7 +128,7 @@ export default function Dashboard() {
   }, [plottedTests, filteredCurves, showAverage]);
 
   const productStats = useMemo(() => {
-    if (selectedProductIds.length === 0) return [];
+    if (!selectedProductIds || selectedProductIds.length === 0 || !filteredProductsList || !apiStats) return [];
 
     return selectedProductIds.map(productId => {
       const product = filteredProductsList.find(p => p.id === productId);
@@ -215,19 +229,14 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-700 uppercase tracking-widest flex items-center gap-1.5 px-0.5">
-              <Building2 className="w-3.5 h-3.5 text-slate-400" />
-              Facility
-            </label>
-            <select 
-              value={selectedFacility}
-              onChange={(e) => setSelectedFacility(e.target.value)}
-              className="w-full bg-white border border-slate-300 text-slate-700 text-sm rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent p-2.5 transition-all hover:border-slate-400"
-            >
-              {facilities.map((f, i) => <option key={f || i} value={f}>{f}</option>)}
-            </select>
-          </div>
+          <MultiSelect
+            label="Facility"
+            options={facilities.filter(f => f !== 'All')}
+            selectedValues={selectedFacilities}
+            onChange={setSelectedFacilities}
+            placeholder="Select facilities..."
+            icon={Building2}
+          />
         </div>
       </section>
 
@@ -370,54 +379,201 @@ export default function Dashboard() {
       {/* Tests Summary Stats Section */}
       {plottedTests.length > 0 && productStats.length > 0 && (
         <section className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 md:p-5 shrink-0 overflow-hidden flex flex-col">
-          <div className="flex items-center justify-between gap-3 mb-3 shrink-0">
-            <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wide">Plotted Products Summary Stats</h3>
+          <div className="flex items-center justify-between gap-3 mb-4 shrink-0">
+            <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wide">Summary Statistics</h3>
+            <select
+              value={selectedProperty}
+              onChange={(e) => setSelectedProperty(e.target.value)}
+              className="w-56 bg-white border border-slate-300 text-slate-700 text-sm rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent p-2 transition-all hover:border-slate-400"
+            >
+              <option value="peak_strength">Peak Strength (kN)</option>
+              <option value="yield_strength">Yield Strength (kN)</option>
+              <option value="ultimate_deformation">Ultimate Deformation (mm)</option>
+              <option value="energy_absorption">Energy Absorption (kJ)</option>
+              <option value="bond_strength">Bond Strength</option>
+              <option value="stiffness">Stiffness</option>
+              <option value="number_of_drops">Number of Drops</option>
+            </select>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse text-sm whitespace-nowrap">
               <thead>
                 <tr className="bg-slate-50 border-y border-slate-200 text-slate-600">
-                  <th className="px-4 py-3 font-medium">Product / Metric</th>
-                  <th className="px-4 py-3 font-medium">Peak Strength (kN)</th>
-                  <th className="px-4 py-3 font-medium">Yield Strength (kN)</th>
-                  <th className="px-4 py-3 font-medium">Ultimate Def. (mm)</th>
-                  <th className="px-4 py-3 font-medium">Energy Abs. (kJ)</th>
-                  <th className="px-4 py-3 font-medium">Bond Strength</th>
-                  <th className="px-4 py-3 font-medium">Stiffness</th>
-                  <th className="px-4 py-3 font-medium">Drops</th>
+                  <th className="px-4 py-3 font-medium">Product</th>
+                  <th className="px-4 py-3 font-medium">Count</th>
+                  <th className="px-4 py-3 font-medium">Min</th>
+                  <th className="px-4 py-3 font-medium">Max</th>
+                  <th className="px-4 py-3 font-medium">Mean</th>
+                  <th className="px-4 py-3 font-medium">Median</th>
+                  <th className="px-4 py-3 font-medium">Q25</th>
+                  <th className="px-4 py-3 font-medium">Q75</th>
+                  <th className="px-4 py-3 font-medium">Std Dev</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {productStats.map(({ product, stats }) => {
                   const colorMap = productColorMap[product?.id];
-                  const labels = [
-                    { display: 'Count', key: 'count' },
-                    { display: 'Min', key: 'min' },
-                    { display: 'Max', key: 'max' },
-                    { display: 'Mean', key: 'mean' },
-                    { display: 'Median', key: 'median' },
-                    { display: 'Q25', key: 'q25' },
-                    { display: 'Q75', key: 'q75' },
-                    { display: 'Std Dev', key: 'std_dev' }
-                  ];
-                  return labels.map(({ display, key }, idx) => (
-                    <tr key={`${product?.id}-${key}`} className="hover:bg-slate-50 transition-colors">
+                  const propertyStats = stats[selectedProperty];
+                  
+                  return (
+                    <tr key={product?.id} className="hover:bg-slate-50 transition-colors">
                       <td className="px-4 py-3 font-medium text-slate-700 border-l-4" style={{ borderLeftColor: colorMap?.hex || '#cbd5e1' }}>
-                        {idx === 0 ? product?.product_name : ''} {idx === 0 && <span className="text-slate-400 font-normal pl-2">{display}</span>}
-                        {idx !== 0 && <span className="text-slate-400 pl-4">{display}</span>}
+                        {product?.product_name}
                       </td>
-                      <td className="px-4 py-2 text-slate-600">{stats.peak_strength && stats.peak_strength[key] != null ? (key === 'count' ? stats.peak_strength[key] : stats.peak_strength[key].toFixed(2)) : '-'}</td>
-                      <td className="px-4 py-2 text-slate-600">{stats.yield_strength && stats.yield_strength[key] != null ? (key === 'count' ? stats.yield_strength[key] : stats.yield_strength[key].toFixed(2)) : '-'}</td>
-                      <td className="px-4 py-2 text-slate-600">{stats.ultimate_deformation && stats.ultimate_deformation[key] != null ? (key === 'count' ? stats.ultimate_deformation[key] : stats.ultimate_deformation[key].toFixed(2)) : '-'}</td>
-                      <td className="px-4 py-2 text-slate-600">{stats.energy_absorption && stats.energy_absorption[key] != null ? (key === 'count' ? stats.energy_absorption[key] : stats.energy_absorption[key].toFixed(2)) : '-'}</td>
-                      <td className="px-4 py-2 text-slate-600">{stats.bond_strength && stats.bond_strength[key] != null ? (key === 'count' ? stats.bond_strength[key] : stats.bond_strength[key].toFixed(2)) : '-'}</td>
-                      <td className="px-4 py-2 text-slate-600">{stats.stiffness && stats.stiffness[key] != null ? (key === 'count' ? stats.stiffness[key] : stats.stiffness[key].toFixed(2)) : '-'}</td>
-                      <td className="px-4 py-2 text-slate-600">{stats.number_of_drops && stats.number_of_drops[key] != null ? (key === 'count' ? stats.number_of_drops[key] : stats.number_of_drops[key].toFixed(2)) : '-'}</td>
+                      <td className="px-4 py-2 text-slate-600">{propertyStats?.count ?? '-'}</td>
+                      <td className="px-4 py-2 text-slate-600">{propertyStats?.min != null ? propertyStats.min.toFixed(2) : '-'}</td>
+                      <td className="px-4 py-2 text-slate-600">{propertyStats?.max != null ? propertyStats.max.toFixed(2) : '-'}</td>
+                      <td className="px-4 py-2 text-slate-600">{propertyStats?.mean != null ? propertyStats.mean.toFixed(2) : '-'}</td>
+                      <td className="px-4 py-2 text-slate-600">{propertyStats?.median != null ? propertyStats.median.toFixed(2) : '-'}</td>
+                      <td className="px-4 py-2 text-slate-600">{propertyStats?.q25 != null ? propertyStats.q25.toFixed(2) : '-'}</td>
+                      <td className="px-4 py-2 text-slate-600">{propertyStats?.q75 != null ? propertyStats.q75.toFixed(2) : '-'}</td>
+                      <td className="px-4 py-2 text-slate-600">{propertyStats?.std_dev != null ? propertyStats.std_dev.toFixed(2) : '-'}</td>
                     </tr>
-                  ));
+                  );
                 })}
               </tbody>
             </table>
+          </div>
+        </section>
+      )}
+
+      {/* Distribution Box Plot Section */}
+      {plottedTests.length > 0 && productStats.length > 0 && (
+        <section className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 md:p-5 shrink-0 flex flex-col">
+          <div className="flex items-center justify-between gap-3 mb-4 shrink-0">
+            <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wide">Distribution Analysis</h3>
+            <p className="text-xs text-slate-500">Viewing: {selectedProperty.replace(/_/g, ' ')}</p>
+          </div>
+          
+          <div className="overflow-x-auto flex-1">
+            {(() => {
+              const numProducts = productStats.length;
+              const spacing = 65;
+              const lastProductYPos = 80 + (numProducts - 1) * spacing;
+              const lastProductBottom = lastProductYPos + 25;
+              const axisLabelPadding = 40;
+              const xAxisY = lastProductBottom + axisLabelPadding;
+              const svgHeight = xAxisY + 80; // space for axis labels and title below
+              return (
+                <svg width="100%" height={svgHeight} viewBox={`0 0 1000 ${svgHeight}`} className="w-full">
+                  {/* Background */}
+                  <rect width="1000" height={svgHeight} fill="#fafafa" />
+                  
+                  {/* Y-axis line */}
+                  <line x1="80" y1="30" x2="80" y2={xAxisY} stroke="#94a3b8" strokeWidth="2" />
+                  
+                  {/* X-axis line */}
+                  <line x1="80" y1={xAxisY} x2="950" y2={xAxisY} stroke="#94a3b8" strokeWidth="2" />
+              
+              {productStats.map(({ product, stats }, idx) => {
+                const propertyStats = stats[selectedProperty];
+                if (!propertyStats) return null;
+                
+                const { min, q25, median, q75, max } = propertyStats;
+                const colorMap = productColorMap[product?.id];
+                const color = colorMap?.hex || '#cbd5e1';
+                
+                // Calculate scale
+                const dataMin = Math.min(...productStats.map(p => p.stats[selectedProperty]?.min || 0));
+                const dataMax = Math.max(...productStats.map(p => p.stats[selectedProperty]?.max || 100));
+                const range = dataMax - dataMin || 1;
+                const scale = (value) => ((value - dataMin) / range) * 850 + 95;
+                
+                const yPos = 80 + idx * 65;
+                
+                return (
+                  <g key={product?.id}>
+                    {/* Whisker line */}
+                    <line x1={scale(min)} y1={yPos} x2={scale(max)} y2={yPos} stroke={color} strokeWidth="1" opacity="0.5" />
+                    
+                    {/* Min cap */}
+                    <line x1={scale(min)} y1={yPos - 10} x2={scale(min)} y2={yPos + 10} stroke={color} strokeWidth="2" />
+                    
+                    {/* Max cap */}
+                    <line x1={scale(max)} y1={yPos - 10} x2={scale(max)} y2={yPos + 10} stroke={color} strokeWidth="2" />
+                    
+                    {/* Q25-Q75 box */}
+                    <rect
+                      x={scale(q25)}
+                      y={yPos - 25}
+                      width={Math.max(2, scale(q75) - scale(q25))}
+                      height={50}
+                      fill={color}
+                      opacity="0.25"
+                      stroke={color}
+                      strokeWidth="2"
+                    />
+                    
+                    {/* Median line */}
+                    <line
+                      x1={scale(median)}
+                      y1={yPos - 25}
+                      x2={scale(median)}
+                      y2={yPos + 25}
+                      stroke={color}
+                      strokeWidth="3"
+                    />
+                    
+                    {/* Product label*/}
+                    <text
+                      x="15"
+                      y={yPos + 6}
+                      fontSize="10"
+                      fontWeight="600"
+                      fill="#334155"
+                      textAnchor="start"
+                    >
+                      {product?.product_name}
+                    </text>
+                  </g>
+                );
+              })}
+              
+              {/* X-axis title */}
+              <text
+                x="500"
+                y={xAxisY + 50}
+                fontSize="13"
+                fontWeight="600"
+                fill="#475569"
+                textAnchor="middle"
+              >
+                {selectedProperty.replace(/_/g, ' ').toUpperCase()}
+              </text>
+              
+              {/* X-axis min label */}
+              <text
+                x="95"
+                y={xAxisY + 25}
+                fontSize="11"
+                fill="#64748b"
+                fontWeight="500"
+                textAnchor="start"
+              >
+                {Math.min(...productStats.filter(p => p.stats[selectedProperty]).map(p => p.stats[selectedProperty].min)).toFixed(1)}
+              </text>
+              
+              {/* X-axis max label */}
+              <text
+                x="935"
+                y={xAxisY + 25}
+                fontSize="11"
+                fill="#64748b"
+                fontWeight="500"
+                textAnchor="end"
+              >
+                {Math.max(...productStats.filter(p => p.stats[selectedProperty]).map(p => p.stats[selectedProperty].max)).toFixed(1)}
+              </text>
+                </svg>
+              );
+            })()}
+          </div>
+          
+          <div className="mt-4 pt-4 border-t border-slate-100 text-xs text-slate-500 space-y-1">
+            <p className="font-medium text-slate-600">Box Plot Legend:</p>
+            <p>• <span className="inline-block w-4 h-4 bg-slate-300 align-middle mr-2"></span>Box shows 25th-75th percentile (IQR)</p>
+            <p>• <span className="inline-block w-1 h-4 bg-slate-600 align-middle mr-2"></span>Bold line inside box is the median</p>
+            <p>• Whiskers extend from minimum to maximum values</p>
           </div>
         </section>
       )}

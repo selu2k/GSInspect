@@ -6,7 +6,7 @@ import Sidebar from './components/layout/Sidebar';
 import Dashboard from './pages/Dashboard';
 import AdminPanel from './pages/AdminPanel';
 import './index.css';
-
+import LoginPage from './pages/LoginPage';
 function MainLayout() {
   return (
     <div className="flex flex-col h-screen bg-slate-100 font-sans text-slate-800">
@@ -29,6 +29,7 @@ export default function App() {
     <AppProvider>
       <BrowserRouter>
         <Routes>
+          <Route path="/admin/login" element={<LoginPage />} />
           <Route path="/admin/*" element={<AdminPanel />} />
           <Route path="/*" element={<MainLayout />} />
         </Routes>
