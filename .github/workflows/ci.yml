@@ -93,6 +93,7 @@ jobs:
           DB_HOST: 127.0.0.1
           DB_PORT: '3306'
           SECRET_KEY: test-secret-key
+          DJANGO_ALLOWED_HOSTS: localhost,127.0.0.1
         run: |
           cd backend/web
           python manage.py migrate
@@ -106,6 +107,7 @@ jobs:
           DB_HOST: 127.0.0.1
           DB_PORT: '3306'
           SECRET_KEY: test-secret-key
+          DJANGO_ALLOWED_HOSTS: localhost,127.0.0.1
         run: |
           cd backend/web
           pytest
@@ -174,6 +176,7 @@ jobs:
           DB_HOST: 127.0.0.1
           DB_PORT: '3306'
           SECRET_KEY: test-secret-key
+          DJANGO_ALLOWED_HOSTS: localhost,127.0.0.1
         run: |
           cd backend/web
           python manage.py migrate
@@ -187,6 +190,7 @@ jobs:
           DB_HOST: 127.0.0.1
           DB_PORT: '3306'
           SECRET_KEY: test-secret-key
+          DJANGO_ALLOWED_HOSTS: localhost,127.0.0.1
         run: |
           cd backend/web
           python manage.py shell < api/fixtures/seed_data.py || echo "Seed data skipped"
@@ -200,6 +204,7 @@ jobs:
           DB_HOST: 127.0.0.1
           DB_PORT: '3306'
           SECRET_KEY: test-secret-key
+          DJANGO_ALLOWED_HOSTS: localhost,127.0.0.1
         run: |
           cd backend/web
           python manage.py runserver 0.0.0.0:8000 &
