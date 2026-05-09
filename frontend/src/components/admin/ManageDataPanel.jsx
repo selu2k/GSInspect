@@ -49,7 +49,11 @@ function SuppliersTab() {
 
   const fetchSuppliers = async () => {
     setLoading(true);
-    const res = await fetch(`${API_BASE}/admin/suppliers/`);
+    const res = await fetch(`${API_BASE}/admin/suppliers/`, {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      }
+    });
     const data = await res.json();
     setSuppliers(data.results || data);
     setLoading(false);
@@ -63,13 +67,19 @@ function SuppliersTab() {
     if (modal === 'add') {
       await fetch(`${API_BASE}/admin/suppliers/`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
         body: JSON.stringify({ name: form.name }),
       });
     } else {
       await fetch(`${API_BASE}/admin/suppliers/${editing.id}/`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
         body: JSON.stringify({ name: form.name }),
       });
     }
@@ -78,7 +88,12 @@ function SuppliersTab() {
   };
 
   const handleDelete = async () => {
-    await fetch(`${API_BASE}/admin/suppliers/${deleteId}/`, { method: 'DELETE' });
+    await fetch(`${API_BASE}/admin/suppliers/${deleteId}/`, { 
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      }
+    });
     setDeleteId(null);
     fetchSuppliers();
   };
