@@ -88,7 +88,12 @@ function SuppliersTab() {
   };
 
   const handleDelete = async () => {
-    await fetch(`${API_BASE}/admin/suppliers/${deleteId}/`, { method: 'DELETE' });
+    await fetch(`${API_BASE}/admin/suppliers/${deleteId}/`, { 
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      }
+    });
     setDeleteId(null);
     fetchSuppliers();
   };
