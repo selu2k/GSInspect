@@ -5,6 +5,7 @@ import Topbar from './components/layout/Topbar';
 import Sidebar from './components/layout/Sidebar';
 import Dashboard from './pages/Dashboard';
 import AdminPanel from './pages/AdminPanel';
+import LoginPage from './pages/LoginPage';
 import './index.css';
 
 function MainLayout() {
@@ -29,6 +30,7 @@ export default function App() {
     <AppProvider>
       <BrowserRouter>
         <Routes>
+          <Route path="/admin/login" element={<LoginPage />} />
           <Route path="/admin/*" element={<AdminPanel />} />
           <Route path="/*" element={<MainLayout />} />
         </Routes>
