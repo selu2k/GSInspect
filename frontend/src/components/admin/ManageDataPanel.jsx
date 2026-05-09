@@ -168,30 +168,78 @@ function SuppliersTab() {
 
 // --- Products Tab ---
 function ProductsTab() {
-  const [products, setProducts] = useState(INIT_PRODUCTS);
+  const [products, setProducts] = useState([]);
+  const [suppliers, setSuppliers] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState(null);
   const [editing, setEditing] = useState(null);
   const [deleteId, setDeleteId] = useState(null);
-  const emptyForm = { supplier: '', product_name: '', bolt_length: '', bolt_diameter: '', bolt_category: 'Encapsulated' };
+  const emptyForm = { supplier: '', name: '', length: '', diameter: '', category: 'Encapsulated' };
   const [form, setForm] = useState(emptyForm);
 
-  const openAdd = () => { setForm(emptyForm); setModal('add'); };
-  const openEdit = (p) => { setEditing(p); setForm({ supplier: p.supplier, product_name: p.product_name, bolt_length: p.bolt_length, bolt_diameter: p.bolt_diameter, bolt_category: p.bolt_category }); setModal('edit'); };
+  const token = localStorage.getItem('token');
+  const authHeader = { 'Authorization': `Bearer ${token}` };
 
-  const handleSave = () => {
-    if (!form.product_name.trim()) return;
+  useEffect(() => {
+    fetchProducts();
+    fetchSuppliers();
+  }, []);
+
+  const fetchProducts = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/admin/bolts/`, { headers: authHeader });
+      const data = await res.json();
+      setProducts(data.results || data);
+    } catch (err) {
+      console.error('Failed to fetch products', err);
+    }
+    setLoading(false);
+  };
+
+  const fetchSuppliers = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/admin/suppliers/`, { headers: authHeader });
+      const data = await res.json();
+      setSuppliers(data.results || data);
+    } catch (err) {
+      console.error('Failed to fetch suppliers', err);
+    }
+  };
+
+  const openAdd = () => { setForm(emptyForm); setModal('add'); };
+  const openEdit = (p) => {
+    setEditing(p);
+    setForm({ supplier: p.supplier?.id || p.supplier, name: p.name, length: p.length, diameter: p.diameter, category: p.category });
+    setModal('edit');
+  };
+
+  const handleSave = async () => {
+    if (!form.name.trim()) return;
     if (modal === 'add') {
-      setProducts([...products, { id: 'p' + Date.now(), ...form }]);
+      await fetch(`${API_BASE}/admin/bolts/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...authHeader },
+        body: JSON.stringify(form),
+      });
     } else {
-      setProducts(products.map(p => p.id === editing.id ? { ...p, ...form } : p));
+      await fetch(`${API_BASE}/admin/bolts/${editing.id}/`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', ...authHeader },
+        body: JSON.stringify(form),
+      });
     }
     setModal(null);
+    fetchProducts();
   };
 
-  const handleDelete = () => {
-    setProducts(products.filter(p => p.id !== deleteId));
+  const handleDelete = async () => {
+    await fetch(`${API_BASE}/admin/bolts/${deleteId}/`, { method: 'DELETE', headers: authHeader });
     setDeleteId(null);
+    fetchProducts();
   };
+
+  if (loading) return <p className="text-sm text-slate-500">Loading products...</p>;
 
   return (
     <div className="space-y-4">
@@ -217,13 +265,13 @@ function ProductsTab() {
           <tbody className="divide-y divide-slate-100">
             {products.map(p => (
               <tr key={p.id} className="hover:bg-slate-50">
-                <td className="px-5 py-3 font-medium text-slate-800 max-w-[200px] truncate">{p.product_name}</td>
-                <td className="px-5 py-3 text-slate-500">{p.supplier}</td>
+                <td className="px-5 py-3 font-medium text-slate-800 max-w-[200px] truncate">{p.name}</td>
+                <td className="px-5 py-3 text-slate-500">{p.supplier?.name || p.supplier}</td>
                 <td className="px-5 py-3">
-                  <span className="bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full text-xs font-medium">{p.bolt_category}</span>
+                  <span className="bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full text-xs font-medium">{p.category}</span>
                 </td>
-                <td className="px-5 py-3 text-slate-500">{p.bolt_length}</td>
-                <td className="px-5 py-3 text-slate-500">{p.bolt_diameter}</td>
+                <td className="px-5 py-3 text-slate-500">{p.length}</td>
+                <td className="px-5 py-3 text-slate-500">{p.diameter}</td>
                 <td className="px-5 py-3 text-right space-x-2">
                   <button onClick={() => openEdit(p)} className="text-indigo-600 hover:text-indigo-900 bg-indigo-50 px-3 py-1 rounded-md text-xs font-medium inline-flex items-center gap-1">
                     <Edit className="w-3 h-3" /> Edit
@@ -243,30 +291,33 @@ function ProductsTab() {
           <div className="space-y-3">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Product Name *</label>
-              <input value={form.product_name} onChange={e => setForm({ ...form, product_name: e.target.value })}
+              <input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })}
                 className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="e.g. Resin Bolt D20 x 2.4 m" />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Supplier</label>
-                <input value={form.supplier} onChange={e => setForm({ ...form, supplier: e.target.value })}
-                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="e.g. Supplier A" />
+                <select value={form.supplier} onChange={e => setForm({ ...form, supplier: e.target.value })}
+                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                  <option value="">Select supplier...</option>
+                  {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                </select>
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Category</label>
-                <select value={form.bolt_category} onChange={e => setForm({ ...form, bolt_category: e.target.value })}
+                <select value={form.category} onChange={e => setForm({ ...form, category: e.target.value })}
                   className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
                   {['Encapsulated', 'Friction', 'Hybrid', 'Cable'].map(c => <option key={c}>{c}</option>)}
                 </select>
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Length (m)</label>
-                <input value={form.bolt_length} onChange={e => setForm({ ...form, bolt_length: e.target.value })}
+                <input value={form.length} onChange={e => setForm({ ...form, length: e.target.value })}
                   className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="e.g. 2.4" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Diameter (mm)</label>
-                <input value={form.bolt_diameter} onChange={e => setForm({ ...form, bolt_diameter: e.target.value })}
+                <input value={form.diameter} onChange={e => setForm({ ...form, diameter: e.target.value })}
                   className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="e.g. 20" />
               </div>
             </div>
