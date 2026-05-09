@@ -346,30 +346,78 @@ function ProductsTab() {
 
 // --- Tests Tab ---
 function TestsTab() {
-  const [tests, setTests] = useState(INIT_TESTS);
+  const [tests, setTests] = useState([]);
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState(null);
   const [editing, setEditing] = useState(null);
   const [deleteId, setDeleteId] = useState(null);
-  const emptyForm = { product_name: '', test_methodology: 'dynamic', test_facility: '', peak_strength: '' };
+  const emptyForm = { bolt: '', methodology: 'dynamic', facility: '', peak_strength: '' };
   const [form, setForm] = useState(emptyForm);
 
-  const openAdd = () => { setForm(emptyForm); setModal('add'); };
-  const openEdit = (t) => { setEditing(t); setForm({ product_name: t.product_name, test_methodology: t.test_methodology, test_facility: t.test_facility, peak_strength: t.peak_strength }); setModal('edit'); };
+  const token = localStorage.getItem('token');
+  const authHeader = { 'Authorization': `Bearer ${token}` };
 
-  const handleSave = () => {
-    if (!form.product_name.trim()) return;
+  useEffect(() => {
+    fetchTests();
+    fetchProducts();
+  }, []);
+
+  const fetchTests = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/admin/tests/`, { headers: authHeader });
+      const data = await res.json();
+      setTests(data.results || data);
+    } catch (err) {
+      console.error('Failed to fetch tests', err);
+    }
+    setLoading(false);
+  };
+
+  const fetchProducts = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/admin/bolts/`, { headers: authHeader });
+      const data = await res.json();
+      setProducts(data.results || data);
+    } catch (err) {
+      console.error('Failed to fetch products', err);
+    }
+  };
+
+  const openAdd = () => { setForm(emptyForm); setModal('add'); };
+  const openEdit = (t) => {
+    setEditing(t);
+    setForm({ bolt: t.bolt?.id || t.bolt, methodology: t.methodology, facility: t.facility, peak_strength: t.peak_strength });
+    setModal('edit');
+  };
+
+  const handleSave = async () => {
+    if (!form.bolt) return;
     if (modal === 'add') {
-      setTests([...tests, { id: 't' + Date.now(), ...form }]);
+      await fetch(`${API_BASE}/admin/tests/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...authHeader },
+        body: JSON.stringify(form),
+      });
     } else {
-      setTests(tests.map(t => t.id === editing.id ? { ...t, ...form } : t));
+      await fetch(`${API_BASE}/admin/tests/${editing.id}/`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', ...authHeader },
+        body: JSON.stringify(form),
+      });
     }
     setModal(null);
+    fetchTests();
   };
 
-  const handleDelete = () => {
-    setTests(tests.filter(t => t.id !== deleteId));
+  const handleDelete = async () => {
+    await fetch(`${API_BASE}/admin/tests/${deleteId}/`, { method: 'DELETE', headers: authHeader });
     setDeleteId(null);
+    fetchTests();
   };
+
+  if (loading) return <p className="text-sm text-slate-500">Loading tests...</p>;
 
   return (
     <div className="space-y-4">
@@ -394,13 +442,13 @@ function TestsTab() {
           <tbody className="divide-y divide-slate-100">
             {tests.map(t => (
               <tr key={t.id} className="hover:bg-slate-50">
-                <td className="px-5 py-3 font-medium text-slate-800 max-w-[200px] truncate">{t.product_name}</td>
+                <td className="px-5 py-3 font-medium text-slate-800 max-w-[200px] truncate">{t.bolt?.name || t.bolt}</td>
                 <td className="px-5 py-3">
-                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${t.test_methodology === 'dynamic' ? 'bg-amber-50 text-amber-700' : 'bg-teal-50 text-teal-700'}`}>
-                    {t.test_methodology}
+                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${t.methodology === 'dynamic' ? 'bg-amber-50 text-amber-700' : 'bg-teal-50 text-teal-700'}`}>
+                    {t.methodology}
                   </span>
                 </td>
-                <td className="px-5 py-3 text-slate-500">{t.test_facility}</td>
+                <td className="px-5 py-3 text-slate-500">{t.facility}</td>
                 <td className="px-5 py-3 text-slate-500 font-mono">{t.peak_strength}</td>
                 <td className="px-5 py-3 text-right space-x-2">
                   <button onClick={() => openEdit(t)} className="text-indigo-600 hover:text-indigo-900 bg-indigo-50 px-3 py-1 rounded-md text-xs font-medium inline-flex items-center gap-1">
@@ -420,14 +468,17 @@ function TestsTab() {
         <Modal title={modal === 'add' ? 'Add Test' : 'Edit Test'} onClose={() => setModal(null)}>
           <div className="space-y-3">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Product Name *</label>
-              <input value={form.product_name} onChange={e => setForm({ ...form, product_name: e.target.value })}
-                className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="e.g. Hollow Core Bolt D28 x 2.4 m" />
+              <label className="block text-sm font-medium text-slate-700 mb-1">Product *</label>
+              <select value={form.bolt} onChange={e => setForm({ ...form, bolt: e.target.value })}
+                className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <option value="">Select product...</option>
+                {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+              </select>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Methodology</label>
-                <select value={form.test_methodology} onChange={e => setForm({ ...form, test_methodology: e.target.value })}
+                <select value={form.methodology} onChange={e => setForm({ ...form, methodology: e.target.value })}
                   className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
                   <option value="dynamic">Dynamic</option>
                   <option value="static">Static</option>
@@ -435,7 +486,7 @@ function TestsTab() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Test Facility</label>
-                <input value={form.test_facility} onChange={e => setForm({ ...form, test_facility: e.target.value })}
+                <input value={form.facility} onChange={e => setForm({ ...form, facility: e.target.value })}
                   className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="e.g. Facility A" />
               </div>
             </div>
