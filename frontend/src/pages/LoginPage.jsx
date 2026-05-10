@@ -24,7 +24,7 @@ export default function LoginPage() {
 
       if (response.ok) {
         const data = await response.json();
-        localStorage.setItem('token', data.token);
+        localStorage.setItem('token', data.access);
         navigate('/admin');
       } else {
         setError('Invalid username or password. Please try again.');

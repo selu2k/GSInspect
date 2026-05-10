@@ -8,7 +8,10 @@ import {
   ResponsiveContainer,
   Tooltip,
   XAxis,
-  YAxis
+  YAxis,
+  ScatterChart,
+  Scatter,
+  Cell
 } from 'recharts';
 import { useAppContext } from '../context/AppContext';
 import MultiSelect from '../components/filters/MultiSelect';
@@ -140,6 +143,31 @@ export default function Dashboard() {
       };
     });
   }, [selectedProductIds, apiStats, filteredProductsList]);
+
+  const scatterData = useMemo(() => {
+    if (!plottedTests || plottedTests.length === 0 || !selectedProperty) return [];
+    
+    return plottedTests
+      .map((test, idx) => {
+        const product = filteredProductsList.find(p => p.id === test.product_id);
+        const propertyValue = test[selectedProperty];
+        
+        if (propertyValue == null || isNaN(propertyValue)) return null;
+        
+        const productIndex = selectedProductIds.indexOf(test.product_id);
+        const color = productColorMap[test.product_id]?.hex || '#cbd5e1';
+        
+        return {
+          x: propertyValue,
+          y: productIndex,
+          productName: product?.product_name || 'Unknown',
+          testId: test.test_id,
+          color: color,
+          productId: test.product_id
+        };
+      })
+      .filter(Boolean);
+  }, [plottedTests, selectedProperty, filteredProductsList, selectedProductIds, productColorMap]);
 
   return (
     <div className="flex flex-col gap-4 h-full overflow-y-auto pb-6">
@@ -393,6 +421,10 @@ export default function Dashboard() {
               <option value="bond_strength">Bond Strength</option>
               <option value="stiffness">Stiffness</option>
               <option value="number_of_drops">Number of Drops</option>
+<<<<<<< HEAD
+=======
+              <option value="loading_rate">Loading Rate</option>
+>>>>>>> 9c20791a5d36c0fefc7ea167d384c3dafe701ecc
             </select>
           </div>
           <div className="overflow-x-auto">
@@ -437,6 +469,7 @@ export default function Dashboard() {
         </section>
       )}
 
+<<<<<<< HEAD
       {/* Distribution Box Plot Section */}
       {plottedTests.length > 0 && productStats.length > 0 && (
         <section className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 md:p-5 shrink-0 flex flex-col">
@@ -574,6 +607,75 @@ export default function Dashboard() {
             <p>• <span className="inline-block w-4 h-4 bg-slate-300 align-middle mr-2"></span>Box shows 25th-75th percentile (IQR)</p>
             <p>• <span className="inline-block w-1 h-4 bg-slate-600 align-middle mr-2"></span>Bold line inside box is the median</p>
             <p>• Whiskers extend from minimum to maximum values</p>
+=======
+      {/* Distribution Scatter Plot Section */}
+      {plottedTests.length > 0 && scatterData.length > 0 && (
+        <section className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 md:p-5 shrink-0 flex flex-col min-h-[400px]">
+          <div className="flex items-center gap-3 mb-4 shrink-0">
+            <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wide">Distribution Analysis</h3>
+          </div>
+          
+          <div className="flex-1 min-h-0 w-full relative">
+            <ResponsiveContainer width="100%" height="100%">
+              <ScatterChart margin={{ top: 24, right: 24, left: 12, bottom: 24 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                <XAxis
+                  dataKey="x"
+                  type="number"
+                  name={selectedProperty.replace(/_/g, ' ')}
+                  tick={{ fill: '#475569', fontSize: 12 }}
+                  tickLine={false}
+                  axisLine={{ stroke: '#94a3b8' }}
+                  label={{ value: selectedProperty.replace(/_/g, ' ').toUpperCase(), position: 'insideBottomRight', offset: -10, fill: '#334155' }}
+                />
+                <YAxis
+                  dataKey="y"
+                  type="number"
+                  name="Product"
+                  domain={[-0.5, Math.max(...selectedProductIds.map((_, i) => i) || [0]) + 0.5]}
+                  tick={{
+                    fill: '#475569',
+                    fontSize: 12,
+                    formatter: (value) => {
+                      const productId = selectedProductIds[value];
+                      const product = filteredProductsList.find(p => p.id === productId);
+                      return product?.product_name || '';
+                    }
+                  }}
+                  tickLine={false}
+                  axisLine={{ stroke: '#94a3b8' }}
+                  width={110}
+                />
+                <Tooltip
+                  cursor={{ strokeDasharray: '3 3' }}
+                  contentStyle={{ borderRadius: '0.75rem', borderColor: '#cbd5e1' }}
+                  formatter={(value, name) => {
+                    if (name === 'x') return Number(value).toFixed(2);
+                    return value;
+                  }}
+                  labelFormatter={() => ''}
+                  content={({ active, payload }) => {
+                    if (active && payload && payload[0]) {
+                      const data = payload[0].payload;
+                      return (
+                        <div className="bg-white p-2 border border-slate-300 rounded-md shadow-lg text-xs">
+                          <p className="font-semibold text-slate-700">{data.productName}</p>
+                          <p className="text-slate-600">Test ID: {data.testId}</p>
+                          <p className="text-slate-600">{selectedProperty.replace(/_/g, ' ')}: {Number(data.x).toFixed(2)}</p>
+                        </div>
+                      );
+                    }
+                    return null;
+                  }}
+                />
+                <Scatter name="Test Points" data={scatterData}>
+                  {scatterData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} opacity={0.7} />
+                  ))}
+                </Scatter>
+              </ScatterChart>
+            </ResponsiveContainer>
+>>>>>>> 9c20791a5d36c0fefc7ea167d384c3dafe701ecc
           </div>
         </section>
       )}
