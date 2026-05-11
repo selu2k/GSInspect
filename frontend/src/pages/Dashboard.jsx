@@ -729,6 +729,8 @@ export default function Dashboard() {
                           <Cell
                             key={`cell-facility-${facility}-${index}`}
                             fillOpacity={containsSelectedTest ? 1 : 0.3}
+                            stroke={containsSelectedTest ? '#1f2937' : 'none'}
+                            strokeWidth={containsSelectedTest ? 3 : 0}
                           />
                         );
                       })}
@@ -753,6 +755,8 @@ export default function Dashboard() {
                             <Cell
                               key={`cell-product-${productId}-${index}`}
                               fillOpacity={containsSelectedTest ? 1 : 0.3}
+                              stroke={containsSelectedTest ? '#1f2937' : 'none'}
+                              strokeWidth={containsSelectedTest ? 3 : 0}
                             />
                           );
                         })}
