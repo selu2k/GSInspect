@@ -49,13 +49,17 @@ function SuppliersTab() {
 
   const fetchSuppliers = async () => {
     setLoading(true);
-    const res = await fetch(`${API_BASE}/admin/suppliers/`, {
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
-      }
-    });
-    const data = await res.json();
-    setSuppliers(data.results || data);
+    try {
+      const res = await fetch(`${API_BASE}/admin/suppliers/`, {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+      });
+      if (!res.ok) throw new Error('Failed to fetch');
+      const data = await res.json();
+      setSuppliers(data.results || data);
+    } catch (err) {
+      console.error('Failed to fetch suppliers', err);
+      setSuppliers([]);
+    }
     setLoading(false);
   };
 
