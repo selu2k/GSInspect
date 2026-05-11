@@ -168,7 +168,7 @@ function ProductsTab() {
   const [modal, setModal] = useState(null);
   const [editing, setEditing] = useState(null);
   const [deleteId, setDeleteId] = useState(null);
-  const emptyForm = { supplier: '', name: '', length: '', diameter: '', category: 'Encapsulated' };
+  const emptyForm = { supplier: '', name: '', length: '', diameter: '', category: 'Encapsulated', equipment_compatibility: [] };
   const [form, setForm] = useState(emptyForm);
 
   const authHeader = { 'Authorization': `Bearer ${localStorage.getItem('token')}` };
@@ -206,7 +206,7 @@ function ProductsTab() {
   const openAdd = () => { setForm(emptyForm); setModal('add'); };
   const openEdit = (p) => {
     setEditing(p);
-    setForm({ supplier: p.supplier?.id || p.supplier, name: p.name, length: p.length, diameter: p.diameter, category: p.category });
+    setForm({ supplier: p.supplier?.id || p.supplier, name: p.name, length: p.length, diameter: p.diameter, category: p.category, equipment_compatibility: p.equipment_compatibility || [] });
     setModal('edit');
   };
 
@@ -217,14 +217,24 @@ function ProductsTab() {
         const res = await fetch(`${API_BASE}/admin/bolts/`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', ...authHeader },
-          body: JSON.stringify(form),
+          body: JSON.stringify({
+            ...form,
+            length: parseFloat(form.length),
+            diameter: parseFloat(form.diameter),
+            supplier: parseInt(form.supplier),
+          }),
         });
         if (!res.ok) throw new Error('Failed to save');
       } else {
         const res = await fetch(`${API_BASE}/admin/bolts/${editing.id}/`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json', ...authHeader },
-          body: JSON.stringify(form),
+          body: JSON.stringify({
+            ...form,
+            length: parseFloat(form.length),
+            diameter: parseFloat(form.diameter),
+            supplier: parseInt(form.supplier),
+          }),
         });
         if (!res.ok) throw new Error('Failed to save');
       }
@@ -317,6 +327,26 @@ function ProductsTab() {
                   {['Encapsulated', 'Friction', 'Hybrid', 'Cable'].map(c => <option key={c}>{c}</option>)}
                 </select>
               </div>
+              <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Equipment Compatibility *</label>
+              <div className="space-y-1">
+                {['Handheld', 'Mechanized Bolting Machine A', 'Multi-OEM'].map(eq => (
+                  <label key={eq} className="flex items-center gap-2 text-sm text-slate-700">
+                    <input
+                      type="checkbox"
+                      checked={form.equipment_compatibility.includes(eq)}
+                      onChange={e => {
+                        const updated = e.target.checked
+                          ? [...form.equipment_compatibility, eq]
+                          : form.equipment_compatibility.filter(x => x !== eq);
+                        setForm({ ...form, equipment_compatibility: updated });
+                      }}
+                    />
+                    {eq}
+                  </label>
+                ))}
+              </div>
+            </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Length (m)</label>
                 <input value={form.length} onChange={e => setForm({ ...form, length: e.target.value })}
