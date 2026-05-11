@@ -460,8 +460,43 @@ export default function Dashboard() {
                 />
                 <Tooltip
                   contentStyle={{ borderRadius: '0.75rem', borderColor: '#cbd5e1' }}
-                  formatter={(value) => (value == null ? '-' : Number(value).toFixed(1))}
-                  labelFormatter={(value) => `Disp: ${value} mm`}
+                  content={({ active, payload, label }) => {
+                    if (active && payload && payload.length > 0) {
+                      // Sort payload by test ID numerically
+                      const sortedPayload = [...payload].sort((a, b) => {
+                        const aTestId = parseInt(a.dataKey.replace('test_', '').replace('avg_', ''), 10) || 0;
+                        const bTestId = parseInt(b.dataKey.replace('test_', '').replace('avg_', ''), 10) || 0;
+                        return aTestId - bTestId;
+                      });
+
+                      return (
+                        <div className="bg-white p-3 border border-slate-300 rounded-md shadow-lg text-xs">
+                          <p className="font-semibold text-slate-700 mb-2">Disp: {Number(label).toFixed(2)} mm</p>
+                          <div className="space-y-1">
+                            {sortedPayload.map((entry, idx) => {
+                              const isAverage = entry.dataKey.startsWith('avg_');
+                              let testLabel = entry.name;
+                              
+                              if (!isAverage) {
+                                const testId = parseInt(entry.dataKey.replace('test_', ''), 10);
+                                const test = plottedTests.find(t => t.test_id === testId);
+                                if (test) {
+                                  testLabel = `Test ${test.test_id} (${test.test_facility || 'Unknown'})`;
+                                }
+                              }
+                              
+                              return (
+                                <div key={idx} style={{ color: entry.color || '#cbd5e1' }} className="font-medium">
+                                  {testLabel}: {entry.value == null ? '-' : Number(entry.value).toFixed(1)} kN
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    }
+                    return null;
+                  }}
                 />
                 {/* <Legend iconType="circle" wrapperStyle={{ fontSize: '12px' }} /> */}
 
