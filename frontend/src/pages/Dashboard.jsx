@@ -13,7 +13,7 @@ import {
   Bar,
   Cell
 } from 'recharts';
-import { useAppContext } from '../context/AppContext';
+import { useAppContext } from '../context/AppContextCore';
 import MultiSelect from '../components/filters/MultiSelect';
 
 export default function Dashboard() {
@@ -42,11 +42,12 @@ export default function Dashboard() {
       return () => document.removeEventListener('mousedown', handleClickOutside);
     }
   }, [selectedTestId]);
-  const facilityColorPalette = [
-    '#ef4444', '#f97316', '#eab308', '#22c55e', '#06b6d4',
-    '#3b82f6', '#8b5cf6', '#ec4899', '#6366f1', '#14b8a6'
-  ];
+
   const facilityColorMap = useMemo(() => {
+    const facilityColorPalette = [
+      '#ef4444', '#f97316', '#eab308', '#22c55e', '#06b6d4',
+      '#3b82f6', '#8b5cf6', '#ec4899', '#6366f1', '#14b8a6'
+    ];
     const map = {};
     if (facilities) {
       facilities.forEach((facility, index) => {
@@ -69,7 +70,7 @@ export default function Dashboard() {
         const product = filteredProductsList.find((item) => item.id === test.product_id);
         const productName = product ? product.product_name : 'Unknown Product';
         
-        let label, color, key;
+        let label, color;
         if (colorBy === 'facility') {
           label = test.test_facility || 'Unknown Facility';
           const isFirst = !seenItems.has(label);
@@ -227,53 +228,53 @@ export default function Dashboard() {
   }, [plottedTests, selectedProperty, filteredProductsList, selectedProductIds, productColorMap, colorBy, facilityColorMap, facilities]);
 
   // Binning function for histogram
-  const createHistogramData = (data, binSize = 10) => {
-    if (!data || data.length === 0) return [];
+  const histogramData = useMemo(() => {
+    const createHistogramData = (data, binSize = 10) => {
+      if (!data || data.length === 0) return [];
 
-    const minVal = Math.floor(Math.min(...data.map(d => d.x)) / binSize) * binSize;
-    const maxVal = Math.ceil(Math.max(...data.map(d => d.x)) / binSize) * binSize;
-    
-    const bins = {};
-    for (let i = minVal; i < maxVal; i += binSize) {
-      const binLabel = `${i}-${i + binSize}`;
-      bins[binLabel] = {};
-      bins[binLabel]._testIds = [];
-      if (colorBy === 'facility') {
-        facilities.filter(f => f !== 'All').forEach(facility => {
-          bins[binLabel][facility] = 0;
-        });
-      } else {
-        selectedProductIds.forEach(productId => {
-          const product = filteredProductsList.find(p => p.id === productId);
-          const productName = product?.product_name || 'Unknown';
-          bins[binLabel][productName] = 0;
-        });
-      }
-    }
-
-    // Populate bins
-    data.forEach(point => {
-      const binIndex = Math.floor(point.x / binSize) * binSize;
-      const binLabel = `${binIndex}-${binIndex + binSize}`;
-      if (bins[binLabel]) {
-        bins[binLabel]._testIds.push(point.testId);
+      const minVal = Math.floor(Math.min(...data.map(d => d.x)) / binSize) * binSize;
+      const maxVal = Math.ceil(Math.max(...data.map(d => d.x)) / binSize) * binSize;
+      
+      const bins = {};
+      for (let i = minVal; i < maxVal; i += binSize) {
+        const binLabel = `${i}-${i + binSize}`;
+        bins[binLabel] = {};
+        bins[binLabel]._testIds = [];
         if (colorBy === 'facility') {
-          bins[binLabel][point.facility] = (bins[binLabel][point.facility] || 0) + 1;
+          facilities.filter(f => f !== 'All').forEach(facility => {
+            bins[binLabel][facility] = 0;
+          });
         } else {
-          bins[binLabel][point.productName] = (bins[binLabel][point.productName] || 0) + 1;
+          selectedProductIds.forEach(productId => {
+            const product = filteredProductsList.find(p => p.id === productId);
+            const productName = product?.product_name || 'Unknown';
+            bins[binLabel][productName] = 0;
+          });
         }
       }
-    });
 
-    return Object.entries(bins).map(([binLabel, counts]) => ({
-      name: binLabel,
-      ...counts
-    }));
-  };
+      // Populate bins
+      data.forEach(point => {
+        const binIndex = Math.floor(point.x / binSize) * binSize;
+        const binLabel = `${binIndex}-${binIndex + binSize}`;
+        if (bins[binLabel]) {
+          bins[binLabel]._testIds.push(point.testId);
+          if (colorBy === 'facility') {
+            bins[binLabel][point.facility] = (bins[binLabel][point.facility] || 0) + 1;
+          } else {
+            bins[binLabel][point.productName] = (bins[binLabel][point.productName] || 0) + 1;
+          }
+        }
+      });
 
-  const histogramData = useMemo(() => {
+      return Object.entries(bins).map(([binLabel, counts]) => ({
+        name: binLabel,
+        ...counts
+      }));
+    };
+
     return createHistogramData(scatterData);
-  }, [scatterData, colorBy]);
+  }, [scatterData, colorBy, selectedProductIds, filteredProductsList, facilities]);
 
   // Guard against null/undefined API data
   if (!filteredProductsList || !filteredTests || !filteredCurves || !productColorMap || !apiStats) {
@@ -713,38 +714,12 @@ export default function Dashboard() {
                   height={36}
                   wrapperStyle={{ paddingBottom: '12px' }}
                 />
-                {colorBy === 'facility' ? (
-                  facilities.filter(f => f !== 'All').map((facility, idx) => (
-                    <Bar
-                      key={`facility-${facility}`}
-                      dataKey={facility}
-                      fill={facilityColorMap[facility] || '#cbd5e1'}
-                      stackId="distribution"
-                      radius={[4, 4, 0, 0]}
-                      isAnimationActive={false}
-                    >
-                      {selectedTestId && histogramData.map((entry, index) => {
-                        const containsSelectedTest = entry._testIds && entry._testIds.includes(selectedTestId);
-                        return (
-                          <Cell
-                            key={`cell-facility-${facility}-${index}`}
-                            fillOpacity={containsSelectedTest ? 1 : 0.3}
-                            stroke={containsSelectedTest ? '#1f2937' : 'none'}
-                            strokeWidth={containsSelectedTest ? 3 : 0}
-                          />
-                        );
-                      })}
-                    </Bar>
-                  ))
-                ) : (
-                  selectedProductIds.map((productId, idx) => {
-                    const product = filteredProductsList.find(p => p.id === productId);
-                    const productName = product?.product_name || 'Unknown';
-                    return (
+                {colorBy === 'facility'
+                  ? facilities.filter(f => f !== 'All').map((facility) => (
                       <Bar
-                        key={`product-${productId}`}
-                        dataKey={productName}
-                        fill={productColorMap[productId]?.hex || '#cbd5e1'}
+                        key={`facility-${facility}`}
+                        dataKey={facility}
+                        fill={facilityColorMap[facility] || '#cbd5e1'}
                         stackId="distribution"
                         radius={[4, 4, 0, 0]}
                         isAnimationActive={false}
@@ -753,7 +728,7 @@ export default function Dashboard() {
                           const containsSelectedTest = entry._testIds && entry._testIds.includes(selectedTestId);
                           return (
                             <Cell
-                              key={`cell-product-${productId}-${index}`}
+                              key={`cell-facility-${facility}-${index}`}
                               fillOpacity={containsSelectedTest ? 1 : 0.3}
                               stroke={containsSelectedTest ? '#1f2937' : 'none'}
                               strokeWidth={containsSelectedTest ? 3 : 0}
@@ -761,9 +736,33 @@ export default function Dashboard() {
                           );
                         })}
                       </Bar>
-                    );
-                  })
-                )}
+                    ))
+                  : selectedProductIds.map((productId) => {
+                      const product = filteredProductsList.find(p => p.id === productId);
+                      const productName = product?.product_name || 'Unknown';
+                      return (
+                        <Bar
+                          key={`product-${productId}`}
+                          dataKey={productName}
+                          fill={productColorMap[productId]?.hex || '#cbd5e1'}
+                          stackId="distribution"
+                          radius={[4, 4, 0, 0]}
+                          isAnimationActive={false}
+                        >
+                          {selectedTestId && histogramData.map((entry, index) => {
+                            const containsSelectedTest = entry._testIds && entry._testIds.includes(selectedTestId);
+                            return (
+                              <Cell
+                                key={`cell-product-${productId}-${index}`}
+                                fillOpacity={containsSelectedTest ? 1 : 0.3}
+                                stroke={containsSelectedTest ? '#1f2937' : 'none'}
+                                strokeWidth={containsSelectedTest ? 3 : 0}
+                              />
+                            );
+                          })}
+                        </Bar>
+                      );
+                    })}
               </BarChart>
             </ResponsiveContainer>
           </div>
