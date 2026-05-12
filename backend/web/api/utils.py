@@ -35,9 +35,13 @@ def calculate_stats_for_tests(tests):
             )
 
             try:
-                quants = quantiles(values, n=4)
-                q25_val = quants[0]
-                q75_val = quants[2]
+                if count >= 4:
+                    quants = quantiles(values, n=4)
+                    q25_val = quants[0]
+                    q75_val = quants[2]
+                else:
+                    q25_val = None
+                    q75_val = None
             except Exception:
                 q25_val = None
                 q75_val = None
@@ -66,9 +70,13 @@ def calculate_stats_for_tests(tests):
         std_val = (sum((x - mean_val) ** 2 for x in values) / count) ** 0.5 if count > 1 else 0.0
 
         try:
-            quants = quantiles(values, n=4)
-            q25_val = quants[0]
-            q75_val = quants[2]
+            if count >= 4:
+                quants = quantiles(values, n=4)
+                q25_val = quants[0]
+                q75_val = quants[2]
+            else:
+                q25_val = None
+                q75_val = None
         except Exception:
             q25_val = None
             q75_val = None

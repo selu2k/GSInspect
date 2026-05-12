@@ -175,8 +175,18 @@ class AdminTestSerializer(serializers.ModelSerializer):
         return ret
 
 
+class AdminBoltMinimalSerializer(serializers.ModelSerializer):
+    """Minimal Bolt serializer with only id and name for list views."""
+
+    class Meta:
+        model = Bolt
+        fields = ["id", "name"]
+
+
 class AdminTestListSerializer(serializers.ModelSerializer):
     """Serializer for Test list operations - minimal fields for performance."""
+
+    bolt = AdminBoltMinimalSerializer(read_only=True)
 
     class Meta:
         model = Test
@@ -186,7 +196,7 @@ class AdminTestListSerializer(serializers.ModelSerializer):
             "methodology",
             "facility",
         ]
-        read_only_fields = ["id"]
+        read_only_fields = ["id", "methodology", "facility"]
 
 
 class BoltPublishSerializer(serializers.ModelSerializer):

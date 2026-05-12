@@ -44,12 +44,12 @@ jobs:
             docker-compose up --build -d
             sleep 15
             # Health check from VM itself
-            for i in {1..30}; do
+            for i in {1..10}; do
               if curl -f http://localhost/api/health/ > /dev/null 2>&1; then
                 echo "App is healthy"
                 exit 0
               fi
-              echo "Waiting for app... ($i/30)"
+              echo "Waiting for app... ($i/10)"
               sleep 2
             done
             echo "App health check failed"
