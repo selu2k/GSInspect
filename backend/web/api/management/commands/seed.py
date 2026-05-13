@@ -192,11 +192,12 @@ class Command(BaseCommand):
             for i in range(bolts_per_supplier):
                 category = random.choice(CATEGORIES)
                 diameter = random.choice([16, 20, 22, 25, 28, 32])
+                length = round(random.uniform(1.5, 3.5), 1)
                 equipment_compat = random.sample(EQUIPMENT_COMPATIBILITY, k=random.randint(1, 3))
                 bolt = Bolt.objects.create(
                     supplier=supplier,
-                    name=f"{category} Bolt D{diameter}mm x 2.4m - {supplier.name} - {i + 1}",
-                    length=round(random.uniform(1.5, 3.5), 1),
+                    name=f"{category} Bolt D{diameter}mm x {length}m - {supplier.name} - {i + 1}",
+                    length=length,
                     diameter=diameter,
                     category=category,
                     equipment_compatibility=equipment_compat,
