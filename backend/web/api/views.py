@@ -14,7 +14,7 @@ from .serializers import (
     SupplierSerializer,
     BoltSerializer,
 )
-from .utils import group_tests_by_bolt
+from .utils import group_tests_by_bolt, calculate_stats_for_tests
 
 
 class TestFilterSet(FilterSet):
@@ -220,3 +220,124 @@ class AdminBoltDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = BoltSerializer
     permission_classes = [IsAdminUser]
     lookup_field = "id"
+
+
+class ExternalBoltSummaryStatsView(generics.GenericAPIView):
+    """
+    External API endpoint for published bolts with summary statistics.
+
+    Returns:
+    - Bolt details
+    - Supplier details
+    - Number of published tests
+    - Summary statistics calculated from published tests
+    """
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request, *args, **kwargs):
+        bolts = Bolt.objects.select_related("supplier").filter(
+            is_published=True
+        ).order_by("id")
+
+        results = []
+
+        for bolt in bolts:
+            tests = list(
+                Test.objects.filter(
+                    bolt=bolt,
+                    is_published=True,
+                )
+            )
+
+            stats = calculate_stats_for_tests(tests)
+
+            results.append({
+                "id": bolt.id,
+                "name": bolt.name,
+                "supplier": {
+                    "id": bolt.supplier.id,
+                    "name": bolt.supplier.name,
+                },
+                "category": bolt.category,
+                "length": bolt.length,
+                "diameter": bolt.diameter,
+                "equipment_compatibility": bolt.equipment_compatibility,
+                "test_count": len(tests),
+                "summary_stats": stats,
+            })
+
+        return Response({
+            "count": len(results),
+            "results": results,
+        })
+
+
+class ExternalTestCurvesView(generics.GenericAPIView):
+    """
+    External API endpoint for published test curve data.
+
+    Optional query parameters:
+    - bolt_ids: Comma-separated bolt IDs, e.g. ?bolt_ids=1,2,3
+    - methodology: static or dynamic
+    - facilities: Comma-separated facility names
+    """
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request, *args, **kwargs):
+        queryset = Test.objects.select_related(
+            "bolt__supplier",
+            "curve",
+        ).filter(
+            is_published=True,
+            bolt__is_published=True,
+            curve__is_published=True,
+        ).order_by("id")
+
+        bolt_ids = request.query_params.get("bolt_ids")
+        methodology = request.query_params.get("methodology")
+        facilities = request.query_params.get("facilities")
+
+        if bolt_ids:
+            bolt_id_list = [
+                int(bolt_id.strip())
+                for bolt_id in bolt_ids.split(",")
+                if bolt_id.strip()
+            ]
+            queryset = queryset.filter(bolt_id__in=bolt_id_list)
+
+        if methodology:
+            queryset = queryset.filter(methodology=methodology)
+
+        if facilities:
+            facility_list = [
+                facility.strip()
+                for facility in facilities.split(",")
+                if facility.strip()
+            ]
+            queryset = queryset.filter(facility__in=facility_list)
+
+        results = []
+
+        for test in queryset:
+            results.append({
+                "test_id": test.id,
+                "bolt": {
+                    "id": test.bolt.id,
+                    "name": test.bolt.name,
+                    "supplier": {
+                        "id": test.bolt.supplier.id,
+                        "name": test.bolt.supplier.name,
+                    },
+                },
+                "methodology": test.methodology,
+                "facility": test.facility,
+                "curve": {
+                    "id": test.curve.id,
+                    "curve_pair": test.curve.curve_pair,
+                },
+            })
+
+        return Response({
+            "count": len(results),
+            "results": results,
+        })

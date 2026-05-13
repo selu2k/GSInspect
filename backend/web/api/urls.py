@@ -13,6 +13,8 @@ from .views import (
     SupplierDetailView,
     AdminBoltListCreateView,
     AdminBoltDetailView,
+    ExternalBoltSummaryStatsView,
+    ExternalTestCurvesView,
 )
 
 urlpatterns = [
@@ -36,4 +38,8 @@ urlpatterns = [
     # Admin API - Bolt CRUD
     path("admin/bolts/", AdminBoltListCreateView.as_view(), name="admin-bolt-list-create"),
     path("admin/bolts/<int:id>/", AdminBoltDetailView.as_view(), name="admin-bolt-detail"),
+
+    # External API endpoints
+    path("external/bolts-summary/", ExternalBoltSummaryStatsView.as_view(), name="external-bolts-summary"),
+    path("external/test-curves/", ExternalTestCurvesView.as_view(), name="external-test-curves"),
 ]
