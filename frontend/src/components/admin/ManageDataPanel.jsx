@@ -397,7 +397,6 @@ function TestsTab({ tests, products, loading, onRefresh }) {
               <th className="px-5 py-3 font-semibold text-slate-600">Product</th>
               <th className="px-5 py-3 font-semibold text-slate-600">Methodology</th>
               <th className="px-5 py-3 font-semibold text-slate-600">Facility</th>
-              <th className="px-5 py-3 font-semibold text-slate-600">Peak Strength (kN)</th>
               <th className="px-5 py-3 font-semibold text-slate-600 text-right">Actions</th>
             </tr>
           </thead>
@@ -411,7 +410,6 @@ function TestsTab({ tests, products, loading, onRefresh }) {
                   </span>
                 </td>
                 <td className="px-5 py-3 text-slate-500">{t.facility}</td>
-                <td className="px-5 py-3 text-slate-500 font-mono">{t.peak_strength}</td>
                 <td className="px-5 py-3 text-right space-x-2">
                   <button onClick={() => openEdit(t)} className="text-indigo-600 hover:text-indigo-900 bg-indigo-50 px-3 py-1 rounded-md text-xs font-medium inline-flex items-center gap-1">
                     <Edit className="w-3 h-3" /> Edit
