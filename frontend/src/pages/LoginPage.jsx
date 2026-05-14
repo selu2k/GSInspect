@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Shield, Eye, EyeOff, AlertCircle } from 'lucide-react';
+import { useAppContext } from '../context/AppContext';
 
 export default function LoginPage() {
   const navigate = useNavigate();
+  const { setIsAuthenticated, setUserRole } = useAppContext();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -25,11 +27,14 @@ export default function LoginPage() {
       if (response.ok) {
         const data = await response.json();
         localStorage.setItem('token', data.access);
+        setIsAuthenticated(true);
+        setUserRole('admin');
         navigate('/admin');
       } else {
         setError('Invalid username or password. Please try again.');
       }
     } catch (err) {
+      console.error('Login error:', err);
       setError('Unable to connect to server. Please try again.');
     } finally {
       setLoading(false);

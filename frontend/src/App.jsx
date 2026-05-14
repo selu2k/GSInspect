@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AppProvider } from './context/AppContext';
+import ProtectedRoute from './components/ProtectedRoute';
 import Topbar from './components/layout/Topbar';
 import Sidebar from './components/layout/Sidebar';
 import Dashboard from './pages/Dashboard';
@@ -31,7 +32,11 @@ export default function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/admin/login" element={<LoginPage />} />
-          <Route path="/admin/*" element={<AdminPanel />} />
+          <Route path="/admin/*" element={
+            <ProtectedRoute>
+              <AdminPanel />
+            </ProtectedRoute>
+          } />
           <Route path="/*" element={<MainLayout />} />
         </Routes>
       </BrowserRouter>
