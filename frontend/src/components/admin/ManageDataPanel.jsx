@@ -645,13 +645,7 @@ function TestsTab({ tests, products, filterOptions, loading, onRefresh, currentP
               )}
 
               {/* Product & Bolt ID */}
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Product Name</label>
-                  <div className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-slate-50 text-slate-600">
-                    {modal === 'edit' && detailedTest ? detailedTest.bolt?.name || detailedTest.bolt : 'Select a product'}
-                  </div>
-                </div>
+              <div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">Bolt ID *</label>
                   <input type="number" value={form.bolt} onChange={e => setForm({ ...form, bolt: e.target.value })}
