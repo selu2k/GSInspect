@@ -262,6 +262,7 @@ function ProductsTab({ products, suppliers, filterOptions, loading, onRefresh, c
         <table className="w-full text-sm text-left">
           <thead className="bg-slate-50 border-b border-slate-200">
             <tr>
+              <th className="px-5 py-3 font-semibold text-slate-600">ID</th>
               <th className="px-5 py-3 font-semibold text-slate-600">Product Name</th>
               <th className="px-5 py-3 font-semibold text-slate-600">Supplier</th>
               <th className="px-5 py-3 font-semibold text-slate-600">Category</th>
@@ -273,6 +274,7 @@ function ProductsTab({ products, suppliers, filterOptions, loading, onRefresh, c
           <tbody className="divide-y divide-slate-100">
             {products.map(p => (
               <tr key={p.id} className="hover:bg-slate-50">
+                <td className="px-5 py-3 text-slate-500">{p.id}</td>
                 <td className="px-5 py-3 font-medium text-slate-800 max-w-[200px] truncate">{p.name}</td>
                 <td className="px-5 py-3 text-slate-500">{p.supplier?.name || p.supplier}</td>
                 <td className="px-5 py-3">
