@@ -2,7 +2,15 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { AppContext, TAILWIND_COLORS, HEX_COLORS } from './AppContextCore';
 
 export function AppProvider({ children }) {
-  const [userRole, setUserRole] = useState('admin');
+  // Initialize auth state from localStorage immediately
+  const [userRole, setUserRole] = useState(() => {
+    const token = localStorage.getItem('token');
+    return token ? 'admin' : null;
+  });
+
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    return !!localStorage.getItem('token');
+  });
 
   const [products, setProducts] = useState([]);
   const [apiTests, setApiTests] = useState([]);
@@ -229,6 +237,11 @@ export function AppProvider({ children }) {
     );
   };
 
+  const logout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('refreshToken');
+    setIsAuthenticated(false);
+    setUserRole(null);
   const resetFilters = () => {
     setSelectedCategories([]);
     setSelectedSuppliers([]);
@@ -240,6 +253,9 @@ export function AppProvider({ children }) {
   const value = {
     userRole,
     setUserRole,
+    isAuthenticated,
+    setIsAuthenticated,
+    logout,
     products,
     apiTests,
     apiCurves,

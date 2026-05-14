@@ -1,10 +1,12 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AppProvider } from './context/AppContext';
+import ProtectedRoute from './components/ProtectedRoute';
 import Topbar from './components/layout/Topbar';
 import Sidebar from './components/layout/Sidebar';
 import Dashboard from './pages/Dashboard';
 import AdminPanel from './pages/AdminPanel';
+import LoginPage from './pages/LoginPage';
 import './index.css';
 
 function MainLayout() {
@@ -29,7 +31,12 @@ export default function App() {
     <AppProvider>
       <BrowserRouter>
         <Routes>
-          <Route path="/admin/*" element={<AdminPanel />} />
+          <Route path="/admin/login" element={<LoginPage />} />
+          <Route path="/admin/*" element={
+            <ProtectedRoute>
+              <AdminPanel />
+            </ProtectedRoute>
+          } />
           <Route path="/*" element={<MainLayout />} />
         </Routes>
       </BrowserRouter>
