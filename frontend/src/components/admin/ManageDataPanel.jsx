@@ -460,17 +460,49 @@ function ProductsTab({ products, suppliers, filterOptions, loading, onRefresh, c
 function TestsTab({ tests, products, loading, onRefresh, currentPage, totalCount, nextUrl, prevUrl, onNextPage, onPrevPage }) {
   const [modal, setModal] = useState(null);
   const [editing, setEditing] = useState(null);
+  const [detailedTest, setDetailedTest] = useState(null);
+  const [loadingDetails, setLoadingDetails] = useState(false);
   const [deleteId, setDeleteId] = useState(null);
-  const emptyForm = { bolt: '', methodology: 'dynamic', facility: '', peak_strength: '' };
+  const emptyForm = { bolt: '', methodology: 'dynamic', facility: '', installation_method: '', encapsulation_method: '', peak_strength: '', bond_strength: '', yield_strength: '', ultimate_deformation: '', stiffness: '', loading_rate: '', energy_absorption: '', number_of_drops: '' };
   const [form, setForm] = useState(emptyForm);
 
   const authHeader = { 'Authorization': `Bearer ${localStorage.getItem('token')}` };
 
-  const openAdd = () => { setForm(emptyForm); setModal('add'); };
-  const openEdit = (t) => {
+  const openAdd = () => { 
+    setForm(emptyForm); 
+    setDetailedTest(null);
+    setModal('add'); 
+  };
+  
+  const openEdit = async (t) => {
     setEditing(t);
-    setForm({ bolt: t.bolt?.id || t.bolt, methodology: t.methodology, facility: t.facility, peak_strength: t.peak_strength });
+    setLoadingDetails(true);
     setModal('edit');
+    try {
+      const res = await fetch(`${API_BASE}/admin/tests/${t.id}/`, { headers: authHeader });
+      if (res.ok) {
+        const data = await res.json();
+        setDetailedTest(data);
+        setForm({
+          bolt: data.bolt?.id || data.bolt,
+          methodology: data.methodology,
+          facility: data.facility,
+          installation_method: data.installation_method || '',
+          encapsulation_method: data.encapsulation_method || '',
+          peak_strength: data.peak_strength || '',
+          bond_strength: data.bond_strength || '',
+          yield_strength: data.yield_strength || '',
+          ultimate_deformation: data.ultimate_deformation || '',
+          stiffness: data.stiffness || '',
+          loading_rate: data.loading_rate || '',
+          energy_absorption: data.energy_absorption || '',
+          number_of_drops: data.number_of_drops || '',
+        });
+      }
+    } catch (err) {
+      console.error('Failed to fetch test details', err);
+    }
+    setLoadingDetails(false);
   };
 
   const handleSave = async () => {
@@ -480,14 +512,42 @@ function TestsTab({ tests, products, loading, onRefresh, currentPage, totalCount
         const res = await fetch(`${API_BASE}/admin/tests/`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', ...authHeader },
-          body: JSON.stringify(form),
+          body: JSON.stringify({
+            bolt: parseInt(form.bolt),
+            methodology: form.methodology,
+            facility: form.facility,
+            installation_method: form.installation_method,
+            encapsulation_method: form.encapsulation_method,
+            peak_strength: form.peak_strength ? parseFloat(form.peak_strength) : null,
+            bond_strength: form.bond_strength ? parseFloat(form.bond_strength) : null,
+            yield_strength: form.yield_strength ? parseFloat(form.yield_strength) : null,
+            ultimate_deformation: form.ultimate_deformation ? parseFloat(form.ultimate_deformation) : null,
+            stiffness: form.stiffness ? parseFloat(form.stiffness) : null,
+            loading_rate: form.loading_rate ? parseFloat(form.loading_rate) : null,
+            energy_absorption: form.energy_absorption ? parseFloat(form.energy_absorption) : null,
+            number_of_drops: form.number_of_drops ? parseInt(form.number_of_drops) : null,
+          }),
         });
         if (!res.ok) throw new Error('Failed to save');
       } else {
         const res = await fetch(`${API_BASE}/admin/tests/${editing.id}/`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json', ...authHeader },
-          body: JSON.stringify(form),
+          body: JSON.stringify({
+            bolt: parseInt(form.bolt),
+            methodology: form.methodology,
+            facility: form.facility,
+            installation_method: form.installation_method,
+            encapsulation_method: form.encapsulation_method,
+            peak_strength: form.peak_strength ? parseFloat(form.peak_strength) : null,
+            bond_strength: form.bond_strength ? parseFloat(form.bond_strength) : null,
+            yield_strength: form.yield_strength ? parseFloat(form.yield_strength) : null,
+            ultimate_deformation: form.ultimate_deformation ? parseFloat(form.ultimate_deformation) : null,
+            stiffness: form.stiffness ? parseFloat(form.stiffness) : null,
+            loading_rate: form.loading_rate ? parseFloat(form.loading_rate) : null,
+            energy_absorption: form.energy_absorption ? parseFloat(form.energy_absorption) : null,
+            number_of_drops: form.number_of_drops ? parseInt(form.number_of_drops) : null,
+          }),
         });
         if (!res.ok) throw new Error('Failed to save');
       }
@@ -579,42 +639,130 @@ function TestsTab({ tests, products, loading, onRefresh, currentPage, totalCount
 
       {(modal === 'add' || modal === 'edit') && (
         <Modal title={modal === 'add' ? 'Add Test' : 'Edit Test'} onClose={() => setModal(null)}>
-          <div className="space-y-3">
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Product *</label>
-              <select value={form.bolt} onChange={e => setForm({ ...form, bolt: e.target.value })}
-                className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                <option value="">Select product...</option>
-                {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-              </select>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
+          {loadingDetails && modal === 'edit' ? (
+            <p className="text-sm text-slate-500">Loading test details...</p>
+          ) : (
+            <div className="space-y-4 max-h-96 overflow-y-auto">
+              {/* Product Selection */}
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Methodology</label>
-                <select value={form.methodology} onChange={e => setForm({ ...form, methodology: e.target.value })}
+                <label className="block text-sm font-medium text-slate-700 mb-1">Product *</label>
+                <select value={form.bolt} onChange={e => setForm({ ...form, bolt: e.target.value })}
                   className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                  <option value="dynamic">Dynamic</option>
-                  <option value="static">Static</option>
+                  <option value="">Select product...</option>
+                  {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                 </select>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Test Facility</label>
-                <input value={form.facility} onChange={e => setForm({ ...form, facility: e.target.value })}
-                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="e.g. Facility A" />
+
+              {/* Basic Test Info */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Methodology *</label>
+                  <select value={form.methodology} onChange={e => setForm({ ...form, methodology: e.target.value })}
+                    className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <option value="dynamic">Dynamic</option>
+                    <option value="static">Static</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Facility *</label>
+                  <input value={form.facility} onChange={e => setForm({ ...form, facility: e.target.value })}
+                    className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="e.g. Facility A" />
+                </div>
+              </div>
+
+              {/* Installation & Encapsulation */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Installation Method</label>
+                  <input value={form.installation_method} onChange={e => setForm({ ...form, installation_method: e.target.value })}
+                    className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="e.g. Grouted" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Encapsulation Method</label>
+                  <input value={form.encapsulation_method} onChange={e => setForm({ ...form, encapsulation_method: e.target.value })}
+                    className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="e.g. Resin" />
+                </div>
+              </div>
+
+              {/* Strength Values */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Peak Strength (kN)</label>
+                  <input type="number" step="0.01" value={form.peak_strength} onChange={e => setForm({ ...form, peak_strength: e.target.value })}
+                    className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="e.g. 36.03" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Bond Strength (MPa)</label>
+                  <input type="number" step="0.01" value={form.bond_strength} onChange={e => setForm({ ...form, bond_strength: e.target.value })}
+                    className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="e.g. 5.2" />
+                </div>
+              </div>
+
+              {/* Yield & Deformation */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Yield Strength (kN)</label>
+                  <input type="number" step="0.01" value={form.yield_strength} onChange={e => setForm({ ...form, yield_strength: e.target.value })}
+                    className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="e.g. 28.5" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Ultimate Deformation (mm)</label>
+                  <input type="number" step="0.01" value={form.ultimate_deformation} onChange={e => setForm({ ...form, ultimate_deformation: e.target.value })}
+                    className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="e.g. 12.3" />
+                </div>
+              </div>
+
+              {/* Loading & Energy */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Stiffness (N/mm)</label>
+                  <input type="number" step="0.01" value={form.stiffness} onChange={e => setForm({ ...form, stiffness: e.target.value })}
+                    className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="e.g. 450" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Loading Rate (mm/min)</label>
+                  <input type="number" step="0.01" value={form.loading_rate} onChange={e => setForm({ ...form, loading_rate: e.target.value })}
+                    className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="e.g. 2.5" />
+                </div>
+              </div>
+
+              {/* Energy & Drops */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Energy Absorption (J)</label>
+                  <input type="number" step="0.01" value={form.energy_absorption} onChange={e => setForm({ ...form, energy_absorption: e.target.value })}
+                    className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="e.g. 156.8" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Number of Drops</label>
+                  <input type="number" step="1" value={form.number_of_drops} onChange={e => setForm({ ...form, number_of_drops: e.target.value })}
+                    className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="e.g. 5" />
+                </div>
+              </div>
+
+              {/* Published Status - Only in Edit Mode */}
+              {modal === 'edit' && detailedTest && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-2">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-medium text-slate-700">Status:</p>
+                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${detailedTest.is_published ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
+                      {detailedTest.is_published ? '✓ Published' : '○ Draft'}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div className="flex justify-end gap-2 pt-2 border-t border-slate-200">
+                <button onClick={() => setModal(null)} className="px-4 py-2 text-sm border border-slate-300 rounded-lg hover:bg-slate-50 font-medium">
+                  Cancel
+                </button>
+                <button onClick={handleSave} className="px-4 py-2 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 flex items-center gap-1 font-medium">
+                  <Check className="w-4 h-4" /> {modal === 'add' ? 'Create' : 'Update'}
+                </button>
               </div>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Peak Strength (kN)</label>
-              <input value={form.peak_strength} onChange={e => setForm({ ...form, peak_strength: e.target.value })}
-                className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="e.g. 36.03" />
-            </div>
-            <div className="flex justify-end gap-2 pt-2">
-              <button onClick={() => setModal(null)} className="px-4 py-2 text-sm border border-slate-300 rounded-lg hover:bg-slate-50">Cancel</button>
-              <button onClick={handleSave} className="px-4 py-2 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 flex items-center gap-1">
-                <Check className="w-4 h-4" /> Save
-              </button>
-            </div>
-          </div>
+          )}
         </Modal>
       )}
 
