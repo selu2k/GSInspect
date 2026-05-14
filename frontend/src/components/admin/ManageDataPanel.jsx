@@ -350,10 +350,7 @@ function ProductsTab({ products, suppliers, filterOptions, loading, onRefresh, c
                   <select value={form.category} onChange={e => setForm({ ...form, category: e.target.value })}
                     className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
                     <option value="">Select category...</option>
-                    {(filterOptions.categories.length > 0 
-                      ? filterOptions.categories 
-                      : ['Encapsulated', 'Friction', 'Hybrid', 'Cable']
-                    ).map(c => <option key={c}>{c}</option>)}
+                    {filterOptions.categories.map(c => <option key={c}>{c}</option>)}
                   </select>
                   <input value={customCategory} onChange={e => {setCustomCategory(e.target.value); setForm({ ...form, category: e.target.value });}}
                     placeholder="Or custom" className="w-full mt-2 border border-slate-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500" />
