@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState, useRef, useEffect } from 'react';
 import { Layers, Gauge, Building2, TrendingUp } from 'lucide-react';
 import {
   CartesianGrid,
@@ -9,11 +9,11 @@ import {
   Tooltip,
   XAxis,
   YAxis,
-  ScatterChart,
-  Scatter,
+  BarChart,
+  Bar,
   Cell
 } from 'recharts';
-import { useAppContext } from '../context/AppContext';
+import { useAppContext } from '../context/AppContextCore';
 import MultiSelect from '../components/filters/MultiSelect';
 
 export default function Dashboard() {
@@ -24,15 +24,38 @@ export default function Dashboard() {
   } = useAppContext();
 
   const [selectedProperty, setSelectedProperty] = useState('peak_strength');
+  const [colorBy, setColorBy] = useState('product'); // 'product' or 'facility'
+  const [selectedTestId, setSelectedTestId] = useState(null); // Track selected test for highlighting
 
-  // Guard against null/undefined API data
-  if (!filteredProductsList || !filteredTests || !filteredCurves || !productColorMap || !apiStats) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <p className="text-slate-500 italic">Loading data...</p>
-      </div>
-    );
-  }
+  const tableRef = useRef(null); // Ref for detecting clicks outside table
+
+  // Handle click outside table to deselect
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (tableRef.current && !tableRef.current.contains(event.target)) {
+        setSelectedTestId(null);
+      }
+    };
+
+    if (selectedTestId) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [selectedTestId]);
+
+  const facilityColorMap = useMemo(() => {
+    const facilityColorPalette = [
+      '#ef4444', '#f97316', '#eab308', '#22c55e', '#06b6d4',
+      '#3b82f6', '#8b5cf6', '#ec4899', '#6366f1', '#14b8a6'
+    ];
+    const map = {};
+    if (facilities) {
+      facilities.forEach((facility, index) => {
+        map[facility] = facilityColorPalette[index % facilityColorPalette.length];
+      });
+    }
+    return map;
+  }, [facilities]);
 
   const plottedTests = useMemo(() => {
     if (!filteredTests || selectedProductIds.length === 0) return [];
@@ -41,24 +64,42 @@ export default function Dashboard() {
 
   const chartSeries = useMemo(() => {
     if (!plottedTests || plottedTests.length === 0 || !filteredProductsList || !productColorMap) return [];
-    const seenProducts = new Set();
+    const seenItems = new Set();
     return plottedTests
       .map((test) => {
         const product = filteredProductsList.find((item) => item.id === test.product_id);
         const productName = product ? product.product_name : 'Unknown Product';
-        const isFirst = !seenProducts.has(test.product_id);
-        if (isFirst) seenProducts.add(test.product_id);
-
-        return {
-          testId: test.test_id,
-          dataKey: `test_${test.test_id}`,
-          productId: test.product_id,
-          label: productName,
-          color: productColorMap[test.product_id]?.hex || '#64748b',
-          showInLegend: isFirst
-        };
+        
+        let label, color;
+        if (colorBy === 'facility') {
+          label = test.test_facility || 'Unknown Facility';
+          const isFirst = !seenItems.has(label);
+          if (isFirst) seenItems.add(label);
+          color = facilityColorMap[label] || '#64748b';
+          return {
+            testId: test.test_id,
+            dataKey: `test_${test.test_id}`,
+            productId: test.product_id,
+            facility: label,
+            label: label,
+            color: color,
+            showInLegend: isFirst
+          };
+        } else {
+          const isFirst = !seenItems.has(test.product_id);
+          if (isFirst) seenItems.add(test.product_id);
+          color = productColorMap[test.product_id]?.hex || '#64748b';
+          return {
+            testId: test.test_id,
+            dataKey: `test_${test.test_id}`,
+            productId: test.product_id,
+            label: productName,
+            color: color,
+            showInLegend: isFirst
+          };
+        }
       });
-  }, [plottedTests, filteredProductsList, productColorMap]);
+  }, [plottedTests, filteredProductsList, productColorMap, colorBy, facilityColorMap]);
 
   const chartSeriesData = useMemo(() => {
     if (!selectedProductIds || !filteredProductsList || !productColorMap) return [];
@@ -148,26 +189,101 @@ export default function Dashboard() {
     if (!plottedTests || plottedTests.length === 0 || !selectedProperty) return [];
     
     return plottedTests
-      .map((test, idx) => {
+      .map((test) => {
         const product = filteredProductsList.find(p => p.id === test.product_id);
         const propertyValue = test[selectedProperty];
         
         if (propertyValue == null || isNaN(propertyValue)) return null;
         
-        const productIndex = selectedProductIds.indexOf(test.product_id);
-        const color = productColorMap[test.product_id]?.hex || '#cbd5e1';
-        
-        return {
-          x: propertyValue,
-          y: productIndex,
-          productName: product?.product_name || 'Unknown',
-          testId: test.test_id,
-          color: color,
-          productId: test.product_id
-        };
+        if (colorBy === 'facility') {
+          const facilityList = facilities.filter(f => f !== 'All');
+          const facilityIndex = facilityList.indexOf(test.test_facility || 'Unknown Facility');
+          const color = facilityColorMap[test.test_facility] || '#cbd5e1';
+          
+          return {
+            x: propertyValue,
+            y: facilityIndex,
+            productName: product?.product_name || 'Unknown',
+            facility: test.test_facility || 'Unknown Facility',
+            testId: test.test_id,
+            color: color,
+            productId: test.product_id,
+            yLabel: test.test_facility || 'Unknown Facility'
+          };
+        } else {
+          const productIndex = selectedProductIds.indexOf(test.product_id);
+          const color = productColorMap[test.product_id]?.hex || '#cbd5e1';
+          
+          return {
+            x: propertyValue,
+            y: productIndex,
+            productName: product?.product_name || 'Unknown',
+            testId: test.test_id,
+            color: color,
+            productId: test.product_id
+          };
+        }
       })
       .filter(Boolean);
-  }, [plottedTests, selectedProperty, filteredProductsList, selectedProductIds, productColorMap]);
+  }, [plottedTests, selectedProperty, filteredProductsList, selectedProductIds, productColorMap, colorBy, facilityColorMap, facilities]);
+
+  // Binning function for histogram
+  const histogramData = useMemo(() => {
+    const createHistogramData = (data, binSize = 10) => {
+      if (!data || data.length === 0) return [];
+
+      const minVal = Math.floor(Math.min(...data.map(d => d.x)) / binSize) * binSize;
+      const maxVal = Math.ceil(Math.max(...data.map(d => d.x)) / binSize) * binSize;
+      
+      const bins = {};
+      for (let i = minVal; i < maxVal; i += binSize) {
+        const binLabel = `${i}-${i + binSize}`;
+        bins[binLabel] = {};
+        bins[binLabel]._testIds = [];
+        if (colorBy === 'facility') {
+          facilities.filter(f => f !== 'All').forEach(facility => {
+            bins[binLabel][facility] = 0;
+          });
+        } else {
+          selectedProductIds.forEach(productId => {
+            const product = filteredProductsList.find(p => p.id === productId);
+            const productName = product?.product_name || 'Unknown';
+            bins[binLabel][productName] = 0;
+          });
+        }
+      }
+
+      // Populate bins
+      data.forEach(point => {
+        const binIndex = Math.floor(point.x / binSize) * binSize;
+        const binLabel = `${binIndex}-${binIndex + binSize}`;
+        if (bins[binLabel]) {
+          bins[binLabel]._testIds.push(point.testId);
+          if (colorBy === 'facility') {
+            bins[binLabel][point.facility] = (bins[binLabel][point.facility] || 0) + 1;
+          } else {
+            bins[binLabel][point.productName] = (bins[binLabel][point.productName] || 0) + 1;
+          }
+        }
+      });
+
+      return Object.entries(bins).map(([binLabel, counts]) => ({
+        name: binLabel,
+        ...counts
+      }));
+    };
+
+    return createHistogramData(scatterData);
+  }, [scatterData, colorBy, selectedProductIds, filteredProductsList, facilities]);
+
+  // Guard against null/undefined API data
+  if (!filteredProductsList || !filteredTests || !filteredCurves || !productColorMap || !apiStats) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <p className="text-slate-500 italic">Loading data...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-4 h-full overflow-y-auto pb-6">
@@ -275,17 +391,41 @@ export default function Dashboard() {
             <span className="text-xs text-slate-500">{selectedProductIds.length} product(s) plotted</span>
           </div>
           {selectedProductIds.length > 0 && (
-            <button
-              onClick={() => setShowAverage(!showAverage)}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                showAverage
-                  ? 'bg-emerald-600 text-white shadow-md'
-                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-              }`}
-            >
-              <TrendingUp className="w-3.5 h-3.5" />
-              {showAverage ? 'Average On' : 'Show Average'}
-            </button>
+            <div className="flex items-center gap-2">
+              <div className="flex bg-slate-100 p-1 rounded-lg gap-1">
+                <button
+                  onClick={() => setColorBy('product')}
+                  className={`text-xs py-1.5 px-2.5 rounded-md font-semibold transition-all ${
+                    colorBy === 'product'
+                      ? 'bg-blue-600 text-white shadow-md'
+                      : 'text-slate-600 hover:text-slate-800'
+                  }`}
+                >
+                  By Product
+                </button>
+                <button
+                  onClick={() => setColorBy('facility')}
+                  className={`text-xs py-1.5 px-2.5 rounded-md font-semibold transition-all ${
+                    colorBy === 'facility'
+                      ? 'bg-blue-600 text-white shadow-md'
+                      : 'text-slate-600 hover:text-slate-800'
+                  }`}
+                >
+                  By Facility
+                </button>
+              </div>
+              <button
+                onClick={() => setShowAverage(!showAverage)}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                  showAverage
+                    ? 'bg-emerald-600 text-white shadow-md'
+                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                }`}
+              >
+                <TrendingUp className="w-3.5 h-3.5" />
+                {showAverage ? 'Average On' : 'Show Average'}
+              </button>
+            </div>
           )}
         </div>
 
@@ -321,14 +461,54 @@ export default function Dashboard() {
                 />
                 <Tooltip
                   contentStyle={{ borderRadius: '0.75rem', borderColor: '#cbd5e1' }}
-                  formatter={(value) => (value == null ? '-' : Number(value).toFixed(1))}
-                  labelFormatter={(value) => `Disp: ${value} mm`}
+                  content={({ active, payload, label }) => {
+                    if (active && payload && payload.length > 0) {
+                      // Sort payload by test ID numerically
+                      const sortedPayload = [...payload].sort((a, b) => {
+                        const aTestId = parseInt(a.dataKey.replace('test_', '').replace('avg_', ''), 10) || 0;
+                        const bTestId = parseInt(b.dataKey.replace('test_', '').replace('avg_', ''), 10) || 0;
+                        return aTestId - bTestId;
+                      });
+
+                      return (
+                        <div className="bg-white p-3 border border-slate-300 rounded-md shadow-lg text-xs">
+                          <p className="font-semibold text-slate-700 mb-2">Disp: {Number(label).toFixed(2)} mm</p>
+                          <div className="space-y-1">
+                            {sortedPayload.map((entry, idx) => {
+                              const isAverage = entry.dataKey.startsWith('avg_');
+                              let testLabel = entry.name;
+                              
+                              if (!isAverage) {
+                                const testId = parseInt(entry.dataKey.replace('test_', ''), 10);
+                                const test = plottedTests.find(t => t.test_id === testId);
+                                if (test) {
+                                  testLabel = `Test ${test.test_id} (${test.test_facility || 'Unknown'})`;
+                                }
+                              }
+                              
+                              return (
+                                <div key={idx} style={{ color: entry.color || '#cbd5e1' }} className="font-medium">
+                                  {testLabel}: {entry.value == null ? '-' : Number(entry.value).toFixed(1)} kN
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    }
+                    return null;
+                  }}
                 />
                 {/* <Legend iconType="circle" wrapperStyle={{ fontSize: '12px' }} /> */}
 
                 {chartSeriesData.map((series) => {
                   const strokeDasharray = series.isAverage ? '5 5' : 'none';
-                  const strokeWidth = series.isAverage ? 3 : 2.25;
+                  const baseStrokeWidth = series.isAverage ? 3 : 2.25;
+                  const isSelectedLine = selectedTestId && series.testId === selectedTestId;
+                  
+                  const strokeWidth = isSelectedLine ? 4 : baseStrokeWidth;
+                  const strokeOpacity = selectedTestId ? (isSelectedLine ? 1 : 0.15) : 1;
+                  
                   return (
                     <Line
                       key={series.testId}
@@ -338,6 +518,7 @@ export default function Dashboard() {
                       legendType={series.showInLegend ? 'line' : 'none'}
                       stroke={series.color}
                       strokeWidth={strokeWidth}
+                      strokeOpacity={strokeOpacity}
                       strokeDasharray={strokeDasharray}
                       dot={false}
                       connectNulls={false}
@@ -353,7 +534,7 @@ export default function Dashboard() {
 
       {/* Tests Table Section */}
       {plottedTests.length > 0 && (
-        <section className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 md:p-5 shrink-0 overflow-hidden flex flex-col">
+        <section ref={tableRef} className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 md:p-5 shrink-0 overflow-hidden flex flex-col">
           <div className="flex items-center justify-between gap-3 mb-3 shrink-0">
             <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wide">Plotted Tests Data</h3>
           </div>
@@ -379,8 +560,17 @@ export default function Dashboard() {
                 {plottedTests.map((test) => {
                   const product = filteredProductsList.find((p) => p.id === test.product_id);
                   const colorMap = productColorMap[test.product_id];
+                  const isSelected = selectedTestId === test.test_id;
                   return (
-                    <tr key={test.test_id} className="hover:bg-slate-50 transition-colors">
+                    <tr 
+                      key={test.test_id} 
+                      onClick={() => setSelectedTestId(isSelected ? null : test.test_id)}
+                      className={`cursor-pointer transition-colors ${
+                        isSelected 
+                          ? 'bg-blue-200 font-semibold' 
+                          : 'hover:bg-slate-50'
+                      }`}
+                    >
                       <td className="px-4 py-3 font-medium text-slate-700 border-l-4" style={{ borderLeftColor: colorMap?.hex || '#cbd5e1' }}>
                         {test.test_id}
                       </td>
@@ -466,72 +656,114 @@ export default function Dashboard() {
         </section>
       )}
 
-      {/* Distribution Scatter Plot Section */}
-      {plottedTests.length > 0 && scatterData.length > 0 && (
+      {/* Distribution Histogram Section */}
+      {plottedTests.length > 0 && histogramData.length > 0 && (
         <section className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 md:p-5 shrink-0 flex flex-col min-h-[400px]">
-          <div className="flex items-center gap-3 mb-4 shrink-0">
+          <div className="flex items-center justify-between gap-3 mb-4 shrink-0">
             <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wide">Distribution Analysis</h3>
+            <div className="flex bg-slate-100 p-1 rounded-lg gap-2">
+              <button
+                onClick={() => setColorBy('product')}
+                className={`text-xs py-1.5 px-2.5 rounded-md font-semibold transition-all ${
+                  colorBy === 'product'
+                    ? 'bg-blue-600 text-white shadow-md'
+                    : 'text-slate-600 hover:text-slate-800'
+                }`}
+              >
+                By Product
+              </button>
+              <button
+                onClick={() => setColorBy('facility')}
+                className={`text-xs py-1.5 px-2.5 rounded-md font-semibold transition-all ${
+                  colorBy === 'facility'
+                    ? 'bg-blue-600 text-white shadow-md'
+                    : 'text-slate-600 hover:text-slate-800'
+                }`}
+              >
+                By Facility
+              </button>
+            </div>
           </div>
           
           <div className="flex-1 min-h-0 w-full relative">
             <ResponsiveContainer width="100%" height="100%">
-              <ScatterChart margin={{ top: 24, right: 24, left: 12, bottom: 24 }}>
+              <BarChart data={histogramData} margin={{ top: 24, right: 24, left: 40, bottom: 50 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                 <XAxis
-                  dataKey="x"
-                  type="number"
-                  name={selectedProperty.replace(/_/g, ' ')}
+                  dataKey="name"
                   tick={{ fill: '#475569', fontSize: 12 }}
                   tickLine={false}
                   axisLine={{ stroke: '#94a3b8' }}
-                  label={{ value: selectedProperty.replace(/_/g, ' ').toUpperCase(), position: 'insideBottomRight', offset: -10, fill: '#334155' }}
+                  angle={-45}
+                  textAnchor="end"
+                  height={80}
+                  label={{ value: selectedProperty.replace(/_/g, ' ').toUpperCase(), position: 'insideBottomRight', offset: -20, fill: '#334155' }}
                 />
                 <YAxis
-                  dataKey="y"
-                  type="number"
-                  name="Product"
-                  domain={[-0.5, Math.max(...selectedProductIds.map((_, i) => i) || [0]) + 0.5]}
-                  tick={{
-                    fill: '#475569',
-                    fontSize: 12,
-                    formatter: (value) => {
-                      const productId = selectedProductIds[value];
-                      const product = filteredProductsList.find(p => p.id === productId);
-                      return product?.product_name || '';
-                    }
-                  }}
+                  tick={{ fill: '#475569', fontSize: 12 }}
                   tickLine={false}
                   axisLine={{ stroke: '#94a3b8' }}
-                  width={110}
+                  label={{ value: 'Count', angle: -90, position: 'insideLeft', fill: '#334155' }}
                 />
                 <Tooltip
-                  cursor={{ strokeDasharray: '3 3' }}
-                  contentStyle={{ borderRadius: '0.75rem', borderColor: '#cbd5e1' }}
-                  formatter={(value, name) => {
-                    if (name === 'x') return Number(value).toFixed(2);
-                    return value;
-                  }}
-                  labelFormatter={() => ''}
-                  content={({ active, payload }) => {
-                    if (active && payload && payload[0]) {
-                      const data = payload[0].payload;
-                      return (
-                        <div className="bg-white p-2 border border-slate-300 rounded-md shadow-lg text-xs">
-                          <p className="font-semibold text-slate-700">{data.productName}</p>
-                          <p className="text-slate-600">Test ID: {data.testId}</p>
-                          <p className="text-slate-600">{selectedProperty.replace(/_/g, ' ')}: {Number(data.x).toFixed(2)}</p>
-                        </div>
-                      );
-                    }
-                    return null;
-                  }}
+                  contentStyle={{ borderRadius: '0.75rem', borderColor: '#cbd5e1', backgroundColor: '#ffffff' }}
+                  cursor={{ fill: '#f1f5f9' }}
                 />
-                <Scatter name="Test Points" data={scatterData}>
-                  {scatterData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} opacity={0.7} />
-                  ))}
-                </Scatter>
-              </ScatterChart>
+                <Legend 
+                  verticalAlign="top" 
+                  height={36}
+                  wrapperStyle={{ paddingBottom: '12px' }}
+                />
+                {colorBy === 'facility'
+                  ? facilities.filter(f => f !== 'All').map((facility) => (
+                      <Bar
+                        key={`facility-${facility}`}
+                        dataKey={facility}
+                        fill={facilityColorMap[facility] || '#cbd5e1'}
+                        stackId="distribution"
+                        radius={[4, 4, 0, 0]}
+                        isAnimationActive={false}
+                      >
+                        {selectedTestId && histogramData.map((entry, index) => {
+                          const containsSelectedTest = entry._testIds && entry._testIds.includes(selectedTestId);
+                          return (
+                            <Cell
+                              key={`cell-facility-${facility}-${index}`}
+                              fillOpacity={containsSelectedTest ? 1 : 0.3}
+                              stroke={containsSelectedTest ? '#1f2937' : 'none'}
+                              strokeWidth={containsSelectedTest ? 3 : 0}
+                            />
+                          );
+                        })}
+                      </Bar>
+                    ))
+                  : selectedProductIds.map((productId) => {
+                      const product = filteredProductsList.find(p => p.id === productId);
+                      const productName = product?.product_name || 'Unknown';
+                      return (
+                        <Bar
+                          key={`product-${productId}`}
+                          dataKey={productName}
+                          fill={productColorMap[productId]?.hex || '#cbd5e1'}
+                          stackId="distribution"
+                          radius={[4, 4, 0, 0]}
+                          isAnimationActive={false}
+                        >
+                          {selectedTestId && histogramData.map((entry, index) => {
+                            const containsSelectedTest = entry._testIds && entry._testIds.includes(selectedTestId);
+                            return (
+                              <Cell
+                                key={`cell-product-${productId}-${index}`}
+                                fillOpacity={containsSelectedTest ? 1 : 0.3}
+                                stroke={containsSelectedTest ? '#1f2937' : 'none'}
+                                strokeWidth={containsSelectedTest ? 3 : 0}
+                              />
+                            );
+                          })}
+                        </Bar>
+                      );
+                    })}
+              </BarChart>
             </ResponsiveContainer>
           </div>
         </section>

@@ -1,18 +1,25 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Filter, ShieldAlert, Zap, Package, Building2 } from 'lucide-react';
-import { useAppContext } from '../../context/AppContext';
+import { useAppContext } from '../../context/AppContextCore';
 import MultiSelect from '../filters/MultiSelect';
 
 export default function Sidebar() {
   const {
     supportType,
-    selectedCategories, setSelectedCategories,
-    selectedSuppliers, setSelectedSuppliers,
-    selectedLengthRange, setSelectedLengthRange,
+    selectedCategories,
+    selectedSuppliers,
+    selectedLengthRange,
     categories, suppliers, lengthRange,
-    filteredProductsList, filteredTests, filteredCurves,
-    triggerSearch
+    triggerSearch, resetFilters
   } = useAppContext();
+
+  const [draftCategories, setDraftCategories] = useState(selectedCategories || []);
+  const [draftSuppliers, setDraftSuppliers] = useState(selectedSuppliers || []);
+  const [draftLengthRange, setDraftLengthRange] = useState(
+    selectedLengthRange && selectedLengthRange.min != null && selectedLengthRange.max != null
+      ? selectedLengthRange
+      : { min: '', max: '' }
+  );
 
   // Guard against null/undefined API data
   if (!categories || !suppliers || !lengthRange) {
@@ -24,20 +31,6 @@ export default function Sidebar() {
       </aside>
     );
   }
-
-  const [draftCategories, setDraftCategories] = useState(selectedCategories || []);
-  const [draftSuppliers, setDraftSuppliers] = useState(selectedSuppliers || []);
-  const [draftLengthRange, setDraftLengthRange] = useState(
-    selectedLengthRange || { min: lengthRange.min, max: lengthRange.max }
-  );
-
-  useEffect(() => {
-    setDraftCategories(selectedCategories || []);
-    setDraftSuppliers(selectedSuppliers || []);
-    setDraftLengthRange(
-      selectedLengthRange || { min: lengthRange.min, max: lengthRange.max }
-    );
-  }, [selectedCategories, selectedSuppliers, selectedLengthRange, lengthRange]);
 
   const handleLengthMinChange = (e) => {
     const val = e.target.value;
@@ -77,6 +70,13 @@ export default function Sidebar() {
       suppliers: draftSuppliers,
       lengthRange: draftLengthRange
     });
+  };
+
+  const clearAllFilters = () => {
+    setDraftCategories([]);
+    setDraftSuppliers([]);
+    setDraftLengthRange({ min: lengthRange.min, max: lengthRange.max });
+    resetFilters();
   };
 
   return (
@@ -132,10 +132,9 @@ export default function Sidebar() {
               <label className="text-xs text-slate-500 font-medium mb-1 block">Min</label>
               <input
                 type="text"
-                value={draftLengthRange.min}
+                value={draftLengthRange.min || lengthRange.min.toFixed(2)}
                 onChange={handleLengthMinChange}
                 onBlur={handleLengthMinBlur}
-                placeholder={lengthRange.min.toFixed(2)}
                 className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
@@ -143,10 +142,9 @@ export default function Sidebar() {
               <label className="text-xs text-slate-500 font-medium mb-1 block">Max</label>
               <input
                 type="text"
-                value={draftLengthRange.max}
+                value={draftLengthRange.max || lengthRange.max.toFixed(2)}
                 onChange={handleLengthMaxChange}
                 onBlur={handleLengthMaxBlur}
-                placeholder={lengthRange.max.toFixed(2)}
                 className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
@@ -158,13 +156,21 @@ export default function Sidebar() {
         </div>
 
         {/* Search Button */}
-        <button
-          onClick={applyFilters}
-          className="w-full mt-4 inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 px-4 py-2.5 text-sm font-bold text-white shadow-lg hover:from-blue-700 hover:to-blue-800 transition-all hover:shadow-xl active:scale-95 duration-150"
-        >
-          <Zap className="w-4 h-4" />
-          Apply Filters
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={applyFilters}
+            className="flex-1 inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 px-4 py-2.5 text-sm font-bold text-white shadow-lg hover:from-blue-700 hover:to-blue-800 transition-all hover:shadow-xl active:scale-95 duration-150"
+          >
+            <Zap className="w-4 h-4" />
+            Apply
+          </button>
+          <button
+            onClick={clearAllFilters}
+            className="flex-1 inline-flex items-center justify-center gap-2 rounded-lg bg-slate-200 text-slate-700 px-4 py-2.5 text-sm font-bold shadow hover:bg-slate-300 transition-all active:scale-95 duration-150"
+          >
+            Clear All
+          </button>
+        </div>
       </div>
 
     </aside>

@@ -1,20 +1,5 @@
-import React, { createContext, useState, useEffect, useMemo, useContext } from 'react';
-
-// 
-const TAILWIND_COLORS = [
-  'bg-blue-500', 'bg-emerald-500', 'bg-amber-500', 'bg-violet-500', 
-  'bg-pink-500', 'bg-teal-500', 'bg-rose-500', 'bg-yellow-500',
-  'bg-indigo-500', 'bg-cyan-500', 'bg-lime-500', 'bg-fuchsia-500',
-  'bg-red-500', 'bg-orange-500', 'bg-green-500', 'bg-sky-500'
-];
-const HEX_COLORS = [
-  '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', 
-  '#ec4899', '#14b8a6', '#f43f5e', '#eab308',
-  '#6366f1', '#06b6d4', '#84cc16', '#d946ef',
-  '#ef4444', '#f97316', '#22c55e', '#0ea5e9'
-];
-
-export const AppContext = createContext();
+import React, { useState, useEffect, useMemo } from 'react';
+import { AppContext, TAILWIND_COLORS, HEX_COLORS } from './AppContextCore';
 
 export function AppProvider({ children }) {
   const [userRole, setUserRole] = useState('admin');
@@ -88,7 +73,10 @@ export function AppProvider({ children }) {
     // Add suppliers (multi-select - use supplier IDs, comma-separated)
     if (filters.suppliers && filters.suppliers.length > 0) {
       const supplierIds = filters.suppliers
-        .map(supplier => supplierNameToIdMap[supplier])
+        .map(supplierName => {
+          const supplier = filterOptions.suppliers.find(s => s.name === supplierName);
+          return supplier?.id;
+        })
         .filter(id => id !== undefined);
       if (supplierIds.length > 0) {
         params.append('suppliers', supplierIds.join(','));
@@ -127,13 +115,6 @@ export function AppProvider({ children }) {
   // Categories derived from API data for dropdowns
   const categories = useMemo(() => ['All', ...filterOptions.categories], [filterOptions.categories]);
   const suppliers = useMemo(() => ['All', ...filterOptions.suppliers.map(s => s.name || s)], [filterOptions.suppliers]);
-  const supplierNameToIdMap = useMemo(() => {
-    const map = {};
-    filterOptions.suppliers.forEach(s => {
-      map[s.name] = s.id;
-    });
-    return map;
-  }, [filterOptions.suppliers]);
   const facilities = useMemo(() => ['All', ...filterOptions.facilities], [filterOptions.facilities]);
   const lengthRange = useMemo(() => filterOptions.length_range, [filterOptions.length_range]);
   
@@ -150,11 +131,9 @@ export function AppProvider({ children }) {
 
   useEffect(() => {
     if (selectedProductIds.length === 0) {
-      setApiTests([]);
-      setApiCurves([]);
-      setApiStats({});
       return;
     }
+    
     const idsParams = selectedProductIds.join(',');
     let testsUrl = `/api/public/tests/?bolt_ids=${idsParams}&methodology=${methodology}`;
     
@@ -250,6 +229,14 @@ export function AppProvider({ children }) {
     );
   };
 
+  const resetFilters = () => {
+    setSelectedCategories([]);
+    setSelectedSuppliers([]);
+    setSelectedLengthRange(null);
+    setSelectedFacilities([]);
+    setSelectedProductIds([]);
+  };
+
   const value = {
     userRole,
     setUserRole,
@@ -268,7 +255,7 @@ export function AppProvider({ children }) {
     categories, suppliers, lengthRange, facilities,
     filteredProductsList, productColorMap,
     filteredTests, filteredCurves,
-    toggleProductSelection, triggerSearch
+    toggleProductSelection, triggerSearch, resetFilters
   };
 
   return (
@@ -277,5 +264,3 @@ export function AppProvider({ children }) {
     </AppContext.Provider>
   );
 }
-
-export const useAppContext = () => useContext(AppContext);
