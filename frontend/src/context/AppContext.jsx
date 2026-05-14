@@ -17,12 +17,22 @@ const HEX_COLORS = [
 export const AppContext = createContext();
 
 export function AppProvider({ children }) {
-  const [userRole, setUserRole] = useState('admin');
+  const [userRole, setUserRole] = useState(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   const [products, setProducts] = useState([]);
   const [apiTests, setApiTests] = useState([]);
   const [apiCurves, setApiCurves] = useState([]);
   const [apiStats, setApiStats] = useState({});
+
+  // Check for existing token on mount
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      setIsAuthenticated(true);
+      setUserRole('admin');
+    }
+  }, []);
 
   // Filter Options Data from API
   const [filterOptions, setFilterOptions] = useState({
@@ -250,9 +260,18 @@ export function AppProvider({ children }) {
     );
   };
 
+  const logout = () => {
+    localStorage.removeItem('token');
+    setIsAuthenticated(false);
+    setUserRole(null);
+  };
+
   const value = {
     userRole,
     setUserRole,
+    isAuthenticated,
+    setIsAuthenticated,
+    logout,
     products,
     apiTests,
     apiCurves,
