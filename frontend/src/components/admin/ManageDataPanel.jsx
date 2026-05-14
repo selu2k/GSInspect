@@ -654,7 +654,10 @@ export default function ManageDataPanel() {
     if (!productsPagination.nextUrl) return;
     setLoading(true);
     try {
-      const res = await fetch(productsPagination.nextUrl, { headers: authHeader });
+      // Extract path and query from the full URL
+      const url = new URL(productsPagination.nextUrl);
+      const pathAndQuery = url.pathname + url.search;
+      const res = await fetch(pathAndQuery, { headers: authHeader });
       if (res.ok) {
         const data = await res.json();
         setProducts(data.results || data);
@@ -675,7 +678,10 @@ export default function ManageDataPanel() {
     if (!productsPagination.prevUrl) return;
     setLoading(true);
     try {
-      const res = await fetch(productsPagination.prevUrl, { headers: authHeader });
+      // Extract path and query from the full URL
+      const url = new URL(productsPagination.prevUrl);
+      const pathAndQuery = url.pathname + url.search;
+      const res = await fetch(pathAndQuery, { headers: authHeader });
       if (res.ok) {
         const data = await res.json();
         setProducts(data.results || data);
