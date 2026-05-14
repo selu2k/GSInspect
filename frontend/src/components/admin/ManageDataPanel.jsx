@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, X, Check, Database, Package, Building2 } from 'lucide-react';
+import { get, post, put, del, patch } from '../../api/client';
 
 const API_BASE = '/api';
 
@@ -37,38 +38,27 @@ function SuppliersTab({ suppliers, loading, onRefresh, currentPage, totalCount, 
 
   const handleSave = async () => {
     if (!form.name.trim()) return;
-    if (modal === 'add') {
-      await fetch(`${API_BASE}/admin/suppliers/`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify({ name: form.name }),
-      });
-    } else {
-      await fetch(`${API_BASE}/admin/suppliers/${editing.id}/`, {
-        method: 'PUT',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify({ name: form.name }),
-      });
+    try {
+      if (modal === 'add') {
+        await post(`${API_BASE}/admin/suppliers/`, { name: form.name });
+      } else {
+        await put(`${API_BASE}/admin/suppliers/${editing.id}/`, { name: form.name });
+      }
+      setModal(null);
+      onRefresh();
+    } catch (err) {
+      console.error('Failed to save supplier:', err);
     }
-    setModal(null);
-    onRefresh();
   };
 
   const handleDelete = async () => {
-    await fetch(`${API_BASE}/admin/suppliers/${deleteId}/`, { 
-      method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
-      }
-    });
-    setDeleteId(null);
-    onRefresh();
+    try {
+      await del(`${API_BASE}/admin/suppliers/${deleteId}/`);
+      setDeleteId(null);
+      onRefresh();
+    } catch (err) {
+      console.error('Failed to delete supplier:', err);
+    }
   };
 
   if (loading) return <p className="text-sm text-slate-500">Loading suppliers...</p>;
@@ -191,20 +181,17 @@ function ProductsTab({ products, suppliers, filterOptions, loading, onRefresh, c
     setCustomCategory('');
     setCustomEquipment('');
     try {
-      const res = await fetch(`${API_BASE}/admin/bolts/${p.id}/`, { headers: authHeader });
-      if (res.ok) {
-        const data = await res.json();
-        setDetailedProduct(data);
-        setForm({ 
-          supplier: data.supplier?.id || data.supplier, 
-          name: data.name, 
-          length: data.length, 
-          diameter: data.diameter, 
-          category: data.category, 
-          equipment_compatibility: data.equipment_compatibility || [],
-          is_published: data.is_published || false
-        });
-      }
+      const data = await get(`${API_BASE}/admin/bolts/${p.id}/`);
+      setDetailedProduct(data);
+      setForm({ 
+        supplier: data.supplier?.id || data.supplier, 
+        name: data.name, 
+        length: data.length, 
+        diameter: data.diameter, 
+        category: data.category, 
+        equipment_compatibility: data.equipment_compatibility || [],
+        is_published: data.is_published || false
+      });
     } catch (err) {
       console.error('Failed to fetch product details', err);
     }
@@ -214,57 +201,37 @@ function ProductsTab({ products, suppliers, filterOptions, loading, onRefresh, c
   const handleSave = async () => {
     if (!form.name.trim()) return;
     try {
+      const payload = {
+        ...form,
+        length: parseFloat(form.length),
+        diameter: parseFloat(form.diameter),
+        supplier: parseInt(form.supplier),
+      };
       if (modal === 'add') {
-        const res = await fetch(`${API_BASE}/admin/bolts/`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', ...authHeader },
-          body: JSON.stringify({
-            ...form,
-            length: parseFloat(form.length),
-            diameter: parseFloat(form.diameter),
-            supplier: parseInt(form.supplier),
-          }),
-        });
-        if (!res.ok) throw new Error('Failed to save');
+        await post(`${API_BASE}/admin/bolts/`, payload);
       } else {
-        const res = await fetch(`${API_BASE}/admin/bolts/${editing.id}/`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json', ...authHeader },
-          body: JSON.stringify({
-            ...form,
-            length: parseFloat(form.length),
-            diameter: parseFloat(form.diameter),
-            supplier: parseInt(form.supplier),
-          }),
-        });
-        if (!res.ok) throw new Error('Failed to save');
+        await put(`${API_BASE}/admin/bolts/${editing.id}/`, payload);
       }
+      setModal(null);
+      onRefresh();
     } catch (err) {
       console.error('Failed to save product', err);
     }
-    setModal(null);
-    onRefresh();
   };
 
   const handleDelete = async () => {
     try {
-      const res = await fetch(`${API_BASE}/admin/bolts/${deleteId}/`, { method: 'DELETE', headers: authHeader });
-      if (!res.ok) throw new Error('Failed to delete');
+      await del(`${API_BASE}/admin/bolts/${deleteId}/`);
+      setDeleteId(null);
+      onRefresh();
     } catch (err) {
       console.error('Failed to delete product', err);
     }
-    setDeleteId(null);
-    onRefresh();
   };
 
   const handlePublishToggle = async (boltId, currentStatus) => {
     try {
-      const res = await fetch(`${API_BASE}/admin/bolts/${boltId}/publish/`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', ...authHeader },
-        body: JSON.stringify({ is_published: !currentStatus }),
-      });
-      if (!res.ok) throw new Error('Failed to toggle publish status');
+      await patch(`${API_BASE}/admin/bolts/${boltId}/publish/`, { is_published: !currentStatus });
       setDetailedProduct({ ...detailedProduct, is_published: !currentStatus });
       onRefresh();
     } catch (err) {
@@ -348,6 +315,13 @@ function ProductsTab({ products, suppliers, filterOptions, loading, onRefresh, c
             <p className="text-sm text-slate-500">Loading product details...</p>
           ) : (
             <div className="space-y-4">
+              {/* Product ID Display (Edit Mode) */}
+              {modal === 'edit' && detailedProduct && (
+                <div className="bg-slate-50 border border-slate-200 rounded-lg p-2">
+                  <p className="text-sm text-slate-600"><span className="font-medium">Product ID:</span> {detailedProduct.id}</p>
+                </div>
+              )}
+
               {/* Product Name */}
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Product Name *</label>
@@ -507,26 +481,23 @@ function TestsTab({ tests, products, filterOptions, loading, onRefresh, currentP
     setModal('edit');
     setCustomFacility('');
     try {
-      const res = await fetch(`${API_BASE}/admin/tests/${t.id}/`, { headers: authHeader });
-      if (res.ok) {
-        const data = await res.json();
-        setDetailedTest(data);
-        setForm({
-          bolt: data.bolt?.id || data.bolt,
-          methodology: data.methodology,
-          facility: data.facility,
-          installation_method: data.installation_method || '',
-          encapsulation_method: data.encapsulation_method || '',
-          peak_strength: data.peak_strength || '',
-          bond_strength: data.bond_strength || '',
-          yield_strength: data.yield_strength || '',
-          ultimate_deformation: data.ultimate_deformation || '',
-          stiffness: data.stiffness || '',
-          loading_rate: data.loading_rate || '',
-          energy_absorption: data.energy_absorption || '',
-          number_of_drops: data.number_of_drops || '',
-        });
-      }
+      const data = await get(`${API_BASE}/admin/tests/${t.id}/`);
+      setDetailedTest(data);
+      setForm({
+        bolt: data.bolt?.id || data.bolt,
+        methodology: data.methodology,
+        facility: data.facility,
+        installation_method: data.installation_method || '',
+        encapsulation_method: data.encapsulation_method || '',
+        peak_strength: data.peak_strength || '',
+        bond_strength: data.bond_strength || '',
+        yield_strength: data.yield_strength || '',
+        ultimate_deformation: data.ultimate_deformation || '',
+        stiffness: data.stiffness || '',
+        loading_rate: data.loading_rate || '',
+        energy_absorption: data.energy_absorption || '',
+        number_of_drops: data.number_of_drops || '',
+      });
     } catch (err) {
       console.error('Failed to fetch test details', err);
     }
@@ -536,75 +507,46 @@ function TestsTab({ tests, products, filterOptions, loading, onRefresh, currentP
   const handleSave = async () => {
     if (!form.bolt) return;
     try {
+      const payload = {
+        bolt: parseInt(form.bolt),
+        methodology: form.methodology,
+        facility: form.facility,
+        installation_method: form.installation_method,
+        encapsulation_method: form.encapsulation_method,
+        peak_strength: form.peak_strength ? parseFloat(form.peak_strength) : null,
+        bond_strength: form.bond_strength ? parseFloat(form.bond_strength) : null,
+        yield_strength: form.yield_strength ? parseFloat(form.yield_strength) : null,
+        ultimate_deformation: form.ultimate_deformation ? parseFloat(form.ultimate_deformation) : null,
+        stiffness: form.stiffness ? parseFloat(form.stiffness) : null,
+        loading_rate: form.loading_rate ? parseFloat(form.loading_rate) : null,
+        energy_absorption: form.energy_absorption ? parseFloat(form.energy_absorption) : null,
+        number_of_drops: form.number_of_drops ? parseInt(form.number_of_drops) : null,
+      };
       if (modal === 'add') {
-        const res = await fetch(`${API_BASE}/admin/tests/`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', ...authHeader },
-          body: JSON.stringify({
-            bolt: parseInt(form.bolt),
-            methodology: form.methodology,
-            facility: form.facility,
-            installation_method: form.installation_method,
-            encapsulation_method: form.encapsulation_method,
-            peak_strength: form.peak_strength ? parseFloat(form.peak_strength) : null,
-            bond_strength: form.bond_strength ? parseFloat(form.bond_strength) : null,
-            yield_strength: form.yield_strength ? parseFloat(form.yield_strength) : null,
-            ultimate_deformation: form.ultimate_deformation ? parseFloat(form.ultimate_deformation) : null,
-            stiffness: form.stiffness ? parseFloat(form.stiffness) : null,
-            loading_rate: form.loading_rate ? parseFloat(form.loading_rate) : null,
-            energy_absorption: form.energy_absorption ? parseFloat(form.energy_absorption) : null,
-            number_of_drops: form.number_of_drops ? parseInt(form.number_of_drops) : null,
-          }),
-        });
-        if (!res.ok) throw new Error('Failed to save');
+        await post(`${API_BASE}/admin/tests/`, payload);
       } else {
-        const res = await fetch(`${API_BASE}/admin/tests/${editing.id}/`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json', ...authHeader },
-          body: JSON.stringify({
-            bolt: parseInt(form.bolt),
-            methodology: form.methodology,
-            facility: form.facility,
-            installation_method: form.installation_method,
-            encapsulation_method: form.encapsulation_method,
-            peak_strength: form.peak_strength ? parseFloat(form.peak_strength) : null,
-            bond_strength: form.bond_strength ? parseFloat(form.bond_strength) : null,
-            yield_strength: form.yield_strength ? parseFloat(form.yield_strength) : null,
-            ultimate_deformation: form.ultimate_deformation ? parseFloat(form.ultimate_deformation) : null,
-            stiffness: form.stiffness ? parseFloat(form.stiffness) : null,
-            loading_rate: form.loading_rate ? parseFloat(form.loading_rate) : null,
-            energy_absorption: form.energy_absorption ? parseFloat(form.energy_absorption) : null,
-            number_of_drops: form.number_of_drops ? parseInt(form.number_of_drops) : null,
-          }),
-        });
-        if (!res.ok) throw new Error('Failed to save');
+        await put(`${API_BASE}/admin/tests/${editing.id}/`, payload);
       }
+      setModal(null);
+      onRefresh();
     } catch (err) {
       console.error('Failed to save test', err);
     }
-    setModal(null);
-    onRefresh();
   };
 
   const handleDelete = async () => {
     try {
-      const res = await fetch(`${API_BASE}/admin/tests/${deleteId}/`, { method: 'DELETE', headers: authHeader });
-      if (!res.ok) throw new Error('Failed to delete');
+      await del(`${API_BASE}/admin/tests/${deleteId}/`);
+      setDeleteId(null);
+      onRefresh();
     } catch (err) {
       console.error('Failed to delete test', err);
     }
-    setDeleteId(null);
-    onRefresh();
   };
 
   const handlePublishToggle = async (testId, currentStatus) => {
     try {
-      const res = await fetch(`${API_BASE}/admin/tests/${testId}/publish/`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', ...authHeader },
-        body: JSON.stringify({ is_published: !currentStatus }),
-      });
-      if (!res.ok) throw new Error('Failed to toggle publish status');
+      await patch(`${API_BASE}/admin/tests/${testId}/publish/`, { is_published: !currentStatus });
       setDetailedTest({ ...detailedTest, is_published: !currentStatus });
       onRefresh();
     } catch (err) {
@@ -893,50 +835,41 @@ export default function ManageDataPanel() {
   const fetchAllData = async () => {
     setLoading(true);
     try {
-      const [suppliersRes, productsRes, testsRes, filterRes] = await Promise.all([
-        fetch(`${API_BASE}/admin/suppliers/?page=1`, { headers: authHeader }),
-        fetch(`${API_BASE}/admin/bolts/?page=1`, { headers: authHeader }),
-        fetch(`${API_BASE}/admin/tests/?page=1`, { headers: authHeader }),
-        fetch(`${API_BASE}/public/filter-options/`)
+      const [suppliersData, productsData, testsData, filterData] = await Promise.all([
+        get(`${API_BASE}/admin/suppliers/?page=1`),
+        get(`${API_BASE}/admin/bolts/?page=1`),
+        get(`${API_BASE}/admin/tests/?page=1`),
+        get(`${API_BASE}/public/filter-options/`)
       ]);
 
-      if (suppliersRes.ok) {
-        const data = await suppliersRes.json();
-        setSuppliers(data.results || data);
-        setSuppliersPagination({
-          currentPage: 1,
-          totalCount: data.count || 0,
-          nextUrl: data.next || null,
-          prevUrl: data.previous || null,
-        });
-      }
-      if (productsRes.ok) {
-        const data = await productsRes.json();
-        setProducts(data.results || data);
-        setProductsPagination({
-          currentPage: 1,
-          totalCount: data.count || 0,
-          nextUrl: data.next || null,
-          prevUrl: data.previous || null,
-        });
-      }
-      if (testsRes.ok) {
-        const data = await testsRes.json();
-        setTests(data.results || data);
-        setTestsPagination({
-          currentPage: 1,
-          totalCount: data.count || 0,
-          nextUrl: data.next || null,
-          prevUrl: data.previous || null,
-        });
-      }
-      if (filterRes.ok) {
-        const data = await filterRes.json();
-        setFilterOptions({
-          categories: data.categories || [],
-          facilities: data.facilities || [],
-        });
-      }
+      setSuppliers(suppliersData.results || suppliersData);
+      setSuppliersPagination({
+        currentPage: 1,
+        totalCount: suppliersData.count || 0,
+        nextUrl: suppliersData.next || null,
+        prevUrl: suppliersData.previous || null,
+      });
+
+      setProducts(productsData.results || productsData);
+      setProductsPagination({
+        currentPage: 1,
+        totalCount: productsData.count || 0,
+        nextUrl: productsData.next || null,
+        prevUrl: productsData.previous || null,
+      });
+
+      setTests(testsData.results || testsData);
+      setTestsPagination({
+        currentPage: 1,
+        totalCount: testsData.count || 0,
+        nextUrl: testsData.next || null,
+        prevUrl: testsData.previous || null,
+      });
+
+      setFilterOptions({
+        categories: filterData.categories || [],
+        facilities: filterData.facilities || [],
+      });
     } catch (err) {
       console.error('Failed to fetch data', err);
     }
@@ -949,17 +882,14 @@ export default function ManageDataPanel() {
     try {
       const url = new URL(paginationState.nextUrl);
       const pathAndQuery = url.pathname + url.search;
-      const res = await fetch(pathAndQuery, { headers: authHeader });
-      if (res.ok) {
-        const data = await res.json();
-        dataSetFn(data.results || data);
-        setPaginationState({
-          currentPage: paginationState.currentPage + 1,
-          totalCount: data.count || 0,
-          nextUrl: data.next || null,
-          prevUrl: data.previous || null,
-        });
-      }
+      const data = await get(pathAndQuery);
+      dataSetFn(data.results || data);
+      setPaginationState({
+        currentPage: paginationState.currentPage + 1,
+        totalCount: data.count || 0,
+        nextUrl: data.next || null,
+        prevUrl: data.previous || null,
+      });
     } catch (err) {
       console.error('Failed to fetch next page', err);
     }
@@ -972,17 +902,14 @@ export default function ManageDataPanel() {
     try {
       const url = new URL(paginationState.prevUrl);
       const pathAndQuery = url.pathname + url.search;
-      const res = await fetch(pathAndQuery, { headers: authHeader });
-      if (res.ok) {
-        const data = await res.json();
-        dataSetFn(data.results || data);
-        setPaginationState({
-          currentPage: paginationState.currentPage - 1,
-          totalCount: data.count || 0,
-          nextUrl: data.next || null,
-          prevUrl: data.previous || null,
-        });
-      }
+      const data = await get(pathAndQuery);
+      dataSetFn(data.results || data);
+      setPaginationState({
+        currentPage: paginationState.currentPage - 1,
+        totalCount: data.count || 0,
+        nextUrl: data.next || null,
+        prevUrl: data.previous || null,
+      });
     } catch (err) {
       console.error('Failed to fetch previous page', err);
     }

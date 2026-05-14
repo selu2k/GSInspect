@@ -260,6 +260,7 @@ export function AppProvider({ children }) {
 
   const logout = () => {
     localStorage.removeItem('token');
+    localStorage.removeItem('refreshToken');
     setIsAuthenticated(false);
     setUserRole(null);
   };

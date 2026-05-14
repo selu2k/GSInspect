@@ -27,6 +27,7 @@ export default function LoginPage() {
       if (response.ok) {
         const data = await response.json();
         localStorage.setItem('token', data.access);
+        localStorage.setItem('refreshToken', data.refresh);
         setIsAuthenticated(true);
         setUserRole('admin');
         navigate('/admin');
