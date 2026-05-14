@@ -24,7 +24,7 @@ function Modal({ title, onClose, children }) {
 }
 
 // --- Suppliers Tab (connected to real API) ---
-function SuppliersTab({ suppliers, loading, onRefresh }) {
+function SuppliersTab({ suppliers, loading, onRefresh, currentPage, totalCount, nextUrl, prevUrl, onNextPage, onPrevPage }) {
   const [modal, setModal] = useState(null);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState({ name: '' });
@@ -71,10 +71,14 @@ function SuppliersTab({ suppliers, loading, onRefresh }) {
 
   if (loading) return <p className="text-sm text-slate-500">Loading suppliers...</p>;
 
+  const itemsPerPage = 10;
+  const startIndex = (currentPage - 1) * itemsPerPage + 1;
+  const endIndex = Math.min(currentPage * itemsPerPage, totalCount);
+
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <p className="text-sm text-slate-500">{suppliers.length} supplier(s) in database</p>
+        <p className="text-sm text-slate-500">{startIndex}-{endIndex} of {totalCount} supplier(s)</p>
         <button onClick={openAdd} className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium">
           <Plus className="w-4 h-4" /> Add Supplier
         </button>
@@ -104,6 +108,25 @@ function SuppliersTab({ suppliers, loading, onRefresh }) {
             ))}
           </tbody>
         </table>
+      </div>
+
+      {/* Pagination Controls */}
+      <div className="flex justify-between items-center">
+        <button 
+          onClick={onPrevPage} 
+          disabled={!prevUrl}
+          className="px-4 py-2 text-sm border border-slate-300 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+        >
+          ← Previous
+        </button>
+        <p className="text-sm text-slate-600 font-medium">Page {currentPage}</p>
+        <button 
+          onClick={onNextPage} 
+          disabled={!nextUrl}
+          className="px-4 py-2 text-sm border border-slate-300 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+        >
+          Next →
+        </button>
       </div>
 
       {(modal === 'add' || modal === 'edit') && (
@@ -434,8 +457,7 @@ function ProductsTab({ products, suppliers, filterOptions, loading, onRefresh, c
 }
 
 // --- Tests Tab ---
-// --- Tests Tab ---
-function TestsTab({ tests, products, loading, onRefresh }) {
+function TestsTab({ tests, products, loading, onRefresh, currentPage, totalCount, nextUrl, prevUrl, onNextPage, onPrevPage }) {
   const [modal, setModal] = useState(null);
   const [editing, setEditing] = useState(null);
   const [deleteId, setDeleteId] = useState(null);
@@ -489,10 +511,14 @@ function TestsTab({ tests, products, loading, onRefresh }) {
 
   if (loading) return <p className="text-sm text-slate-500">Loading tests...</p>;
 
+  const itemsPerPage = 10;
+  const startIndex = (currentPage - 1) * itemsPerPage + 1;
+  const endIndex = Math.min(currentPage * itemsPerPage, totalCount);
+
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <p className="text-sm text-slate-500">{tests.length} test(s) in database</p>
+        <p className="text-sm text-slate-500">{startIndex}-{endIndex} of {totalCount} test(s)</p>
         <button onClick={openAdd} className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium">
           <Plus className="w-4 h-4" /> Add Test
         </button>
@@ -530,6 +556,25 @@ function TestsTab({ tests, products, loading, onRefresh }) {
             ))}
           </tbody>
         </table>
+      </div>
+
+      {/* Pagination Controls */}
+      <div className="flex justify-between items-center">
+        <button 
+          onClick={onPrevPage} 
+          disabled={!prevUrl}
+          className="px-4 py-2 text-sm border border-slate-300 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+        >
+          ← Previous
+        </button>
+        <p className="text-sm text-slate-600 font-medium">Page {currentPage}</p>
+        <button 
+          onClick={onNextPage} 
+          disabled={!nextUrl}
+          className="px-4 py-2 text-sm border border-slate-300 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+        >
+          Next →
+        </button>
       </div>
 
       {(modal === 'add' || modal === 'edit') && (
@@ -603,6 +648,22 @@ export default function ManageDataPanel() {
     prevUrl: null,
   });
 
+  // Pagination state for suppliers
+  const [suppliersPagination, setSuppliersPagination] = useState({
+    currentPage: 1,
+    totalCount: 0,
+    nextUrl: null,
+    prevUrl: null,
+  });
+
+  // Pagination state for tests
+  const [testsPagination, setTestsPagination] = useState({
+    currentPage: 1,
+    totalCount: 0,
+    nextUrl: null,
+    prevUrl: null,
+  });
+
   const authHeader = { 'Authorization': `Bearer ${localStorage.getItem('token')}` };
 
   // Fetch all data on mount
@@ -614,15 +675,21 @@ export default function ManageDataPanel() {
     setLoading(true);
     try {
       const [suppliersRes, productsRes, testsRes, filterRes] = await Promise.all([
-        fetch(`${API_BASE}/admin/suppliers/`, { headers: authHeader }),
+        fetch(`${API_BASE}/admin/suppliers/?page=1`, { headers: authHeader }),
         fetch(`${API_BASE}/admin/bolts/?page=1`, { headers: authHeader }),
-        fetch(`${API_BASE}/admin/tests/`, { headers: authHeader }),
+        fetch(`${API_BASE}/admin/tests/?page=1`, { headers: authHeader }),
         fetch(`${API_BASE}/public/filter-options/`)
       ]);
 
       if (suppliersRes.ok) {
         const data = await suppliersRes.json();
         setSuppliers(data.results || data);
+        setSuppliersPagination({
+          currentPage: 1,
+          totalCount: data.count || 0,
+          nextUrl: data.next || null,
+          prevUrl: data.previous || null,
+        });
       }
       if (productsRes.ok) {
         const data = await productsRes.json();
@@ -637,6 +704,12 @@ export default function ManageDataPanel() {
       if (testsRes.ok) {
         const data = await testsRes.json();
         setTests(data.results || data);
+        setTestsPagination({
+          currentPage: 1,
+          totalCount: data.count || 0,
+          nextUrl: data.next || null,
+          prevUrl: data.previous || null,
+        });
       }
       if (filterRes.ok) {
         const data = await filterRes.json();
@@ -650,19 +723,18 @@ export default function ManageDataPanel() {
     setLoading(false);
   };
 
-  const handleNextPage = async () => {
-    if (!productsPagination.nextUrl) return;
+  const handleNextPage = async (paginationState, setPaginationState, dataSetFn) => {
+    if (!paginationState.nextUrl) return;
     setLoading(true);
     try {
-      // Extract path and query from the full URL
-      const url = new URL(productsPagination.nextUrl);
+      const url = new URL(paginationState.nextUrl);
       const pathAndQuery = url.pathname + url.search;
       const res = await fetch(pathAndQuery, { headers: authHeader });
       if (res.ok) {
         const data = await res.json();
-        setProducts(data.results || data);
-        setProductsPagination({
-          currentPage: productsPagination.currentPage + 1,
+        dataSetFn(data.results || data);
+        setPaginationState({
+          currentPage: paginationState.currentPage + 1,
           totalCount: data.count || 0,
           nextUrl: data.next || null,
           prevUrl: data.previous || null,
@@ -674,19 +746,18 @@ export default function ManageDataPanel() {
     setLoading(false);
   };
 
-  const handlePrevPage = async () => {
-    if (!productsPagination.prevUrl) return;
+  const handlePrevPage = async (paginationState, setPaginationState, dataSetFn) => {
+    if (!paginationState.prevUrl) return;
     setLoading(true);
     try {
-      // Extract path and query from the full URL
-      const url = new URL(productsPagination.prevUrl);
+      const url = new URL(paginationState.prevUrl);
       const pathAndQuery = url.pathname + url.search;
       const res = await fetch(pathAndQuery, { headers: authHeader });
       if (res.ok) {
         const data = await res.json();
-        setProducts(data.results || data);
-        setProductsPagination({
-          currentPage: productsPagination.currentPage - 1,
+        dataSetFn(data.results || data);
+        setPaginationState({
+          currentPage: paginationState.currentPage - 1,
           totalCount: data.count || 0,
           nextUrl: data.next || null,
           prevUrl: data.previous || null,
@@ -724,7 +795,19 @@ export default function ManageDataPanel() {
         ))}
       </div>
 
-      {tab === 'suppliers' && <SuppliersTab suppliers={suppliers} loading={loading} onRefresh={fetchAllData} />}
+      {tab === 'suppliers' && (
+        <SuppliersTab 
+          suppliers={suppliers} 
+          loading={loading} 
+          onRefresh={fetchAllData}
+          currentPage={suppliersPagination.currentPage}
+          totalCount={suppliersPagination.totalCount}
+          nextUrl={suppliersPagination.nextUrl}
+          prevUrl={suppliersPagination.prevUrl}
+          onNextPage={() => handleNextPage(suppliersPagination, setSuppliersPagination, setSuppliers)}
+          onPrevPage={() => handlePrevPage(suppliersPagination, setSuppliersPagination, setSuppliers)}
+        />
+      )}
       {tab === 'products' && (
         <ProductsTab 
           products={products} 
@@ -736,11 +819,24 @@ export default function ManageDataPanel() {
           totalCount={productsPagination.totalCount}
           nextUrl={productsPagination.nextUrl}
           prevUrl={productsPagination.prevUrl}
-          onNextPage={handleNextPage}
-          onPrevPage={handlePrevPage}
+          onNextPage={() => handleNextPage(productsPagination, setProductsPagination, setProducts)}
+          onPrevPage={() => handlePrevPage(productsPagination, setProductsPagination, setProducts)}
         />
       )}
-      {tab === 'tests' && <TestsTab tests={tests} products={products} loading={loading} onRefresh={fetchAllData} />}
+      {tab === 'tests' && (
+        <TestsTab 
+          tests={tests} 
+          products={products} 
+          loading={loading} 
+          onRefresh={fetchAllData}
+          currentPage={testsPagination.currentPage}
+          totalCount={testsPagination.totalCount}
+          nextUrl={testsPagination.nextUrl}
+          prevUrl={testsPagination.prevUrl}
+          onNextPage={() => handleNextPage(testsPagination, setTestsPagination, setTests)}
+          onPrevPage={() => handlePrevPage(testsPagination, setTestsPagination, setTests)}
+        />
+      )}
     </div>
   );
 }
