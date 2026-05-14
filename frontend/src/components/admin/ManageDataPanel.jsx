@@ -457,13 +457,14 @@ function ProductsTab({ products, suppliers, filterOptions, loading, onRefresh, c
 }
 
 // --- Tests Tab ---
-function TestsTab({ tests, products, loading, onRefresh, currentPage, totalCount, nextUrl, prevUrl, onNextPage, onPrevPage }) {
+function TestsTab({ tests, products, filterOptions, loading, onRefresh, currentPage, totalCount, nextUrl, prevUrl, onNextPage, onPrevPage }) {
   const [modal, setModal] = useState(null);
   const [editing, setEditing] = useState(null);
   const [detailedTest, setDetailedTest] = useState(null);
   const [loadingDetails, setLoadingDetails] = useState(false);
   const [deleteId, setDeleteId] = useState(null);
-  const emptyForm = { bolt: '', methodology: 'dynamic', facility: '', installation_method: '', encapsulation_method: '', peak_strength: '', bond_strength: '', yield_strength: '', ultimate_deformation: '', stiffness: '', loading_rate: '', energy_absorption: '', number_of_drops: '' };
+  const [customFacility, setCustomFacility] = useState('');
+  const emptyForm = { bolt: '', methodology: 'dynamic', facility: 'Custom', installation_method: '', encapsulation_method: '', peak_strength: '', bond_strength: '', yield_strength: '', ultimate_deformation: '', stiffness: '', loading_rate: '', energy_absorption: '', number_of_drops: '' };
   const [form, setForm] = useState(emptyForm);
 
   const authHeader = { 'Authorization': `Bearer ${localStorage.getItem('token')}` };
@@ -471,6 +472,7 @@ function TestsTab({ tests, products, loading, onRefresh, currentPage, totalCount
   const openAdd = () => { 
     setForm(emptyForm); 
     setDetailedTest(null);
+    setCustomFacility('');
     setModal('add'); 
   };
   
@@ -478,6 +480,7 @@ function TestsTab({ tests, products, loading, onRefresh, currentPage, totalCount
     setEditing(t);
     setLoadingDetails(true);
     setModal('edit');
+    setCustomFacility('');
     try {
       const res = await fetch(`${API_BASE}/admin/tests/${t.id}/`, { headers: authHeader });
       if (res.ok) {
@@ -638,19 +641,31 @@ function TestsTab({ tests, products, loading, onRefresh, currentPage, totalCount
       </div>
 
       {(modal === 'add' || modal === 'edit') && (
-        <Modal title={modal === 'add' ? 'Add Test' : 'Edit Test'} onClose={() => setModal(null)}>
+        <Modal title={modal === 'add' ? 'Add Test' : `Edit Test #${editing?.id}`} onClose={() => setModal(null)}>
           {loadingDetails && modal === 'edit' ? (
             <p className="text-sm text-slate-500">Loading test details...</p>
           ) : (
             <div className="space-y-4 max-h-96 overflow-y-auto">
-              {/* Product Selection */}
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Product *</label>
-                <select value={form.bolt} onChange={e => setForm({ ...form, bolt: e.target.value })}
-                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                  <option value="">Select product...</option>
-                  {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-                </select>
+              {/* Test ID Display (Edit Mode) */}
+              {modal === 'edit' && detailedTest && (
+                <div className="bg-slate-50 border border-slate-200 rounded-lg p-2">
+                  <p className="text-sm text-slate-600"><span className="font-medium">Test ID:</span> {detailedTest.id}</p>
+                </div>
+              )}
+
+              {/* Product & Bolt ID */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Product Name</label>
+                  <div className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-slate-50 text-slate-600">
+                    {modal === 'edit' && detailedTest ? detailedTest.bolt?.name || detailedTest.bolt : 'Select a product'}
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Bolt ID *</label>
+                  <input type="number" value={form.bolt} onChange={e => setForm({ ...form, bolt: e.target.value })}
+                    className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="e.g. 1" />
+                </div>
               </div>
 
               {/* Basic Test Info */}
@@ -665,8 +680,16 @@ function TestsTab({ tests, products, loading, onRefresh, currentPage, totalCount
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">Facility *</label>
-                  <input value={form.facility} onChange={e => setForm({ ...form, facility: e.target.value })}
-                    className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="e.g. Facility A" />
+                  <select value={form.facility} onChange={e => {setForm({ ...form, facility: e.target.value }); setCustomFacility('');}}
+                    className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <option value="">Select facility...</option>
+                    {filterOptions.facilities?.map(f => <option key={f}>{f}</option>)}
+                    <option value="Custom">Custom...</option>
+                  </select>
+                  {form.facility === 'Custom' && (
+                    <input value={customFacility} onChange={e => {setCustomFacility(e.target.value); setForm({ ...form, facility: e.target.value });}}
+                      placeholder="Enter custom facility" className="w-full mt-2 border border-slate-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                  )}
                 </div>
               </div>
 
@@ -786,7 +809,7 @@ export default function ManageDataPanel() {
   const [suppliers, setSuppliers] = useState([]);
   const [products, setProducts] = useState([]);
   const [tests, setTests] = useState([]);
-  const [filterOptions, setFilterOptions] = useState({ categories: [] });
+  const [filterOptions, setFilterOptions] = useState({ categories: [], facilities: [] });
   
   // Pagination state for products
   const [productsPagination, setProductsPagination] = useState({
@@ -862,7 +885,8 @@ export default function ManageDataPanel() {
       if (filterRes.ok) {
         const data = await filterRes.json();
         setFilterOptions({
-          categories: data.categories || []
+          categories: data.categories || [],
+          facilities: data.facilities || [],
         });
       }
     } catch (err) {
@@ -975,6 +999,7 @@ export default function ManageDataPanel() {
         <TestsTab 
           tests={tests} 
           products={products} 
+          filterOptions={filterOptions}
           loading={loading} 
           onRefresh={fetchAllData}
           currentPage={testsPagination.currentPage}
