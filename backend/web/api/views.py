@@ -28,7 +28,7 @@ from .serializers import (
     TestCurvePublishSerializer,
     TestPublishSerializer,
 )
-from .utils import group_tests_by_bolt, calculate_stats_for_tests
+from .utils import calculate_stats_for_tests, group_tests_by_bolt
 
 
 class HealthView(generics.GenericAPIView):
@@ -290,6 +290,12 @@ class AdminTestListCreateView(generics.ListCreateAPIView):
     queryset = Test.objects.select_related("bolt").all().order_by("-id")
     permission_classes = [IsAdminUser]
     lookup_field = "id"
+    pagination_class = AdminPagination
+
+    def get_serializer_class(self):
+        if self.request.method == "GET":
+            return AdminTestListSerializer
+        return AdminTestSerializer
 
 
 class ExternalBoltSummaryStatsView(generics.GenericAPIView):
@@ -420,13 +426,6 @@ class ExternalTestCurvesView(generics.GenericAPIView):
             }
         )
 
-    pagination_class = AdminPagination
-
-    def get_serializer_class(self):
-        if self.request.method == "GET":
-            return AdminTestListSerializer
-        return AdminTestSerializer
-
 
 class AdminTestDetailView(generics.RetrieveUpdateDestroyAPIView):
     """
@@ -517,29 +516,24 @@ class AdminTestCurveCreateView(generics.CreateAPIView):
     parser_classes = (JSONParser, MultiPartParser, FormParser)
 
     def post(self, request, *args, **kwargs):
-        # Check if CSV file is uploaded
         if "file" in request.FILES:
             return self._handle_csv_upload(request)
-        else:
-            return self._handle_json_upload(request)
+        return self._handle_json_upload(request)
 
     def _handle_csv_upload(self, request):
         """Parse CSV file and create test curves."""
         csv_file = request.FILES["file"]
 
         try:
-            # Read CSV content
             stream = io.TextIOWrapper(csv_file.file, encoding="utf-8")
             reader = csv.DictReader(stream)
 
-            # Group rows by test_id
             grouped_data = {}
             for row in reader:
                 test_id = int(row["test_id"])
                 if test_id not in grouped_data:
                     grouped_data[test_id] = []
 
-                # Create data point from CSV row
                 data_point = {
                     "displacement": float(row["displacement"]),
                     "load": float(row["load"]),
@@ -547,7 +541,6 @@ class AdminTestCurveCreateView(generics.CreateAPIView):
                 }
                 grouped_data[test_id].append(data_point)
 
-            # Convert to expected format
             data = [
                 {"test": test_id, "curve_pair": curve_pair}
                 for test_id, curve_pair in grouped_data.items()
@@ -558,7 +551,6 @@ class AdminTestCurveCreateView(generics.CreateAPIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # Process like normal JSON bulk upload
         return self._process_data(data)
 
     def _handle_json_upload(self, request):
