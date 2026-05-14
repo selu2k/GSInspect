@@ -138,20 +138,52 @@ function SuppliersTab({ suppliers, loading, onRefresh }) {
 }
 
 // --- Products Tab ---
-function ProductsTab({ products, suppliers, loading, onRefresh }) {
+function ProductsTab({ products, suppliers, filterOptions, loading, onRefresh, currentPage, totalCount, nextUrl, prevUrl, onNextPage, onPrevPage }) {
   const [modal, setModal] = useState(null);
   const [editing, setEditing] = useState(null);
+  const [detailedProduct, setDetailedProduct] = useState(null);
+  const [loadingDetails, setLoadingDetails] = useState(false);
   const [deleteId, setDeleteId] = useState(null);
-  const emptyForm = { supplier: '', name: '', length: '', diameter: '', category: 'Encapsulated', equipment_compatibility: [] };
+  const [customCategory, setCustomCategory] = useState('');
+  const [customEquipment, setCustomEquipment] = useState('');
+  const emptyForm = { supplier: '', name: '', length: '', diameter: '', category: 'Encapsulated', equipment_compatibility: [], is_published: false };
   const [form, setForm] = useState(emptyForm);
 
   const authHeader = { 'Authorization': `Bearer ${localStorage.getItem('token')}` };
 
-  const openAdd = () => { setForm(emptyForm); setModal('add'); };
-  const openEdit = (p) => {
+  const openAdd = () => { 
+    setForm(emptyForm); 
+    setDetailedProduct(null); 
+    setCustomCategory('');
+    setCustomEquipment('');
+    setModal('add'); 
+  };
+  
+  const openEdit = async (p) => {
     setEditing(p);
-    setForm({ supplier: p.supplier?.id || p.supplier, name: p.name, length: p.length, diameter: p.diameter, category: p.category, equipment_compatibility: p.equipment_compatibility || [] });
+    setLoadingDetails(true);
     setModal('edit');
+    setCustomCategory('');
+    setCustomEquipment('');
+    try {
+      const res = await fetch(`${API_BASE}/admin/bolts/${p.id}/`, { headers: authHeader });
+      if (res.ok) {
+        const data = await res.json();
+        setDetailedProduct(data);
+        setForm({ 
+          supplier: data.supplier?.id || data.supplier, 
+          name: data.name, 
+          length: data.length, 
+          diameter: data.diameter, 
+          category: data.category, 
+          equipment_compatibility: data.equipment_compatibility || [],
+          is_published: data.is_published || false
+        });
+      }
+    } catch (err) {
+      console.error('Failed to fetch product details', err);
+    }
+    setLoadingDetails(false);
   };
 
   const handleSave = async () => {
@@ -202,10 +234,14 @@ function ProductsTab({ products, suppliers, loading, onRefresh }) {
 
   if (loading) return <p className="text-sm text-slate-500">Loading products...</p>;
 
+  const itemsPerPage = 10;
+  const startIndex = (currentPage - 1) * itemsPerPage + 1;
+  const endIndex = Math.min(currentPage * itemsPerPage, totalCount);
+
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <p className="text-sm text-slate-500">{products.length} product(s) in database</p>
+        <p className="text-sm text-slate-500">{startIndex}-{endIndex} of {totalCount} product(s)</p>
         <button onClick={openAdd} className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium">
           <Plus className="w-4 h-4" /> Add Product
         </button>
@@ -247,68 +283,140 @@ function ProductsTab({ products, suppliers, loading, onRefresh }) {
         </table>
       </div>
 
+      {/* Pagination Controls */}
+      <div className="flex justify-between items-center">
+        <button 
+          onClick={onPrevPage} 
+          disabled={!prevUrl}
+          className="px-4 py-2 text-sm border border-slate-300 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+        >
+          ← Previous
+        </button>
+        <p className="text-sm text-slate-600 font-medium">Page {currentPage}</p>
+        <button 
+          onClick={onNextPage} 
+          disabled={!nextUrl}
+          className="px-4 py-2 text-sm border border-slate-300 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+        >
+          Next →
+        </button>
+      </div>
+
       {(modal === 'add' || modal === 'edit') && (
         <Modal title={modal === 'add' ? 'Add Product' : 'Edit Product'} onClose={() => setModal(null)}>
-          <div className="space-y-3">
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Product Name *</label>
-              <input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })}
-                className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="e.g. Resin Bolt D20 x 2.4 m" />
+          {loadingDetails && modal === 'edit' ? (
+            <p className="text-sm text-slate-500">Loading product details...</p>
+          ) : (
+            <div className="space-y-4">
+              {/* Product Name */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Product Name *</label>
+                <input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })}
+                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="e.g. Resin Bolt D20 x 2.4 m" />
+              </div>
+
+              {/* Supplier & Category - Side by side */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Supplier *</label>
+                  <select value={form.supplier} onChange={e => setForm({ ...form, supplier: e.target.value })}
+                    className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <option value="">Select supplier...</option>
+                    {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Category *</label>
+                  <select value={form.category} onChange={e => setForm({ ...form, category: e.target.value })}
+                    className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <option value="">Select category...</option>
+                    {filterOptions.categories.map(c => <option key={c}>{c}</option>)}
+                  </select>
+                  <input value={customCategory} onChange={e => {setCustomCategory(e.target.value); setForm({ ...form, category: e.target.value });}}
+                    placeholder="Or custom" className="w-full mt-2 border border-slate-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                </div>
+              </div>
+
+              {/* Length & Diameter */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Length (m) *</label>
+                  <input type="number" step="0.1" value={form.length} onChange={e => setForm({ ...form, length: e.target.value })}
+                    className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="e.g. 2.4" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Diameter (mm) *</label>
+                  <input type="number" step="1" value={form.diameter} onChange={e => setForm({ ...form, diameter: e.target.value })}
+                    className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="e.g. 20" />
+                </div>
+              </div>
+
+              {/* Equipment Compatibility */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-3">Equipment Compatibility</label>
+                <div className="space-y-2 mb-3">
+                  {form.equipment_compatibility.length > 0 ? (
+                    form.equipment_compatibility.map(eq => (
+                      <label key={eq} className="flex items-center gap-2 text-sm text-slate-700">
+                        <input
+                          type="checkbox"
+                          checked={true}
+                          onChange={() => setForm({ ...form, equipment_compatibility: form.equipment_compatibility.filter(x => x !== eq) })}
+                          className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                        />
+                        <span>{eq}</span>
+                      </label>
+                    ))
+                  ) : (
+                    <p className="text-sm text-slate-400 italic">No equipment added yet</p>
+                  )}
+                </div>
+                <div className="flex gap-2">
+                  <input value={customEquipment} onChange={e => setCustomEquipment(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        if (customEquipment.trim() && !form.equipment_compatibility.includes(customEquipment)) {
+                          setForm({ ...form, equipment_compatibility: [...form.equipment_compatibility, customEquipment] });
+                          setCustomEquipment('');
+                        }
+                      }
+                    }}
+                    placeholder="Enter equipment type" className="flex-1 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                  <button onClick={() => {
+                    if (customEquipment.trim() && !form.equipment_compatibility.includes(customEquipment)) {
+                      setForm({ ...form, equipment_compatibility: [...form.equipment_compatibility, customEquipment] });
+                      setCustomEquipment('');
+                    }
+                  }} className="bg-indigo-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700">
+                    Add
+                  </button>
+                </div>
+              </div>
+
+              {/* Published Status - Only in Edit Mode */}
+              {modal === 'edit' && detailedProduct && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-2">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-medium text-slate-700">Status:</p>
+                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${form.is_published ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
+                      {form.is_published ? '✓ Published' : '○ Draft'}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div className="flex justify-end gap-2 pt-2 border-t border-slate-200">
+                <button onClick={() => setModal(null)} className="px-4 py-2 text-sm border border-slate-300 rounded-lg hover:bg-slate-50 font-medium">
+                  Cancel
+                </button>
+                <button onClick={handleSave} className="px-4 py-2 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 flex items-center gap-1 font-medium">
+                  <Check className="w-4 h-4" /> {modal === 'add' ? 'Create' : 'Update'}
+                </button>
+              </div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Supplier</label>
-                <select value={form.supplier} onChange={e => setForm({ ...form, supplier: e.target.value })}
-                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                  <option value="">Select supplier...</option>
-                  {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Category</label>
-                <select value={form.category} onChange={e => setForm({ ...form, category: e.target.value })}
-                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                  {['Encapsulated', 'Friction', 'Hybrid', 'Cable'].map(c => <option key={c}>{c}</option>)}
-                </select>
-              </div>
-              <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Equipment Compatibility *</label>
-              <div className="space-y-1">
-                {['Handheld', 'Mechanized Bolting Machine A', 'Multi-OEM'].map(eq => (
-                  <label key={eq} className="flex items-center gap-2 text-sm text-slate-700">
-                    <input
-                      type="checkbox"
-                      checked={form.equipment_compatibility.includes(eq)}
-                      onChange={e => {
-                        const updated = e.target.checked
-                          ? [...form.equipment_compatibility, eq]
-                          : form.equipment_compatibility.filter(x => x !== eq);
-                        setForm({ ...form, equipment_compatibility: updated });
-                      }}
-                    />
-                    {eq}
-                  </label>
-                ))}
-              </div>
-            </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Length (m)</label>
-                <input value={form.length} onChange={e => setForm({ ...form, length: e.target.value })}
-                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="e.g. 2.4" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Diameter (mm)</label>
-                <input value={form.diameter} onChange={e => setForm({ ...form, diameter: e.target.value })}
-                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="e.g. 20" />
-              </div>
-            </div>
-            <div className="flex justify-end gap-2 pt-2">
-              <button onClick={() => setModal(null)} className="px-4 py-2 text-sm border border-slate-300 rounded-lg hover:bg-slate-50">Cancel</button>
-              <button onClick={handleSave} className="px-4 py-2 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 flex items-center gap-1">
-                <Check className="w-4 h-4" /> Save
-              </button>
-            </div>
-          </div>
+          )}
         </Modal>
       )}
 
@@ -485,6 +593,15 @@ export default function ManageDataPanel() {
   const [suppliers, setSuppliers] = useState([]);
   const [products, setProducts] = useState([]);
   const [tests, setTests] = useState([]);
+  const [filterOptions, setFilterOptions] = useState({ categories: [] });
+  
+  // Pagination state for products
+  const [productsPagination, setProductsPagination] = useState({
+    currentPage: 1,
+    totalCount: 0,
+    nextUrl: null,
+    prevUrl: null,
+  });
 
   const authHeader = { 'Authorization': `Bearer ${localStorage.getItem('token')}` };
 
@@ -496,10 +613,11 @@ export default function ManageDataPanel() {
   const fetchAllData = async () => {
     setLoading(true);
     try {
-      const [suppliersRes, productsRes, testsRes] = await Promise.all([
+      const [suppliersRes, productsRes, testsRes, filterRes] = await Promise.all([
         fetch(`${API_BASE}/admin/suppliers/`, { headers: authHeader }),
-        fetch(`${API_BASE}/admin/bolts/`, { headers: authHeader }),
-        fetch(`${API_BASE}/admin/tests/`, { headers: authHeader })
+        fetch(`${API_BASE}/admin/bolts/?page=1`, { headers: authHeader }),
+        fetch(`${API_BASE}/admin/tests/`, { headers: authHeader }),
+        fetch(`${API_BASE}/public/filter-options/`)
       ]);
 
       if (suppliersRes.ok) {
@@ -509,13 +627,67 @@ export default function ManageDataPanel() {
       if (productsRes.ok) {
         const data = await productsRes.json();
         setProducts(data.results || data);
+        setProductsPagination({
+          currentPage: 1,
+          totalCount: data.count || 0,
+          nextUrl: data.next || null,
+          prevUrl: data.previous || null,
+        });
       }
       if (testsRes.ok) {
         const data = await testsRes.json();
         setTests(data.results || data);
       }
+      if (filterRes.ok) {
+        const data = await filterRes.json();
+        setFilterOptions({
+          categories: data.categories || []
+        });
+      }
     } catch (err) {
       console.error('Failed to fetch data', err);
+    }
+    setLoading(false);
+  };
+
+  const handleNextPage = async () => {
+    if (!productsPagination.nextUrl) return;
+    setLoading(true);
+    try {
+      const res = await fetch(productsPagination.nextUrl, { headers: authHeader });
+      if (res.ok) {
+        const data = await res.json();
+        setProducts(data.results || data);
+        setProductsPagination({
+          currentPage: productsPagination.currentPage + 1,
+          totalCount: data.count || 0,
+          nextUrl: data.next || null,
+          prevUrl: data.previous || null,
+        });
+      }
+    } catch (err) {
+      console.error('Failed to fetch next page', err);
+    }
+    setLoading(false);
+  };
+
+  const handlePrevPage = async () => {
+    if (!productsPagination.prevUrl) return;
+    setLoading(true);
+    try {
+      const res = await fetch(productsPagination.prevUrl, { headers: authHeader });
+      if (res.ok) {
+        const data = await res.json();
+        setProducts(data.results || data);
+        setProductsPagination({
+          currentPage: productsPagination.currentPage - 1,
+          totalCount: data.count || 0,
+          nextUrl: data.next || null,
+          prevUrl: data.previous || null,
+        });
+      }
+    } catch (err) {
+      console.error('Failed to fetch previous page', err);
     }
     setLoading(false);
   };
@@ -547,7 +719,21 @@ export default function ManageDataPanel() {
       </div>
 
       {tab === 'suppliers' && <SuppliersTab suppliers={suppliers} loading={loading} onRefresh={fetchAllData} />}
-      {tab === 'products' && <ProductsTab products={products} suppliers={suppliers} loading={loading} onRefresh={fetchAllData} />}
+      {tab === 'products' && (
+        <ProductsTab 
+          products={products} 
+          suppliers={suppliers} 
+          filterOptions={filterOptions} 
+          loading={loading} 
+          onRefresh={fetchAllData}
+          currentPage={productsPagination.currentPage}
+          totalCount={productsPagination.totalCount}
+          nextUrl={productsPagination.nextUrl}
+          prevUrl={productsPagination.prevUrl}
+          onNextPage={handleNextPage}
+          onPrevPage={handlePrevPage}
+        />
+      )}
       {tab === 'tests' && <TestsTab tests={tests} products={products} loading={loading} onRefresh={fetchAllData} />}
     </div>
   );
