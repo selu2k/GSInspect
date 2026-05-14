@@ -31,16 +31,16 @@ export default function VettePublishPage() {
 
   const handlePublishBolt = async (id) => {
     try {
-      await patch(`${API_BASE}/admin/bolts/${id}/publish/`);
+      await patch(`${API_BASE}/admin/bolts/${id}/publish/`, { is_published: true });
       fetchData();
     } catch (err) {
       console.error('Failed to publish bolt', err);
     }
   };
-
+  
   const handlePublishTest = async (id) => {
     try {
-      await patch(`${API_BASE}/admin/tests/${id}/publish/`);
+      await patch(`${API_BASE}/admin/tests/${id}/publish/`, { is_published: true });
       fetchData();
     } catch (err) {
       console.error('Failed to publish test', err);
