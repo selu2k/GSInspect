@@ -24,34 +24,11 @@ function Modal({ title, onClose, children }) {
 }
 
 // --- Suppliers Tab (connected to real API) ---
-function SuppliersTab() {
-  const [suppliers, setSuppliers] = useState([]);
-  const [loading, setLoading] = useState(true);
+function SuppliersTab({ suppliers, loading, onRefresh }) {
   const [modal, setModal] = useState(null);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState({ name: '' });
   const [deleteId, setDeleteId] = useState(null);
-
-  // Fetch all suppliers on load
-  useEffect(() => {
-    fetchSuppliers();
-  }, []);
-
-  const fetchSuppliers = async () => {
-    setLoading(true);
-    try {
-      const res = await fetch(`${API_BASE}/admin/suppliers/`, {
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-      });
-      if (!res.ok) throw new Error('Failed to fetch');
-      const data = await res.json();
-      setSuppliers(data.results || data);
-    } catch (err) {
-      console.error('Failed to fetch suppliers', err);
-      setSuppliers([]);
-    }
-    setLoading(false);
-  };
 
   const openAdd = () => { setForm({ name: '' }); setModal('add'); };
   const openEdit = (s) => { setEditing(s); setForm({ name: s.name }); setModal('edit'); };
@@ -78,7 +55,7 @@ function SuppliersTab() {
       });
     }
     setModal(null);
-    fetchSuppliers();
+    onRefresh();
   };
 
   const handleDelete = async () => {
@@ -89,7 +66,7 @@ function SuppliersTab() {
       }
     });
     setDeleteId(null);
-    fetchSuppliers();
+    onRefresh();
   };
 
   if (loading) return <p className="text-sm text-slate-500">Loading suppliers...</p>;
@@ -161,10 +138,7 @@ function SuppliersTab() {
 }
 
 // --- Products Tab ---
-function ProductsTab() {
-  const [products, setProducts] = useState([]);
-  const [suppliers, setSuppliers] = useState([]);
-  const [loading, setLoading] = useState(true);
+function ProductsTab({ products, suppliers, loading, onRefresh }) {
   const [modal, setModal] = useState(null);
   const [editing, setEditing] = useState(null);
   const [deleteId, setDeleteId] = useState(null);
@@ -172,36 +146,6 @@ function ProductsTab() {
   const [form, setForm] = useState(emptyForm);
 
   const authHeader = { 'Authorization': `Bearer ${localStorage.getItem('token')}` };
-
-  useEffect(() => {
-    fetchProducts();
-    fetchSuppliers();
-  }, []);
-
-  const fetchProducts = async () => {
-    setLoading(true);
-    try {
-      const res = await fetch(`${API_BASE}/admin/bolts/`, { headers: authHeader });
-      if (!res.ok) throw new Error('Failed to fetch');
-      const data = await res.json();
-      setProducts(data.results || data);
-    } catch (err) {
-      console.error('Failed to fetch products', err);
-      setProducts([]);
-    }
-    setLoading(false);
-  };
-
-  const fetchSuppliers = async () => {
-    try {
-      const res = await fetch(`${API_BASE}/admin/suppliers/`, { headers: authHeader });
-      if (!res.ok) throw new Error('Failed to fetch');
-      const data = await res.json();
-      setSuppliers(data.results || data);
-    } catch (err) {
-      console.error('Failed to fetch suppliers', err);
-    }
-  };
 
   const openAdd = () => { setForm(emptyForm); setModal('add'); };
   const openEdit = (p) => {
@@ -242,7 +186,7 @@ function ProductsTab() {
       console.error('Failed to save product', err);
     }
     setModal(null);
-    fetchProducts();
+    onRefresh();
   };
 
   const handleDelete = async () => {
@@ -253,7 +197,7 @@ function ProductsTab() {
       console.error('Failed to delete product', err);
     }
     setDeleteId(null);
-    fetchProducts();
+    onRefresh();
   };
 
   if (loading) return <p className="text-sm text-slate-500">Loading products...</p>;
@@ -383,10 +327,7 @@ function ProductsTab() {
 
 // --- Tests Tab ---
 // --- Tests Tab ---
-function TestsTab() {
-  const [tests, setTests] = useState([]);
-  const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
+function TestsTab({ tests, products, loading, onRefresh }) {
   const [modal, setModal] = useState(null);
   const [editing, setEditing] = useState(null);
   const [deleteId, setDeleteId] = useState(null);
@@ -394,36 +335,6 @@ function TestsTab() {
   const [form, setForm] = useState(emptyForm);
 
   const authHeader = { 'Authorization': `Bearer ${localStorage.getItem('token')}` };
-
-  useEffect(() => {
-    fetchTests();
-    fetchProducts();
-  }, []);
-
-  const fetchTests = async () => {
-    setLoading(true);
-    try {
-      const res = await fetch(`${API_BASE}/admin/tests/`, { headers: authHeader });
-      if (!res.ok) throw new Error('Failed to fetch');
-      const data = await res.json();
-      setTests(data.results || data);
-    } catch (err) {
-      console.error('Failed to fetch tests', err);
-      setTests([]);
-    }
-    setLoading(false);
-  };
-
-  const fetchProducts = async () => {
-    try {
-      const res = await fetch(`${API_BASE}/admin/bolts/`, { headers: authHeader });
-      if (!res.ok) throw new Error('Failed to fetch');
-      const data = await res.json();
-      setProducts(data.results || data);
-    } catch (err) {
-      console.error('Failed to fetch products', err);
-    }
-  };
 
   const openAdd = () => { setForm(emptyForm); setModal('add'); };
   const openEdit = (t) => {
@@ -454,7 +365,7 @@ function TestsTab() {
       console.error('Failed to save test', err);
     }
     setModal(null);
-    fetchTests();
+    onRefresh();
   };
 
   const handleDelete = async () => {
@@ -465,7 +376,7 @@ function TestsTab() {
       console.error('Failed to delete test', err);
     }
     setDeleteId(null);
-    fetchTests();
+    onRefresh();
   };
 
   if (loading) return <p className="text-sm text-slate-500">Loading tests...</p>;
@@ -572,6 +483,44 @@ function TestsTab() {
 // --- Main Export ---
 export default function ManageDataPanel() {
   const [tab, setTab] = useState('products');
+  const [loading, setLoading] = useState(true);
+  const [suppliers, setSuppliers] = useState([]);
+  const [products, setProducts] = useState([]);
+  const [tests, setTests] = useState([]);
+
+  const authHeader = { 'Authorization': `Bearer ${localStorage.getItem('token')}` };
+
+  // Fetch all data on mount
+  useEffect(() => {
+    fetchAllData();
+  }, []);
+
+  const fetchAllData = async () => {
+    setLoading(true);
+    try {
+      const [suppliersRes, productsRes, testsRes] = await Promise.all([
+        fetch(`${API_BASE}/admin/suppliers/`, { headers: authHeader }),
+        fetch(`${API_BASE}/admin/bolts/`, { headers: authHeader }),
+        fetch(`${API_BASE}/admin/tests/`, { headers: authHeader })
+      ]);
+
+      if (suppliersRes.ok) {
+        const data = await suppliersRes.json();
+        setSuppliers(data.results || data);
+      }
+      if (productsRes.ok) {
+        const data = await productsRes.json();
+        setProducts(data.results || data);
+      }
+      if (testsRes.ok) {
+        const data = await testsRes.json();
+        setTests(data.results || data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch data', err);
+    }
+    setLoading(false);
+  };
 
   const tabs = [
     { id: 'suppliers', label: 'Suppliers', icon: Building2 },
@@ -599,9 +548,9 @@ export default function ManageDataPanel() {
         ))}
       </div>
 
-      {tab === 'suppliers' && <SuppliersTab />}
-      {tab === 'products' && <ProductsTab />}
-      {tab === 'tests' && <TestsTab />}
+      {tab === 'suppliers' && <SuppliersTab suppliers={suppliers} loading={loading} onRefresh={fetchAllData} />}
+      {tab === 'products' && <ProductsTab products={products} suppliers={suppliers} loading={loading} onRefresh={fetchAllData} />}
+      {tab === 'tests' && <TestsTab tests={tests} products={products} loading={loading} onRefresh={fetchAllData} />}
     </div>
   );
 }
