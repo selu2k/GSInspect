@@ -200,6 +200,10 @@ function ProductsTab({ products, suppliers, filterOptions, loading, onRefresh, c
 
   const handleSave = async () => {
     if (!form.name.trim()) return;
+    if (form.equipment_compatibility.length === 0) {
+      alert('Please add at least one equipment type.');
+      return;
+    }
     try {
       const payload = {
         ...form,
