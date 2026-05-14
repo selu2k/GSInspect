@@ -2,19 +2,52 @@ import React, { useState, useEffect } from 'react';
 import { CheckCircle, Clock } from 'lucide-react';
 import { get, post } from '../api/client';
 
-const MOCK_PENDING = [
-  { id: 'u1', filename: 'batch_test_results_mar09.csv', date: '2026-03-09', product: 'Unlinked', status: 'Pending Review' },
-  { id: 'u2', filename: 'supplierB_dynamic_run4.csv', date: '2026-03-10', product: 'Unlinked', status: 'Pending Review' },
-];
+
+const API_BASE = '/api';
 
 export default function VettePublishPage() {
-  const [items, setItems] = useState(MOCK_PENDING);
+  const [bolts, setBolts] = useState([]);
+  const [tests, setTests] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const handlePublish = (id) => {
-    setItems(prev =>
-      prev.map(item => item.id === id ? { ...item, status: 'Published' } : item)
-    );
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      const [boltsData, testsData] = await Promise.all([
+        get(`${API_BASE}/admin/bolts/`),
+        get(`${API_BASE}/admin/tests/`),
+      ]);
+      setBolts((boltsData.results || boltsData).filter(b => !b.is_published));
+      setTests((testsData.results || testsData).filter(t => !t.is_published));
+    } catch (err) {
+      console.error('Failed to fetch data', err);
+    }
+    setLoading(false);
   };
+
+  const handlePublishBolt = async (id) => {
+    try {
+      await post(`${API_BASE}/admin/bolts/${id}/publish/`);
+      fetchData();
+    } catch (err) {
+      console.error('Failed to publish bolt', err);
+    }
+  };
+
+  const handlePublishTest = async (id) => {
+    try {
+      await post(`${API_BASE}/admin/tests/${id}/publish/`);
+      fetchData();
+    } catch (err) {
+      console.error('Failed to publish test', err);
+    }
+  };
+
+  if (loading) return <p className="text-sm text-slate-500">Loading...</p>;
 
   return (
     <div className="max-w-5xl">
