@@ -164,8 +164,6 @@ function ProductsTab({ products, suppliers, filterOptions, loading, onRefresh, c
   const emptyForm = { supplier: '', name: '', length: '', diameter: '', category: 'Encapsulated', equipment_compatibility: [], is_published: false };
   const [form, setForm] = useState(emptyForm);
 
-  const authHeader = { 'Authorization': `Bearer ${localStorage.getItem('token')}` };
-
   const openAdd = () => { 
     setForm(emptyForm); 
     setDetailedProduct(null); 
@@ -316,17 +314,11 @@ function ProductsTab({ products, suppliers, filterOptions, loading, onRefresh, c
       </div>
 
       {(modal === 'add' || modal === 'edit') && (
-        <Modal title={modal === 'add' ? 'Add Product' : 'Edit Product'} onClose={() => setModal(null)}>
+        <Modal title={modal === 'add' ? 'Add Product' : `Edit Product #${detailedProduct?.id}`} onClose={() => setModal(null)}>
           {loadingDetails && modal === 'edit' ? (
             <p className="text-sm text-slate-500">Loading product details...</p>
           ) : (
             <div className="space-y-4">
-              {/* Product ID Display (Edit Mode) */}
-              {modal === 'edit' && detailedProduct && (
-                <div className="bg-slate-50 border border-slate-200 rounded-lg p-2">
-                  <p className="text-sm text-slate-600"><span className="font-medium">Product ID:</span> {detailedProduct.id}</p>
-                </div>
-              )}
 
               {/* Product Name */}
               <div>
@@ -462,7 +454,7 @@ function ProductsTab({ products, suppliers, filterOptions, loading, onRefresh, c
 }
 
 // --- Tests Tab ---
-function TestsTab({ tests, products, filterOptions, loading, onRefresh, currentPage, totalCount, nextUrl, prevUrl, onNextPage, onPrevPage }) {
+function TestsTab({ tests, filterOptions, loading, onRefresh, currentPage, totalCount, nextUrl, prevUrl, onNextPage, onPrevPage }) {
   const [modal, setModal] = useState(null);
   const [editing, setEditing] = useState(null);
   const [detailedTest, setDetailedTest] = useState(null);
@@ -471,8 +463,6 @@ function TestsTab({ tests, products, filterOptions, loading, onRefresh, currentP
   const [customFacility, setCustomFacility] = useState('');
   const emptyForm = { bolt: '', methodology: 'dynamic', facility: 'Custom', installation_method: '', encapsulation_method: '', peak_strength: '', bond_strength: '', yield_strength: '', ultimate_deformation: '', stiffness: '', loading_rate: '', energy_absorption: '', number_of_drops: '' };
   const [form, setForm] = useState(emptyForm);
-
-  const authHeader = { 'Authorization': `Bearer ${localStorage.getItem('token')}` };
 
   const openAdd = () => { 
     setForm(emptyForm); 
@@ -634,12 +624,6 @@ function TestsTab({ tests, products, filterOptions, loading, onRefresh, currentP
             <p className="text-sm text-slate-500">Loading test details...</p>
           ) : (
             <div className="space-y-4">
-              {/* Test ID Display (Edit Mode) */}
-              {modal === 'edit' && detailedTest && (
-                <div className="bg-slate-50 border border-slate-200 rounded-lg p-2">
-                  <p className="text-sm text-slate-600"><span className="font-medium">Test ID:</span> {detailedTest.id}</p>
-                </div>
-              )}
               {modal === 'edit' && (
                 <div className="mb-3">
                   <label className="block text-sm font-medium text-slate-700 mb-1">Product Name</label>
@@ -833,13 +817,6 @@ export default function ManageDataPanel() {
     prevUrl: null,
   });
 
-  const authHeader = { 'Authorization': `Bearer ${localStorage.getItem('token')}` };
-
-  // Fetch all data on mount
-  useEffect(() => {
-    fetchAllData();
-  }, []);
-
   const fetchAllData = async () => {
     setLoading(true);
     try {
@@ -924,6 +901,11 @@ export default function ManageDataPanel() {
     setLoading(false);
   };
 
+  // Fetch all data on mount
+  useEffect(() => {
+    fetchAllData();
+  }, []);
+
   const tabs = [
     { id: 'suppliers', label: 'Suppliers', icon: Building2 },
     { id: 'products', label: 'Products (Bolts)', icon: Package },
@@ -981,7 +963,6 @@ export default function ManageDataPanel() {
       {tab === 'tests' && (
         <TestsTab 
           tests={tests} 
-          products={products} 
           filterOptions={filterOptions}
           loading={loading} 
           onRefresh={fetchAllData}
