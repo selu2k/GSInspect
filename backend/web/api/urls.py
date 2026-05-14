@@ -22,6 +22,8 @@ from .views import (
     MyTokenObtainPairView,
     PublicBoltListView,
     PublicFilterOptionsView,
+    ExternalBoltSummaryStatsView,
+    ExternalTestCurvesView,
     PublicTestListView,
 )
 

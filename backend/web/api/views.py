@@ -28,7 +28,7 @@ from .serializers import (
     TestCurvePublishSerializer,
     TestPublishSerializer,
 )
-from .utils import group_tests_by_bolt
+from .utils import calculate_stats_for_tests, group_tests_by_bolt
 
 
 class HealthView(generics.GenericAPIView):
@@ -289,12 +289,142 @@ class AdminTestListCreateView(generics.ListCreateAPIView):
 
     queryset = Test.objects.select_related("bolt").all().order_by("-id")
     permission_classes = [IsAdminUser]
+    lookup_field = "id"
     pagination_class = AdminPagination
 
     def get_serializer_class(self):
         if self.request.method == "GET":
             return AdminTestListSerializer
         return AdminTestSerializer
+
+
+class ExternalBoltSummaryStatsView(generics.GenericAPIView):
+    """
+    External API endpoint for published bolts with summary statistics.
+
+    Returns:
+    - Bolt details
+    - Supplier details
+    - Number of published tests
+    - Summary statistics calculated from published tests
+    """
+
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request, *args, **kwargs):
+        bolts = Bolt.objects.select_related("supplier").filter(is_published=True).order_by("id")
+
+        results = []
+
+        for bolt in bolts:
+            tests = list(
+                Test.objects.filter(
+                    bolt=bolt,
+                    is_published=True,
+                )
+            )
+
+            stats = calculate_stats_for_tests(tests)
+
+            results.append(
+                {
+                    "id": bolt.id,
+                    "name": bolt.name,
+                    "supplier": {
+                        "id": bolt.supplier.id,
+                        "name": bolt.supplier.name,
+                    },
+                    "category": bolt.category,
+                    "length": bolt.length,
+                    "diameter": bolt.diameter,
+                    "equipment_compatibility": bolt.equipment_compatibility,
+                    "test_count": len(tests),
+                    "summary_stats": stats,
+                }
+            )
+
+        return Response(
+            {
+                "count": len(results),
+                "results": results,
+            }
+        )
+
+
+class ExternalTestCurvesView(generics.GenericAPIView):
+    """
+    External API endpoint for published test curve data.
+
+    Optional query parameters:
+    - bolt_ids: Comma-separated bolt IDs, e.g. ?bolt_ids=1,2,3
+    - methodology: static or dynamic
+    - facilities: Comma-separated facility names
+    """
+
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request, *args, **kwargs):
+        queryset = (
+            Test.objects.select_related(
+                "bolt__supplier",
+                "curve",
+            )
+            .filter(
+                is_published=True,
+                bolt__is_published=True,
+                curve__is_published=True,
+            )
+            .order_by("id")
+        )
+
+        bolt_ids = request.query_params.get("bolt_ids")
+        methodology = request.query_params.get("methodology")
+        facilities = request.query_params.get("facilities")
+
+        if bolt_ids:
+            bolt_id_list = [
+                int(bolt_id.strip()) for bolt_id in bolt_ids.split(",") if bolt_id.strip()
+            ]
+            queryset = queryset.filter(bolt_id__in=bolt_id_list)
+
+        if methodology:
+            queryset = queryset.filter(methodology=methodology)
+
+        if facilities:
+            facility_list = [
+                facility.strip() for facility in facilities.split(",") if facility.strip()
+            ]
+            queryset = queryset.filter(facility__in=facility_list)
+
+        results = []
+
+        for test in queryset:
+            results.append(
+                {
+                    "test_id": test.id,
+                    "bolt": {
+                        "id": test.bolt.id,
+                        "name": test.bolt.name,
+                        "supplier": {
+                            "id": test.bolt.supplier.id,
+                            "name": test.bolt.supplier.name,
+                        },
+                    },
+                    "methodology": test.methodology,
+                    "facility": test.facility,
+                    "curve": {
+                        "id": test.curve.id,
+                        "curve_pair": test.curve.curve_pair,
+                    },
+                }
+            )
+
+        return Response(
+            {
+                "count": len(results),
+                "results": results,
+            }
+        )
 
 
 class AdminTestDetailView(generics.RetrieveUpdateDestroyAPIView):
@@ -386,29 +516,24 @@ class AdminTestCurveCreateView(generics.CreateAPIView):
     parser_classes = (JSONParser, MultiPartParser, FormParser)
 
     def post(self, request, *args, **kwargs):
-        # Check if CSV file is uploaded
         if "file" in request.FILES:
             return self._handle_csv_upload(request)
-        else:
-            return self._handle_json_upload(request)
+        return self._handle_json_upload(request)
 
     def _handle_csv_upload(self, request):
         """Parse CSV file and create test curves."""
         csv_file = request.FILES["file"]
 
         try:
-            # Read CSV content
             stream = io.TextIOWrapper(csv_file.file, encoding="utf-8")
             reader = csv.DictReader(stream)
 
-            # Group rows by test_id
             grouped_data = {}
             for row in reader:
                 test_id = int(row["test_id"])
                 if test_id not in grouped_data:
                     grouped_data[test_id] = []
 
-                # Create data point from CSV row
                 data_point = {
                     "displacement": float(row["displacement"]),
                     "load": float(row["load"]),
@@ -416,7 +541,6 @@ class AdminTestCurveCreateView(generics.CreateAPIView):
                 }
                 grouped_data[test_id].append(data_point)
 
-            # Convert to expected format
             data = [
                 {"test": test_id, "curve_pair": curve_pair}
                 for test_id, curve_pair in grouped_data.items()
@@ -427,7 +551,6 @@ class AdminTestCurveCreateView(generics.CreateAPIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # Process like normal JSON bulk upload
         return self._process_data(data)
 
     def _handle_json_upload(self, request):
