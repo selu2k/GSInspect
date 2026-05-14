@@ -9,15 +9,17 @@ const API_BASE = '/api';
 // --- Reusable Modal ---
 function Modal({ title, onClose, children }) {
   return (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-lg p-6 relative">
-        <div className="flex justify-between items-center mb-4">
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl shadow-xl w-full max-w-lg md:max-w-2xl lg:max-w-3xl max-h-[90vh] flex flex-col relative">
+        <div className="flex justify-between items-center px-6 py-4 border-b border-slate-200 flex-shrink-0">
           <h3 className="text-lg font-bold text-slate-800">{title}</h3>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-600">
             <X className="w-5 h-5" />
           </button>
         </div>
-        {children}
+        <div className="flex-1 overflow-y-auto px-6 py-4">
+          {children}
+        </div>
       </div>
     </div>
   );
@@ -255,6 +257,21 @@ function ProductsTab({ products, suppliers, filterOptions, loading, onRefresh, c
     onRefresh();
   };
 
+  const handlePublishToggle = async (boltId, currentStatus) => {
+    try {
+      const res = await fetch(`${API_BASE}/admin/bolts/${boltId}/publish/`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', ...authHeader },
+        body: JSON.stringify({ is_published: !currentStatus }),
+      });
+      if (!res.ok) throw new Error('Failed to toggle publish status');
+      setDetailedProduct({ ...detailedProduct, is_published: !currentStatus });
+      onRefresh();
+    } catch (err) {
+      console.error('Failed to toggle publish status', err);
+    }
+  };
+
   if (loading) return <p className="text-sm text-slate-500">Loading products...</p>;
 
   const itemsPerPage = 10;
@@ -419,12 +436,20 @@ function ProductsTab({ products, suppliers, filterOptions, loading, onRefresh, c
 
               {/* Published Status - Only in Edit Mode */}
               {modal === 'edit' && detailedProduct && (
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-2">
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
                   <div className="flex items-center justify-between">
-                    <p className="text-sm font-medium text-slate-700">Status:</p>
-                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${form.is_published ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
-                      {form.is_published ? '✓ Published' : '○ Draft'}
-                    </span>
+                    <div>
+                      <p className="text-sm font-medium text-slate-700">Status:</p>
+                      <span className={`inline-block mt-1 px-2 py-0.5 rounded-full text-xs font-medium ${detailedProduct.is_published ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
+                        {detailedProduct.is_published ? '✓ Published' : '○ Draft'}
+                      </span>
+                    </div>
+                    <button 
+                      onClick={() => handlePublishToggle(detailedProduct.id, detailedProduct.is_published)}
+                      className={`px-3 py-1.5 rounded-lg text-sm font-medium text-white ${detailedProduct.is_published ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'}`}
+                    >
+                      {detailedProduct.is_published ? 'Unpublish' : 'Publish'}
+                    </button>
                   </div>
                 </div>
               )}
@@ -572,6 +597,21 @@ function TestsTab({ tests, products, filterOptions, loading, onRefresh, currentP
     onRefresh();
   };
 
+  const handlePublishToggle = async (testId, currentStatus) => {
+    try {
+      const res = await fetch(`${API_BASE}/admin/tests/${testId}/publish/`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', ...authHeader },
+        body: JSON.stringify({ is_published: !currentStatus }),
+      });
+      if (!res.ok) throw new Error('Failed to toggle publish status');
+      setDetailedTest({ ...detailedTest, is_published: !currentStatus });
+      onRefresh();
+    } catch (err) {
+      console.error('Failed to toggle publish status', err);
+    }
+  };
+
   if (loading) return <p className="text-sm text-slate-500">Loading tests...</p>;
 
   const itemsPerPage = 10;
@@ -645,7 +685,7 @@ function TestsTab({ tests, products, filterOptions, loading, onRefresh, currentP
           {loadingDetails && modal === 'edit' ? (
             <p className="text-sm text-slate-500">Loading test details...</p>
           ) : (
-            <div className="space-y-4 max-h-96 overflow-y-auto">
+            <div className="space-y-4">
               {/* Test ID Display (Edit Mode) */}
               {modal === 'edit' && detailedTest && (
                 <div className="bg-slate-50 border border-slate-200 rounded-lg p-2">
@@ -765,12 +805,20 @@ function TestsTab({ tests, products, filterOptions, loading, onRefresh, currentP
 
               {/* Published Status - Only in Edit Mode */}
               {modal === 'edit' && detailedTest && (
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-2">
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
                   <div className="flex items-center justify-between">
-                    <p className="text-sm font-medium text-slate-700">Status:</p>
-                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${detailedTest.is_published ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
-                      {detailedTest.is_published ? '✓ Published' : '○ Draft'}
-                    </span>
+                    <div>
+                      <p className="text-sm font-medium text-slate-700">Status:</p>
+                      <span className={`inline-block mt-1 px-2 py-0.5 rounded-full text-xs font-medium ${detailedTest.is_published ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
+                        {detailedTest.is_published ? '✓ Published' : '○ Draft'}
+                      </span>
+                    </div>
+                    <button 
+                      onClick={() => handlePublishToggle(detailedTest.id, detailedTest.is_published)}
+                      className={`px-3 py-1.5 rounded-lg text-sm font-medium text-white ${detailedTest.is_published ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'}`}
+                    >
+                      {detailedTest.is_published ? 'Unpublish' : 'Publish'}
+                    </button>
                   </div>
                 </div>
               )}
