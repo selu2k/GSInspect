@@ -302,12 +302,11 @@ class ExternalBoltSummaryStatsView(generics.GenericAPIView):
     - Number of published tests
     - Summary statistics calculated from published tests
     """
+
     permission_classes = [permissions.AllowAny]
 
     def get(self, request, *args, **kwargs):
-        bolts = Bolt.objects.select_related("supplier").filter(
-            is_published=True
-        ).order_by("id")
+        bolts = Bolt.objects.select_related("supplier").filter(is_published=True).order_by("id")
 
         results = []
 
@@ -321,25 +320,29 @@ class ExternalBoltSummaryStatsView(generics.GenericAPIView):
 
             stats = calculate_stats_for_tests(tests)
 
-            results.append({
-                "id": bolt.id,
-                "name": bolt.name,
-                "supplier": {
-                    "id": bolt.supplier.id,
-                    "name": bolt.supplier.name,
-                },
-                "category": bolt.category,
-                "length": bolt.length,
-                "diameter": bolt.diameter,
-                "equipment_compatibility": bolt.equipment_compatibility,
-                "test_count": len(tests),
-                "summary_stats": stats,
-            })
+            results.append(
+                {
+                    "id": bolt.id,
+                    "name": bolt.name,
+                    "supplier": {
+                        "id": bolt.supplier.id,
+                        "name": bolt.supplier.name,
+                    },
+                    "category": bolt.category,
+                    "length": bolt.length,
+                    "diameter": bolt.diameter,
+                    "equipment_compatibility": bolt.equipment_compatibility,
+                    "test_count": len(tests),
+                    "summary_stats": stats,
+                }
+            )
 
-        return Response({
-            "count": len(results),
-            "results": results,
-        })
+        return Response(
+            {
+                "count": len(results),
+                "results": results,
+            }
+        )
 
 
 class ExternalTestCurvesView(generics.GenericAPIView):
@@ -351,17 +354,22 @@ class ExternalTestCurvesView(generics.GenericAPIView):
     - methodology: static or dynamic
     - facilities: Comma-separated facility names
     """
+
     permission_classes = [permissions.AllowAny]
 
     def get(self, request, *args, **kwargs):
-        queryset = Test.objects.select_related(
-            "bolt__supplier",
-            "curve",
-        ).filter(
-            is_published=True,
-            bolt__is_published=True,
-            curve__is_published=True,
-        ).order_by("id")
+        queryset = (
+            Test.objects.select_related(
+                "bolt__supplier",
+                "curve",
+            )
+            .filter(
+                is_published=True,
+                bolt__is_published=True,
+                curve__is_published=True,
+            )
+            .order_by("id")
+        )
 
         bolt_ids = request.query_params.get("bolt_ids")
         methodology = request.query_params.get("methodology")
@@ -369,9 +377,7 @@ class ExternalTestCurvesView(generics.GenericAPIView):
 
         if bolt_ids:
             bolt_id_list = [
-                int(bolt_id.strip())
-                for bolt_id in bolt_ids.split(",")
-                if bolt_id.strip()
+                int(bolt_id.strip()) for bolt_id in bolt_ids.split(",") if bolt_id.strip()
             ]
             queryset = queryset.filter(bolt_id__in=bolt_id_list)
 
@@ -380,37 +386,40 @@ class ExternalTestCurvesView(generics.GenericAPIView):
 
         if facilities:
             facility_list = [
-                facility.strip()
-                for facility in facilities.split(",")
-                if facility.strip()
+                facility.strip() for facility in facilities.split(",") if facility.strip()
             ]
             queryset = queryset.filter(facility__in=facility_list)
 
         results = []
 
         for test in queryset:
-            results.append({
-                "test_id": test.id,
-                "bolt": {
-                    "id": test.bolt.id,
-                    "name": test.bolt.name,
-                    "supplier": {
-                        "id": test.bolt.supplier.id,
-                        "name": test.bolt.supplier.name,
+            results.append(
+                {
+                    "test_id": test.id,
+                    "bolt": {
+                        "id": test.bolt.id,
+                        "name": test.bolt.name,
+                        "supplier": {
+                            "id": test.bolt.supplier.id,
+                            "name": test.bolt.supplier.name,
+                        },
                     },
-                },
-                "methodology": test.methodology,
-                "facility": test.facility,
-                "curve": {
-                    "id": test.curve.id,
-                    "curve_pair": test.curve.curve_pair,
-                },
-            })
+                    "methodology": test.methodology,
+                    "facility": test.facility,
+                    "curve": {
+                        "id": test.curve.id,
+                        "curve_pair": test.curve.curve_pair,
+                    },
+                }
+            )
 
-        return Response({
-            "count": len(results),
-            "results": results,
-        })
+        return Response(
+            {
+                "count": len(results),
+                "results": results,
+            }
+        )
+
     pagination_class = AdminPagination
 
     def get_serializer_class(self):
