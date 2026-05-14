@@ -20,6 +20,14 @@ venv/
 capstone-env/
 pip-log.txt
 pip-delete-this-directory.txt
+htmlcov/
+.pytest_cache/
+.coverage
+.coverage.*
+*.egg-info/
+dist/
+build/
+*.egg
 
 # Environment variables
 .env

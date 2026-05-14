@@ -8,23 +8,39 @@ import {
   ResponsiveContainer,
   Tooltip,
   XAxis,
-  YAxis
+  YAxis,
+  ScatterChart,
+  Scatter,
+  Cell
 } from 'recharts';
 import { useAppContext } from '../context/AppContext';
+import MultiSelect from '../components/filters/MultiSelect';
 
 export default function Dashboard() {
   const { 
     filteredProductsList, filteredTests, filteredCurves, productColorMap, apiStats,
     selectedProductIds, setSelectedProductIds, toggleProductSelection, showAverage, setShowAverage,
-    methodology, setMethodology, selectedFacility, setSelectedFacility, facilities
+    methodology, setMethodology, selectedFacilities, setSelectedFacilities, facilities
   } = useAppContext();
 
+  const [selectedProperty, setSelectedProperty] = useState('peak_strength');
+
+  // Guard against null/undefined API data
+  if (!filteredProductsList || !filteredTests || !filteredCurves || !productColorMap || !apiStats) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <p className="text-slate-500 italic">Loading data...</p>
+      </div>
+    );
+  }
+
   const plottedTests = useMemo(() => {
-    if (selectedProductIds.length === 0) return [];
+    if (!filteredTests || selectedProductIds.length === 0) return [];
     return filteredTests.filter((test) => selectedProductIds.includes(test.product_id));
   }, [filteredTests, selectedProductIds]);
 
   const chartSeries = useMemo(() => {
+    if (!plottedTests || plottedTests.length === 0 || !filteredProductsList || !productColorMap) return [];
     const seenProducts = new Set();
     return plottedTests
       .map((test) => {
@@ -45,6 +61,7 @@ export default function Dashboard() {
   }, [plottedTests, filteredProductsList, productColorMap]);
 
   const chartSeriesData = useMemo(() => {
+    if (!selectedProductIds || !filteredProductsList || !productColorMap) return [];
     if (showAverage) {
       // Show average curves per product
       return selectedProductIds.map((productId) => {
@@ -65,7 +82,7 @@ export default function Dashboard() {
   }, [showAverage, selectedProductIds, chartSeries, filteredProductsList, productColorMap]);
 
   const chartData = useMemo(() => {
-    if (plottedTests.length === 0) return [];
+    if (!plottedTests || plottedTests.length === 0 || !filteredCurves) return [];
 
     const selectedTestIds = new Set(plottedTests.map((test) => test.test_id));
     const relevantCurves = filteredCurves.filter((point) => selectedTestIds.has(point.test_id));
@@ -114,7 +131,7 @@ export default function Dashboard() {
   }, [plottedTests, filteredCurves, showAverage]);
 
   const productStats = useMemo(() => {
-    if (selectedProductIds.length === 0) return [];
+    if (!selectedProductIds || selectedProductIds.length === 0 || !filteredProductsList || !apiStats) return [];
 
     return selectedProductIds.map(productId => {
       const product = filteredProductsList.find(p => p.id === productId);
@@ -126,6 +143,31 @@ export default function Dashboard() {
       };
     });
   }, [selectedProductIds, apiStats, filteredProductsList]);
+
+  const scatterData = useMemo(() => {
+    if (!plottedTests || plottedTests.length === 0 || !selectedProperty) return [];
+    
+    return plottedTests
+      .map((test, idx) => {
+        const product = filteredProductsList.find(p => p.id === test.product_id);
+        const propertyValue = test[selectedProperty];
+        
+        if (propertyValue == null || isNaN(propertyValue)) return null;
+        
+        const productIndex = selectedProductIds.indexOf(test.product_id);
+        const color = productColorMap[test.product_id]?.hex || '#cbd5e1';
+        
+        return {
+          x: propertyValue,
+          y: productIndex,
+          productName: product?.product_name || 'Unknown',
+          testId: test.test_id,
+          color: color,
+          productId: test.product_id
+        };
+      })
+      .filter(Boolean);
+  }, [plottedTests, selectedProperty, filteredProductsList, selectedProductIds, productColorMap]);
 
   return (
     <div className="flex flex-col gap-4 h-full overflow-y-auto pb-6">
@@ -215,19 +257,14 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-700 uppercase tracking-widest flex items-center gap-1.5 px-0.5">
-              <Building2 className="w-3.5 h-3.5 text-slate-400" />
-              Facility
-            </label>
-            <select 
-              value={selectedFacility}
-              onChange={(e) => setSelectedFacility(e.target.value)}
-              className="w-full bg-white border border-slate-300 text-slate-700 text-sm rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent p-2.5 transition-all hover:border-slate-400"
-            >
-              {facilities.map((f, i) => <option key={f || i} value={f}>{f}</option>)}
-            </select>
-          </div>
+          <MultiSelect
+            label="Facility"
+            options={facilities.filter(f => f !== 'All')}
+            selectedValues={selectedFacilities}
+            onChange={setSelectedFacilities}
+            placeholder="Select facilities..."
+            icon={Building2}
+          />
         </div>
       </section>
 
@@ -370,54 +407,132 @@ export default function Dashboard() {
       {/* Tests Summary Stats Section */}
       {plottedTests.length > 0 && productStats.length > 0 && (
         <section className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 md:p-5 shrink-0 overflow-hidden flex flex-col">
-          <div className="flex items-center justify-between gap-3 mb-3 shrink-0">
-            <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wide">Plotted Products Summary Stats</h3>
+          <div className="flex items-center justify-between gap-3 mb-4 shrink-0">
+            <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wide">Summary Statistics</h3>
+            <select
+              value={selectedProperty}
+              onChange={(e) => setSelectedProperty(e.target.value)}
+              className="w-56 bg-white border border-slate-300 text-slate-700 text-sm rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent p-2 transition-all hover:border-slate-400"
+            >
+              <option value="peak_strength">Peak Strength (kN)</option>
+              <option value="yield_strength">Yield Strength (kN)</option>
+              <option value="ultimate_deformation">Ultimate Deformation (mm)</option>
+              <option value="energy_absorption">Energy Absorption (kJ)</option>
+              <option value="bond_strength">Bond Strength</option>
+              <option value="stiffness">Stiffness</option>
+              <option value="number_of_drops">Number of Drops</option>
+              <option value="loading_rate">Loading Rate</option>
+            </select>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse text-sm whitespace-nowrap">
               <thead>
                 <tr className="bg-slate-50 border-y border-slate-200 text-slate-600">
-                  <th className="px-4 py-3 font-medium">Product / Metric</th>
-                  <th className="px-4 py-3 font-medium">Peak Strength (kN)</th>
-                  <th className="px-4 py-3 font-medium">Yield Strength (kN)</th>
-                  <th className="px-4 py-3 font-medium">Ultimate Def. (mm)</th>
-                  <th className="px-4 py-3 font-medium">Energy Abs. (kJ)</th>
-                  <th className="px-4 py-3 font-medium">Bond Strength</th>
-                  <th className="px-4 py-3 font-medium">Stiffness</th>
-                  <th className="px-4 py-3 font-medium">Drops</th>
+                  <th className="px-4 py-3 font-medium">Product</th>
+                  <th className="px-4 py-3 font-medium">Count</th>
+                  <th className="px-4 py-3 font-medium">Min</th>
+                  <th className="px-4 py-3 font-medium">Max</th>
+                  <th className="px-4 py-3 font-medium">Mean</th>
+                  <th className="px-4 py-3 font-medium">Median</th>
+                  <th className="px-4 py-3 font-medium">Q25</th>
+                  <th className="px-4 py-3 font-medium">Q75</th>
+                  <th className="px-4 py-3 font-medium">Std Dev</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {productStats.map(({ product, stats }) => {
                   const colorMap = productColorMap[product?.id];
-                  const labels = [
-                    { display: 'Count', key: 'count' },
-                    { display: 'Min', key: 'min' },
-                    { display: 'Max', key: 'max' },
-                    { display: 'Mean', key: 'mean' },
-                    { display: 'Median', key: 'median' },
-                    { display: 'Q25', key: 'q25' },
-                    { display: 'Q75', key: 'q75' },
-                    { display: 'Std Dev', key: 'std_dev' }
-                  ];
-                  return labels.map(({ display, key }, idx) => (
-                    <tr key={`${product?.id}-${key}`} className="hover:bg-slate-50 transition-colors">
+                  const propertyStats = stats[selectedProperty];
+                  
+                  return (
+                    <tr key={product?.id} className="hover:bg-slate-50 transition-colors">
                       <td className="px-4 py-3 font-medium text-slate-700 border-l-4" style={{ borderLeftColor: colorMap?.hex || '#cbd5e1' }}>
-                        {idx === 0 ? product?.product_name : ''} {idx === 0 && <span className="text-slate-400 font-normal pl-2">{display}</span>}
-                        {idx !== 0 && <span className="text-slate-400 pl-4">{display}</span>}
+                        {product?.product_name}
                       </td>
-                      <td className="px-4 py-2 text-slate-600">{stats.peak_strength && stats.peak_strength[key] != null ? (key === 'count' ? stats.peak_strength[key] : stats.peak_strength[key].toFixed(2)) : '-'}</td>
-                      <td className="px-4 py-2 text-slate-600">{stats.yield_strength && stats.yield_strength[key] != null ? (key === 'count' ? stats.yield_strength[key] : stats.yield_strength[key].toFixed(2)) : '-'}</td>
-                      <td className="px-4 py-2 text-slate-600">{stats.ultimate_deformation && stats.ultimate_deformation[key] != null ? (key === 'count' ? stats.ultimate_deformation[key] : stats.ultimate_deformation[key].toFixed(2)) : '-'}</td>
-                      <td className="px-4 py-2 text-slate-600">{stats.energy_absorption && stats.energy_absorption[key] != null ? (key === 'count' ? stats.energy_absorption[key] : stats.energy_absorption[key].toFixed(2)) : '-'}</td>
-                      <td className="px-4 py-2 text-slate-600">{stats.bond_strength && stats.bond_strength[key] != null ? (key === 'count' ? stats.bond_strength[key] : stats.bond_strength[key].toFixed(2)) : '-'}</td>
-                      <td className="px-4 py-2 text-slate-600">{stats.stiffness && stats.stiffness[key] != null ? (key === 'count' ? stats.stiffness[key] : stats.stiffness[key].toFixed(2)) : '-'}</td>
-                      <td className="px-4 py-2 text-slate-600">{stats.number_of_drops && stats.number_of_drops[key] != null ? (key === 'count' ? stats.number_of_drops[key] : stats.number_of_drops[key].toFixed(2)) : '-'}</td>
+                      <td className="px-4 py-2 text-slate-600">{propertyStats?.count ?? '-'}</td>
+                      <td className="px-4 py-2 text-slate-600">{propertyStats?.min != null ? propertyStats.min.toFixed(2) : '-'}</td>
+                      <td className="px-4 py-2 text-slate-600">{propertyStats?.max != null ? propertyStats.max.toFixed(2) : '-'}</td>
+                      <td className="px-4 py-2 text-slate-600">{propertyStats?.mean != null ? propertyStats.mean.toFixed(2) : '-'}</td>
+                      <td className="px-4 py-2 text-slate-600">{propertyStats?.median != null ? propertyStats.median.toFixed(2) : '-'}</td>
+                      <td className="px-4 py-2 text-slate-600">{propertyStats?.q25 != null ? propertyStats.q25.toFixed(2) : '-'}</td>
+                      <td className="px-4 py-2 text-slate-600">{propertyStats?.q75 != null ? propertyStats.q75.toFixed(2) : '-'}</td>
+                      <td className="px-4 py-2 text-slate-600">{propertyStats?.std_dev != null ? propertyStats.std_dev.toFixed(2) : '-'}</td>
                     </tr>
-                  ));
+                  );
                 })}
               </tbody>
             </table>
+          </div>
+        </section>
+      )}
+
+      {/* Distribution Scatter Plot Section */}
+      {plottedTests.length > 0 && scatterData.length > 0 && (
+        <section className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 md:p-5 shrink-0 flex flex-col min-h-[400px]">
+          <div className="flex items-center gap-3 mb-4 shrink-0">
+            <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wide">Distribution Analysis</h3>
+          </div>
+          
+          <div className="flex-1 min-h-0 w-full relative">
+            <ResponsiveContainer width="100%" height="100%">
+              <ScatterChart margin={{ top: 24, right: 24, left: 12, bottom: 24 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                <XAxis
+                  dataKey="x"
+                  type="number"
+                  name={selectedProperty.replace(/_/g, ' ')}
+                  tick={{ fill: '#475569', fontSize: 12 }}
+                  tickLine={false}
+                  axisLine={{ stroke: '#94a3b8' }}
+                  label={{ value: selectedProperty.replace(/_/g, ' ').toUpperCase(), position: 'insideBottomRight', offset: -10, fill: '#334155' }}
+                />
+                <YAxis
+                  dataKey="y"
+                  type="number"
+                  name="Product"
+                  domain={[-0.5, Math.max(...selectedProductIds.map((_, i) => i) || [0]) + 0.5]}
+                  tick={{
+                    fill: '#475569',
+                    fontSize: 12,
+                    formatter: (value) => {
+                      const productId = selectedProductIds[value];
+                      const product = filteredProductsList.find(p => p.id === productId);
+                      return product?.product_name || '';
+                    }
+                  }}
+                  tickLine={false}
+                  axisLine={{ stroke: '#94a3b8' }}
+                  width={110}
+                />
+                <Tooltip
+                  cursor={{ strokeDasharray: '3 3' }}
+                  contentStyle={{ borderRadius: '0.75rem', borderColor: '#cbd5e1' }}
+                  formatter={(value, name) => {
+                    if (name === 'x') return Number(value).toFixed(2);
+                    return value;
+                  }}
+                  labelFormatter={() => ''}
+                  content={({ active, payload }) => {
+                    if (active && payload && payload[0]) {
+                      const data = payload[0].payload;
+                      return (
+                        <div className="bg-white p-2 border border-slate-300 rounded-md shadow-lg text-xs">
+                          <p className="font-semibold text-slate-700">{data.productName}</p>
+                          <p className="text-slate-600">Test ID: {data.testId}</p>
+                          <p className="text-slate-600">{selectedProperty.replace(/_/g, ' ')}: {Number(data.x).toFixed(2)}</p>
+                        </div>
+                      );
+                    }
+                    return null;
+                  }}
+                />
+                <Scatter name="Test Points" data={scatterData}>
+                  {scatterData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} opacity={0.7} />
+                  ))}
+                </Scatter>
+              </ScatterChart>
+            </ResponsiveContainer>
           </div>
         </section>
       )}
