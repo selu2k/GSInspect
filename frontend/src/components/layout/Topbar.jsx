@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Activity, User, LogOut, Settings } from 'lucide-react';
+import { Activity, User, LogOut, LogIn, Settings } from 'lucide-react';
 import { useAppContext } from '../../context/AppContextCore';
 import { useNavigate } from 'react-router-dom';
 

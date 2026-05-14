@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useContext } from 'react';
 import { AppContext, TAILWIND_COLORS, HEX_COLORS } from './AppContextCore';
 
 export function AppProvider({ children }) {
@@ -242,6 +242,8 @@ export function AppProvider({ children }) {
     localStorage.removeItem('refreshToken');
     setIsAuthenticated(false);
     setUserRole(null);
+  };
+
   const resetFilters = () => {
     setSelectedCategories([]);
     setSelectedSuppliers([]);
@@ -280,3 +282,5 @@ export function AppProvider({ children }) {
     </AppContext.Provider>
   );
 }
+
+export const useAppContext = () => useContext(AppContext);
