@@ -153,6 +153,22 @@ class TestFilterSet(FilterSet):
         fields = ["methodology"]
 
 
+class AdminBoltFilterSet(FilterSet):
+    """Filterset for admin bolt list view."""
+
+    class Meta:
+        model = Bolt
+        fields = ["name", "is_published"]
+
+
+class AdminTestFilterSet(FilterSet):
+    """Filterset for admin test list view."""
+
+    class Meta:
+        model = Test
+        fields = ["is_published"]
+
+
 class PublicTestListView(generics.ListAPIView):
     """
     Public API endpoint for published tests with associated curve and calculated stats.
@@ -243,12 +259,18 @@ class AdminBoltListCreateView(generics.ListCreateAPIView):
 
     GET: List all bolts
     POST: Create a new bolt (cannot set is_published, use /api/admin/bolts/{id}/publish/)
+
+    Query parameters:
+    - name: Filter by bolt name (substring match)
+    - is_published: Filter by publish status (true/false)
     """
 
     queryset = Bolt.objects.select_related("supplier").all().order_by("id")
     serializer_class = AdminBoltSerializer
     permission_classes = [IsAdminUser]
     pagination_class = AdminPagination
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = AdminBoltFilterSet
 
 
 class AdminBoltDetailView(generics.RetrieveUpdateDestroyAPIView):
@@ -285,12 +307,17 @@ class AdminTestListCreateView(generics.ListCreateAPIView):
 
     GET: List all tests
     POST: Create a new test (cannot set is_published, use /api/admin/tests/{id}/publish/)
+
+    Query parameters:
+    - is_published: Filter by publish status (true/false)
     """
 
     queryset = Test.objects.select_related("bolt").all().order_by("-id")
     permission_classes = [IsAdminUser]
     lookup_field = "id"
     pagination_class = AdminPagination
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = AdminTestFilterSet
 
     def get_serializer_class(self):
         if self.request.method == "GET":
