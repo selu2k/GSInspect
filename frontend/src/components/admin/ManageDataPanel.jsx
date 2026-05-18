@@ -248,7 +248,7 @@ function ProductsTab({ products, suppliers, filterOptions, loading, onRefresh, c
 
   if (loading) return <p className="text-sm text-slate-500">Loading products...</p>;
 
-  const itemsPerPage = 10;
+  const itemsPerPage = 20;
   const startIndex = (currentPage - 1) * itemsPerPage + 1;
   const endIndex = Math.min(currentPage * itemsPerPage, totalCount);
 
@@ -638,6 +638,7 @@ function TestsTab({ tests, filterOptions, loading, onRefresh, currentPage, total
         <table className="w-full text-sm text-left">
           <thead className="bg-slate-50 border-b border-slate-200">
             <tr>
+              <th className="px-5 py-3 font-semibold text-slate-600">Test ID</th>
               <th className="px-5 py-3 font-semibold text-slate-600">Product</th>
               <th className="px-5 py-3 font-semibold text-slate-600">Methodology</th>
               <th className="px-5 py-3 font-semibold text-slate-600">Facility</th>
@@ -647,6 +648,7 @@ function TestsTab({ tests, filterOptions, loading, onRefresh, currentPage, total
           <tbody className="divide-y divide-slate-100">
             {tests.map(t => (
               <tr key={t.id} className="hover:bg-slate-50">
+                <td className="px-5 py-3 font-medium text-slate-500">{t.id}</td>
                 <td className="px-5 py-3 font-medium text-slate-800 max-w-[200px] truncate">{t.bolt?.name || t.bolt}</td>
                 <td className="px-5 py-3">
                   <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${t.methodology === 'dynamic' ? 'bg-amber-50 text-amber-700' : 'bg-teal-50 text-teal-700'}`}>
