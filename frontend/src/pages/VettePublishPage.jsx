@@ -171,7 +171,7 @@ export default function VettePublishPage() {
       </div>
       {/* Detail Modal */}
       {detailModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-lg mx-4 p-6">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-lg font-bold text-slate-800">
@@ -188,7 +188,10 @@ export default function VettePublishPage() {
                   <div key={key} className="flex gap-2">
                     <span className="font-medium text-slate-600 w-48 shrink-0">{key}:</span>
                     <span className="text-slate-800">
-                      {typeof value === 'object' ? JSON.stringify(value) : String(value ?? '-')}
+                      {value === null ? '-' : 
+                      typeof value === 'object' && value.name ? value.name :
+                      typeof value === 'object' ? JSON.stringify(value) : 
+                      String(value)}
                     </span>
                   </div>
                 ))}
