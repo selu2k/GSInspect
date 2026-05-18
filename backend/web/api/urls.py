@@ -127,7 +127,6 @@ urlpatterns = [
         AdminTestCurveCreateView.as_view(),
         name="admin-test-curve-create",
     ),
-]
     # Admin API - Audit logs
     path(
         "admin/audit-logs/",
