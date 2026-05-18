@@ -4,7 +4,7 @@ import json
 
 from django.db import IntegrityError
 from django.db.models import Max, Min
-from django_filters import BaseInFilter, FilterSet, NumberFilter
+from django_filters import BaseInFilter, CharFilter, FilterSet, NumberFilter
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import generics, permissions, status
 from rest_framework.exceptions import ValidationError
@@ -157,9 +157,11 @@ class TestFilterSet(FilterSet):
 class AdminBoltFilterSet(FilterSet):
     """Filterset for admin bolt list view."""
 
+    name = CharFilter(field_name="name", lookup_expr="icontains")
+
     class Meta:
         model = Bolt
-        fields = ["name", "is_published"]
+        fields = ["id", "name", "is_published"]
 
 
 class AdminTestFilterSet(FilterSet):
@@ -167,7 +169,7 @@ class AdminTestFilterSet(FilterSet):
 
     class Meta:
         model = Test
-        fields = ["is_published"]
+        fields = ["id", "is_published"]
 
 
 class PublicTestListView(generics.ListAPIView):
