@@ -110,6 +110,7 @@ class AdminBoltSerializer(serializers.ModelSerializer):
             "id",
             "name",
             "supplier",
+            "client_product_id",
             "length",
             "diameter",
             "category",
@@ -150,6 +151,7 @@ class AdminTestSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "bolt",
+            "client_test_id",
             "methodology",
             "methodology_display",
             "facility",
@@ -193,11 +195,12 @@ class AdminTestListSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "bolt",
+            "client_test_id",
             "methodology",
             "facility",
             "is_published",
         ]
-        read_only_fields = ["id", "methodology", "facility", "is_published"]
+        read_only_fields = ["id", "methodology", "facility", "is_published", "client_test_id"]
 
 
 class BoltPublishSerializer(serializers.ModelSerializer):
