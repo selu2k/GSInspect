@@ -35,6 +35,10 @@ class Bolt(models.Model):
         Supplier, on_delete=models.PROTECT, related_name="bolts", db_index=True
     )
     name = models.CharField(max_length=255)
+    client_product_id = models.CharField(
+        max_length=255, blank=True, null=True, db_index=True,
+        help_text="External product ID from supplier, combined with supplier_id for uniqueness"
+    )
     length = models.FloatField(db_index=True)
     diameter = models.FloatField()
     category = models.CharField(max_length=255, db_index=True)
@@ -99,6 +103,12 @@ class Test(models.Model):
     )
     number_of_drops = models.PositiveIntegerField(
         null=True, blank=True, help_text="Required for dynamic tests"
+    )
+
+    # External reference
+    client_test_id = models.CharField(
+        max_length=255, blank=True, null=True, db_index=True,
+        help_text="External test ID from supplier, combined with supplier_id for uniqueness"
     )
 
     is_published = models.BooleanField(default=False, db_index=True)
