@@ -56,6 +56,17 @@ export function AppProvider({ children }) {
       });
   }, []);
 
+  // Listen for token expiration from API client
+  useEffect(() => {
+    const handleTokenExpired = () => {
+      setIsAuthenticated(false);
+      setUserRole(null);
+    };
+    
+    window.addEventListener('tokenExpired', handleTokenExpired);
+    return () => window.removeEventListener('tokenExpired', handleTokenExpired);
+  }, []);
+
   // Filter State
   const [supportType] = useState('rockbolt');
   const [methodology, setMethodology] = useState('dynamic');

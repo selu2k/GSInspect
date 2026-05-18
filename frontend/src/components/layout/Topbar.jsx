@@ -58,9 +58,9 @@ export default function Topbar() {
                 >
                   <Settings className="w-4 h-4" /> Admin Panel
                 </button>
-                <button className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2">
+                {/* <button className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2">
                   <User className="w-4 h-4" /> Profile
-                </button>
+                </button> */}
                 <div className="h-px bg-slate-200 my-1"></div>
                 <button 
                   onClick={handleLogout}

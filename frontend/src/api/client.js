@@ -67,9 +67,10 @@ async function handle401() {
     return newToken;
   } catch (error) {
     processQueue(error, null);
-    // Clear auth state and redirect to login
+    // Clear auth state and dispatch event to notify React
     localStorage.removeItem('token');
     localStorage.removeItem('refreshToken');
+    window.dispatchEvent(new Event('tokenExpired'));
     window.location.href = '/admin/login';
     throw error;
   }
