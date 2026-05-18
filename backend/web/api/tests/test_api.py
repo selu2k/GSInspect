@@ -456,3 +456,4 @@ class TestExternalAPI:
         assert response.status_code == status.HTTP_200_OK
         assert response.data["count"] == 1
         assert response.data["results"][0]["methodology"] == test_data.methodology
+        
