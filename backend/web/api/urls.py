@@ -34,16 +34,13 @@ from .views import (
 urlpatterns = [
     # Health check
     path("health/", HealthView.as_view(), name="health"),
-
     # JWT Authentication (Replacement for Session Login)
     path("auth/login/", MyTokenObtainPairView.as_view(), name="token_obtain_pair"),
     path("auth/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
-
     # API Schema & Documentation
     path("schema/", SpectacularAPIView.as_view(), name="schema"),
     path("docs/", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
     path("redoc/", SpectacularRedocView.as_view(url_name="schema"), name="redoc"),
-
     # Public API endpoints
     path(
         "public/filter-options/",
@@ -60,7 +57,6 @@ urlpatterns = [
         PublicTestListView.as_view(),
         name="test-list",
     ),
-
     # External API endpoints
     path(
         "external/bolts-summary/",
@@ -72,7 +68,6 @@ urlpatterns = [
         ExternalTestCurvesView.as_view(),
         name="external-test-curves",
     ),
-
     # Admin API - Supplier CRUD
     path(
         "admin/suppliers/",
@@ -84,7 +79,6 @@ urlpatterns = [
         AdminSupplierDetailView.as_view(),
         name="admin-supplier-detail",
     ),
-
     # Admin API - Bolt CRUD
     path(
         "admin/bolts/",
@@ -101,7 +95,6 @@ urlpatterns = [
         AdminBoltPublishView.as_view(),
         name="admin-bolt-publish",
     ),
-
     # Admin API - Test CRUD
     path(
         "admin/tests/",
@@ -118,7 +111,6 @@ urlpatterns = [
         AdminTestPublishView.as_view(),
         name="admin-test-publish",
     ),
-
     # Admin API - TestCurve operations
     path(
         "admin/test-curves/<int:id>/publish/",
@@ -135,6 +127,7 @@ urlpatterns = [
         AdminTestCurveCreateView.as_view(),
         name="admin-test-curve-create",
     ),
+]
     # Admin API - Audit logs
     path(
         "admin/audit-logs/",
