@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, X, Check, Database, Package, Building2 } from 'lucide-react';
+import { Plus, Edit, Trash2, X, Check, Database, Package, Building2, Search } from 'lucide-react';
 import { get, post, put, del, patch } from '../../api/client';
 
 const API_BASE = '/api';
@@ -153,7 +153,8 @@ function SuppliersTab({ suppliers, loading, onRefresh, currentPage, totalCount, 
 }
 
 // --- Products Tab ---
-function ProductsTab({ products, suppliers, filterOptions, loading, onRefresh, currentPage, totalCount, nextUrl, prevUrl, onNextPage, onPrevPage }) {
+function ProductsTab({ products, suppliers, filterOptions, loading, onRefresh, currentPage, totalCount, nextUrl, prevUrl, onNextPage, onPrevPage, searchValue, onSearch }) {
+  const [localSearch, setLocalSearch] = useState(searchValue);
   const [modal, setModal] = useState(null);
   const [editing, setEditing] = useState(null);
   const [detailedProduct, setDetailedProduct] = useState(null);
@@ -163,6 +164,10 @@ function ProductsTab({ products, suppliers, filterOptions, loading, onRefresh, c
   const [customEquipment, setCustomEquipment] = useState('');
   const emptyForm = { supplier: '', name: '', length: '', diameter: '', category: 'Encapsulated', equipment_compatibility: [], is_published: false };
   const [form, setForm] = useState(emptyForm);
+
+  useEffect(() => {
+    setLocalSearch(searchValue);
+  }, [searchValue]);
 
   const openAdd = () => { 
     setForm(emptyForm); 
@@ -249,6 +254,31 @@ function ProductsTab({ products, suppliers, filterOptions, loading, onRefresh, c
 
   return (
     <div className="space-y-4">
+      {/* Search Bar */}
+      <div className="relative flex gap-2">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <input
+            type="text"
+            placeholder="Search by bolt name..."
+            value={localSearch}
+            onChange={(e) => setLocalSearch(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                onSearch(localSearch);
+              }
+            }}
+            className="w-full pl-9 pr-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+          />
+        </div>
+        <button
+          onClick={() => onSearch(localSearch)}
+          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium"
+        >
+          Search
+        </button>
+      </div>
+
       <div className="flex justify-between items-center">
         <p className="text-sm text-slate-500">{startIndex}-{endIndex} of {totalCount} product(s)</p>
         <button onClick={openAdd} className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium">
@@ -454,7 +484,8 @@ function ProductsTab({ products, suppliers, filterOptions, loading, onRefresh, c
 }
 
 // --- Tests Tab ---
-function TestsTab({ tests, filterOptions, loading, onRefresh, currentPage, totalCount, nextUrl, prevUrl, onNextPage, onPrevPage }) {
+function TestsTab({ tests, filterOptions, loading, onRefresh, currentPage, totalCount, nextUrl, prevUrl, onNextPage, onPrevPage, searchValue, onSearch }) {
+  const [localSearch, setLocalSearch] = useState(searchValue);
   const [modal, setModal] = useState(null);
   const [editing, setEditing] = useState(null);
   const [detailedTest, setDetailedTest] = useState(null);
@@ -464,6 +495,10 @@ function TestsTab({ tests, filterOptions, loading, onRefresh, currentPage, total
   const [removeCurve, setRemoveCurve] = useState(false);
   const emptyForm = { bolt: '', methodology: 'dynamic', facility: 'Custom', installation_method: '', encapsulation_method: '', peak_strength: '', bond_strength: '', yield_strength: '', ultimate_deformation: '', stiffness: '', loading_rate: '', energy_absorption: '', number_of_drops: '' };
   const [form, setForm] = useState(emptyForm);
+
+  useEffect(() => {
+    setLocalSearch(searchValue);
+  }, [searchValue]);
 
   const openAdd = () => { 
     setForm(emptyForm); 
@@ -567,6 +602,31 @@ function TestsTab({ tests, filterOptions, loading, onRefresh, currentPage, total
 
   return (
     <div className="space-y-4">
+      {/* Search Bar */}
+      <div className="relative flex gap-2">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <input
+            type="text"
+            placeholder="Search by test ID..."
+            value={localSearch}
+            onChange={(e) => setLocalSearch(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                onSearch(localSearch);
+              }
+            }}
+            className="w-full pl-9 pr-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+          />
+        </div>
+        <button
+          onClick={() => onSearch(localSearch)}
+          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium"
+        >
+          Search
+        </button>
+      </div>
+
       <div className="flex justify-between items-center">
         <p className="text-sm text-slate-500">{startIndex}-{endIndex} of {totalCount} test(s)</p>
         <button onClick={openAdd} className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium">
@@ -859,6 +919,10 @@ export default function ManageDataPanel() {
     prevUrl: null,
   });
 
+  // Search state
+  const [productSearch, setProductSearch] = useState('');
+  const [testSearch, setTestSearch] = useState('');
+
   const fetchAllData = async () => {
     setLoading(true);
     try {
@@ -943,6 +1007,54 @@ export default function ManageDataPanel() {
     setLoading(false);
   };
 
+  const handleProductSearch = async (searchValue) => {
+    setProductSearch(searchValue);
+    setLoading(true);
+    try {
+      const url = new URL(`${window.location.origin}${API_BASE}/admin/bolts/`);
+      if (searchValue.trim()) {
+        url.searchParams.append('name', searchValue.trim());
+      }
+      url.searchParams.append('page', '1');
+      const pathAndQuery = url.pathname + url.search;
+      const data = await get(pathAndQuery);
+      setProducts(data.results || data);
+      setProductsPagination({
+        currentPage: 1,
+        totalCount: data.count || 0,
+        nextUrl: data.next || null,
+        prevUrl: data.previous || null,
+      });
+    } catch (err) {
+      console.error('Failed to search products', err);
+    }
+    setLoading(false);
+  };
+
+  const handleTestSearch = async (searchValue) => {
+    setTestSearch(searchValue);
+    setLoading(true);
+    try {
+      const url = new URL(`${window.location.origin}${API_BASE}/admin/tests/`);
+      if (searchValue.trim()) {
+        url.searchParams.append('id', searchValue.trim());
+      }
+      url.searchParams.append('page', '1');
+      const pathAndQuery = url.pathname + url.search;
+      const data = await get(pathAndQuery);
+      setTests(data.results || data);
+      setTestsPagination({
+        currentPage: 1,
+        totalCount: data.count || 0,
+        nextUrl: data.next || null,
+        prevUrl: data.previous || null,
+      });
+    } catch (err) {
+      console.error('Failed to search tests', err);
+    }
+    setLoading(false);
+  };
+
   // Fetch all data on mount
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
@@ -1001,6 +1113,8 @@ export default function ManageDataPanel() {
           prevUrl={productsPagination.prevUrl}
           onNextPage={() => handleNextPage(productsPagination, setProductsPagination, setProducts)}
           onPrevPage={() => handlePrevPage(productsPagination, setProductsPagination, setProducts)}
+          searchValue={productSearch}
+          onSearch={handleProductSearch}
         />
       )}
       {tab === 'tests' && (
@@ -1015,6 +1129,8 @@ export default function ManageDataPanel() {
           prevUrl={testsPagination.prevUrl}
           onNextPage={() => handleNextPage(testsPagination, setTestsPagination, setTests)}
           onPrevPage={() => handlePrevPage(testsPagination, setTestsPagination, setTests)}
+          searchValue={testSearch}
+          onSearch={handleTestSearch}
         />
       )}
     </div>
