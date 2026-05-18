@@ -14,12 +14,13 @@ from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenObtainPairView
 
-from .models import Bolt, Supplier, Test, TestCurve
+from .models import AuditLog, Bolt, Supplier, Test, TestCurve
 from .serializers import (
     AdminBoltSerializer,
     AdminTestCurveSerializer,
     AdminTestListSerializer,
     AdminTestSerializer,
+    AuditLogSerializer,
     BoltPublishSerializer,
     MyTokenObtainPairSerializer,
     PublicBoltSerializer,
@@ -514,7 +515,7 @@ class AdminTestCurveCreateView(generics.CreateAPIView):
     """
     Admin API endpoint to create test curves.
 
-    POST: Create curves from JSON or CSV file
+    POST: Create curves from JSON
 
     JSON single curve:
     {
@@ -531,56 +532,13 @@ class AdminTestCurveCreateView(generics.CreateAPIView):
         {"test": 2, "curve_pair": [...]},
         ...
     ]
-
-    CSV file upload (multipart/form-data):
-    File parameter: 'file'
-    CSV columns: test_id, displacement, load, energy_absorbed
-    (Rows grouped by test_id to create curve_pair arrays)
     """
 
     serializer_class = AdminTestCurveSerializer
     permission_classes = [IsAdminUser]
-    parser_classes = (JSONParser, MultiPartParser, FormParser)
+    parser_classes = (JSONParser,)
 
     def post(self, request, *args, **kwargs):
-        if "file" in request.FILES:
-            return self._handle_csv_upload(request)
-        return self._handle_json_upload(request)
-
-    def _handle_csv_upload(self, request):
-        """Parse CSV file and create test curves."""
-        csv_file = request.FILES["file"]
-
-        try:
-            stream = io.TextIOWrapper(csv_file.file, encoding="utf-8")
-            reader = csv.DictReader(stream)
-
-            grouped_data = {}
-            for row in reader:
-                test_id = int(row["test_id"])
-                if test_id not in grouped_data:
-                    grouped_data[test_id] = []
-
-                data_point = {
-                    "displacement": float(row["displacement"]),
-                    "load": float(row["load"]),
-                    "energy_absorbed": float(row["energy_absorbed"]),
-                }
-                grouped_data[test_id].append(data_point)
-
-            data = [
-                {"test": test_id, "curve_pair": curve_pair}
-                for test_id, curve_pair in grouped_data.items()
-            ]
-        except Exception as e:
-            return Response(
-                {"error": f"CSV parsing error: {str(e)}"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        return self._process_data(data)
-
-    def _handle_json_upload(self, request):
         """Process JSON (single or bulk) upload."""
         data = request.data if isinstance(request.data, list) else [request.data]
         return self._process_data(data)
@@ -603,5 +561,379 @@ class AdminTestCurveCreateView(generics.CreateAPIView):
 
         return Response(
             {"created": created_count, "errors": errors, "total": len(data)},
+            status=status.HTTP_201_CREATED,
+        )
+
+
+class AuditLogListView(generics.ListAPIView):
+    """
+    Admin API endpoint to retrieve audit logs.
+
+    Lists all API calls with their metadata:
+    - IP address that made the call
+    - Authenticated user (if any)
+    - HTTP method and endpoint path
+    - Response status code
+    - Response time (ms)
+    - Request body (for POST/PATCH)
+    - Error message (if 4xx/5xx)
+
+    Query parameters:
+    - ip_address: Filter by client IP
+    - user: Filter by user ID
+    - path: Filter by API path
+    - method: Filter by HTTP method (GET, POST, etc.)
+    - status_code: Filter by response status code
+    - date_from: Filter by date (YYYY-MM-DD)
+    - date_to: Filter by date (YYYY-MM-DD)
+
+    Ordered by timestamp (newest first).
+    """
+
+    queryset = AuditLog.objects.all()
+    serializer_class = AuditLogSerializer
+    permission_classes = [IsAdminUser]
+    pagination_class = PageNumberPagination
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ["user", "path", "method", "status_code"]
+    ordering = ["-timestamp"]
+
+    def get_queryset(self):
+        """Filter audit logs by optional date range."""
+        queryset = super().get_queryset()
+        date_from = self.request.query_params.get("date_from")
+        date_to = self.request.query_params.get("date_to")
+
+        if date_from:
+            queryset = queryset.filter(timestamp__date__gte=date_from)
+        if date_to:
+            queryset = queryset.filter(timestamp__date__lte=date_to)
+
+        return queryset
+
+
+class AdminBoltCSVImportView(generics.CreateAPIView):
+    """
+    Admin API endpoint to import bolts from CSV file.
+
+    CSV format:
+    supplier_id, client_product_id, name, length, diameter, category, equipment_compatibility
+
+    equipment_compatibility should be semicolon-separated values: "Multi-OEM;Handheld;Boltec"
+    """
+
+    permission_classes = [IsAdminUser]
+    parser_classes = (MultiPartParser, FormParser)
+
+    def post(self, request, *args, **kwargs):
+        """Handle CSV file upload for bolt import."""
+        if "file" not in request.FILES:
+            return Response(
+                {"error": "No file provided"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        csv_file = request.FILES["file"]
+
+        try:
+            stream = io.TextIOWrapper(csv_file.file, encoding="utf-8")
+            reader = csv.DictReader(stream)
+
+            errors = []
+            created_count = 0
+
+            for row_idx, row in enumerate(reader, start=2):  # Start at 2 (header is row 1)
+                try:
+                    supplier_id = int(row["supplier_id"])
+                    client_product_id = row.get("client_product_id", "").strip() or None
+                    name = row["name"].strip()
+                    length = float(row["length"])
+                    diameter = float(row["diameter"])
+                    category = row["category"].strip()
+                    equipment_compat_str = row.get("equipment_compatibility", "").strip()
+                    equipment_compatibility = [
+                        x.strip() for x in equipment_compat_str.split(";") if x.strip()
+                    ]
+
+                    # Get or create supplier
+                    try:
+                        supplier = Supplier.objects.get(id=supplier_id)
+                    except Supplier.DoesNotExist:
+                        errors.append(
+                            {"row": row_idx, "error": f"Supplier with ID {supplier_id} not found"}
+                        )
+                        continue
+
+                    # Create or update bolt
+                    bolt, created = Bolt.objects.update_or_create(
+                        supplier=supplier,
+                        client_product_id=client_product_id,
+                        defaults={
+                            "name": name,
+                            "length": length,
+                            "diameter": diameter,
+                            "category": category,
+                            "equipment_compatibility": equipment_compatibility,
+                        },
+                    )
+                    created_count += 1
+
+                except ValueError as e:
+                    errors.append({"row": row_idx, "error": f"Invalid data format: {str(e)}"})
+                except Exception as e:
+                    errors.append({"row": row_idx, "error": str(e)})
+
+        except Exception as e:
+            return Response(
+                {"error": f"CSV parsing error: {str(e)}"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        return Response(
+            {"created": created_count, "errors": errors},
+            status=status.HTTP_201_CREATED,
+        )
+
+
+class AdminTestCSVImportView(generics.CreateAPIView):
+    """
+    Admin API endpoint to import tests from CSV file.
+
+    CSV format:
+    product_id, supplier_id, client_product_id, client_test_id, methodology, facility, installation_method,
+    encapsulation_method, peak_strength, bond_strength, yield_strength, ultimate_deformation,
+    stiffness, loading_rate, energy_absorption, number_of_drops
+
+    Note: methodology must be "static" or "dynamic"
+    product_id: Internal database bolt ID (optional, prioritized if provided)
+    client_product_id and supplier_id: Used if product_id is empty
+    """
+
+    permission_classes = [IsAdminUser]
+    parser_classes = (MultiPartParser, FormParser)
+
+    def post(self, request, *args, **kwargs):
+        """Handle CSV file upload for test import."""
+        if "file" not in request.FILES:
+            return Response(
+                {"error": "No file provided"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        csv_file = request.FILES["file"]
+
+        try:
+            stream = io.TextIOWrapper(csv_file.file, encoding="utf-8")
+            reader = csv.DictReader(stream)
+
+            errors = []
+            created_count = 0
+
+            for row_idx, row in enumerate(reader, start=2):  # Start at 2 (header is row 1)
+                try:
+                    product_id = row.get("product_id", "").strip()
+                    supplier_id = int(row["supplier_id"])
+                    client_product_id = row.get("client_product_id", "").strip() or None
+                    client_test_id = row.get("client_test_id", "").strip() or None
+                    methodology = row["methodology"].strip().lower()
+                    facility = row["facility"].strip()
+
+                    # Find bolt: prioritize product_id, fall back to supplier_id + client_product_id
+                    bolt = None
+                    if product_id:
+                        try:
+                            bolt = Bolt.objects.get(id=int(product_id))
+                        except (Bolt.DoesNotExist, ValueError):
+                            errors.append(
+                                {
+                                    "row": row_idx,
+                                    "error": f"Bolt not found for product_id={product_id}",
+                                }
+                            )
+                            continue
+                    else:
+                        try:
+                            bolt = Bolt.objects.get(
+                                supplier_id=supplier_id,
+                                client_product_id=client_product_id,
+                            )
+                        except Bolt.DoesNotExist:
+                            errors.append(
+                                {
+                                    "row": row_idx,
+                                    "error": f"Bolt not found for supplier_id={supplier_id}, client_product_id={client_product_id}",
+                                }
+                            )
+                            continue
+
+                    # Parse optional fields
+                    def safe_float(val):
+                        val = val.strip() if isinstance(val, str) else val
+                        return float(val) if val else None
+
+                    def safe_int(val):
+                        val = val.strip() if isinstance(val, str) else val
+                        return int(val) if val else None
+
+                    test_data = {
+                        "bolt": bolt,
+                        "methodology": methodology,
+                        "facility": facility,
+                        "installation_method": row.get("installation_method", "").strip() or None,
+                        "encapsulation_method": row.get("encapsulation_method", "").strip() or None,
+                        "peak_strength": safe_float(row.get("peak_strength", "")),
+                        "bond_strength": safe_float(row.get("bond_strength", "")),
+                        "yield_strength": safe_float(row.get("yield_strength", "")),
+                        "ultimate_deformation": safe_float(row.get("ultimate_deformation", "")),
+                        "stiffness": safe_float(row.get("stiffness", "")),
+                        "loading_rate": safe_float(row.get("loading_rate", "")),
+                        "energy_absorption": safe_float(row.get("energy_absorption", "")),
+                        "number_of_drops": safe_int(row.get("number_of_drops", "")),
+                        "client_test_id": client_test_id,
+                    }
+
+                    # Create or update test
+                    if client_test_id:
+                        Test.objects.update_or_create(
+                            bolt=bolt,
+                            client_test_id=client_test_id,
+                            defaults=test_data,
+                        )
+                    else:
+                        Test.objects.create(**test_data)
+
+                    created_count += 1
+
+                except ValueError as e:
+                    errors.append({"row": row_idx, "error": f"Invalid data format: {str(e)}"})
+                except Exception as e:
+                    errors.append({"row": row_idx, "error": str(e)})
+
+        except Exception as e:
+            return Response(
+                {"error": f"CSV parsing error: {str(e)}"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        return Response(
+            {"created": created_count, "errors": errors},
+            status=status.HTTP_201_CREATED,
+        )
+
+
+class AdminTestCurveCSVImportView(generics.CreateAPIView):
+    """
+    Admin API endpoint to import test curves from CSV file.
+
+    CSV format:
+    test_id, supplier_id, client_test_id, displacement, load
+
+    Looks up test by:
+    - test_id if provided (prioritized)
+    - supplier_id + client_test_id as fallback
+    """
+
+    permission_classes = [IsAdminUser]
+    parser_classes = (MultiPartParser, FormParser)
+
+    def post(self, request, *args, **kwargs):
+        """Handle CSV file upload for test curve import."""
+        if "file" not in request.FILES:
+            return Response(
+                {"error": "No file provided"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        csv_file = request.FILES["file"]
+
+        try:
+            stream = io.TextIOWrapper(csv_file.file, encoding="utf-8")
+            reader = csv.DictReader(stream)
+
+            errors = []
+            created_count = 0
+            grouped_data = {}
+
+            for row_idx, row in enumerate(reader, start=2):
+                try:
+                    test_id = row.get("test_id", "").strip()
+                    supplier_id = int(row["supplier_id"])
+                    client_test_id = row.get("client_test_id", "").strip()
+                    displacement = float(row["displacement"])
+                    load = float(row["load"])
+
+                    # Determine lookup key: prioritize test_id, fall back to (supplier_id, client_test_id)
+                    if test_id:
+                        key = ("test_id", int(test_id))
+                    else:
+                        key = ("composite", supplier_id, client_test_id)
+
+                    if key not in grouped_data:
+                        grouped_data[key] = []
+
+                    grouped_data[key].append(
+                        {
+                            "displacement": displacement,
+                            "load": load,
+                        }
+                    )
+
+                except ValueError as e:
+                    errors.append({"row": row_idx, "error": f"Invalid data format: {str(e)}"})
+                except Exception as e:
+                    errors.append({"row": row_idx, "error": str(e)})
+
+            # Create TestCurve objects using the grouped data
+            for key, curve_points in grouped_data.items():
+                try:
+                    # Find test based on key type
+                    if key[0] == "test_id":
+                        test = Test.objects.get(id=key[1])
+                    else:  # composite key
+                        supplier_id, client_test_id = key[1], key[2]
+                        test = Test.objects.get(
+                            client_test_id=client_test_id,
+                            bolt__supplier_id=supplier_id,
+                        )
+
+                    # Create or update curve
+                    TestCurve.objects.update_or_create(
+                        test=test,
+                        defaults={"curve_pair": curve_points},
+                    )
+                    created_count += 1
+
+                except Test.DoesNotExist:
+                    if key[0] == "test_id":
+                        errors.append(
+                            {
+                                "test_id": key[1],
+                                "error": f"Test not found for test_id={key[1]}",
+                            }
+                        )
+                    else:
+                        errors.append(
+                            {
+                                "client_test_id": key[2],
+                                "error": f"Test not found for supplier_id={key[1]}, client_test_id={key[2]}",
+                            }
+                        )
+                except Exception as e:
+                    error_key = key[1] if key[0] == "test_id" else key[2]
+                    errors.append(
+                        {
+                            "key": error_key,
+                            "error": str(e),
+                        }
+                    )
+
+        except Exception as e:
+            return Response(
+                {"error": f"CSV parsing error: {str(e)}"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        return Response(
+            {"created": created_count, "errors": errors},
             status=status.HTTP_201_CREATED,
         )

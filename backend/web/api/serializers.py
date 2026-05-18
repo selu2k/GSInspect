@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
-from .models import Bolt, Supplier, Test, TestCurve
+from .models import AuditLog, Bolt, Supplier, Test, TestCurve
 
 
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
@@ -110,6 +110,7 @@ class AdminBoltSerializer(serializers.ModelSerializer):
             "id",
             "name",
             "supplier",
+            "client_product_id",
             "length",
             "diameter",
             "category",
@@ -150,6 +151,7 @@ class AdminTestSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "bolt",
+            "client_test_id",
             "methodology",
             "methodology_display",
             "facility",
@@ -193,11 +195,12 @@ class AdminTestListSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "bolt",
+            "client_test_id",
             "methodology",
             "facility",
             "is_published",
         ]
-        read_only_fields = ["id", "methodology", "facility", "is_published"]
+        read_only_fields = ["id", "methodology", "facility", "is_published", "client_test_id"]
 
 
 class BoltPublishSerializer(serializers.ModelSerializer):
@@ -222,3 +225,32 @@ class TestCurvePublishSerializer(serializers.ModelSerializer):
     class Meta:
         model = TestCurve
         fields = ["is_published"]
+
+
+class AuditLogSerializer(serializers.ModelSerializer):
+    """Serializer for audit logs - read-only."""
+
+    user_username = serializers.CharField(source="user.username", read_only=True)
+    method_display = serializers.SerializerMethodField()
+
+    class Meta:
+        model = AuditLog
+        fields = [
+            "id",
+            "timestamp",
+            "user",
+            "user_username",
+            "method",
+            "method_display",
+            "path",
+            "query_params",
+            "status_code",
+            "response_time_ms",
+            "request_body",
+            "user_agent",
+            "error_message",
+        ]
+        read_only_fields = fields
+
+    def get_method_display(self, obj):
+        return obj.get_method_display()
