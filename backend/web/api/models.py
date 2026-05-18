@@ -35,6 +35,13 @@ class Bolt(models.Model):
         Supplier, on_delete=models.PROTECT, related_name="bolts", db_index=True
     )
     name = models.CharField(max_length=255)
+    client_product_id = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        db_index=True,
+        help_text="External product ID from supplier, combined with supplier_id for uniqueness",
+    )
     length = models.FloatField(db_index=True)
     diameter = models.FloatField()
     category = models.CharField(max_length=255, db_index=True)
@@ -99,6 +106,15 @@ class Test(models.Model):
     )
     number_of_drops = models.PositiveIntegerField(
         null=True, blank=True, help_text="Required for dynamic tests"
+    )
+
+    # External reference
+    client_test_id = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        db_index=True,
+        help_text="External test ID from supplier, combined with supplier_id for uniqueness",
     )
 
     is_published = models.BooleanField(default=False, db_index=True)
@@ -168,3 +184,47 @@ class TestCurve(models.Model):
 
     def __str__(self):
         return f"Curve — Test {self.test.id}"
+
+
+class AuditLog(models.Model):
+    """Audit log for tracking API requests and responses."""
+
+    HTTP_METHODS = [
+        ("GET", "GET"),
+        ("POST", "POST"),
+        ("PUT", "PUT"),
+        ("PATCH", "PATCH"),
+        ("DELETE", "DELETE"),
+        ("HEAD", "HEAD"),
+        ("OPTIONS", "OPTIONS"),
+    ]
+
+    # Request info
+    timestamp = models.DateTimeField(auto_now_add=True, db_index=True)
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    method = models.CharField(max_length=10, choices=HTTP_METHODS)
+    path = models.CharField(max_length=500)
+    query_params = models.JSONField(default=dict, blank=True)
+
+    # Response info
+    status_code = models.IntegerField()
+    response_time_ms = models.IntegerField()  # milliseconds
+
+    # Request body (for POST/PATCH)
+    request_body = models.JSONField(null=True, blank=True)
+
+    # Additional context
+    user_agent = models.CharField(max_length=500, blank=True)
+    error_message = models.TextField(blank=True, null=True)
+
+    class Meta:
+        db_table = "audit_logs"
+        ordering = ["-timestamp"]
+        indexes = [
+            models.Index(fields=["-timestamp"], name="audit_timestamp_idx"),
+            models.Index(fields=["user", "-timestamp"], name="audit_user_timestamp_idx"),
+            models.Index(fields=["path", "-timestamp"], name="audit_path_timestamp_idx"),
+        ]
+
+    def __str__(self):
+        return f"{self.method} {self.path} - {self.status_code}"
