@@ -208,12 +208,12 @@ class TestTestCurveAPI:
 
     def test_create_test_curve_csv(self, authenticated_client, test_data):
         """Test creating test curves with CSV file."""
-        csv_content = "test_id,displacement,load,energy_absorbed\n"
-        csv_content += f"{test_data.id},0.1,100,50\n"
-        csv_content += f"{test_data.id},0.2,200,120\n"
+        csv_content = "test_id,supplier_id,client_test_id,displacement,load\n"
+        csv_content += f"{test_data.id},1,TEST001,0.1,100\n"
+        csv_content += f"{test_data.id},1,TEST001,0.2,200\n"
 
         response = authenticated_client.post(
-            "/api/admin/test-curves/",
+            "/api/admin/test-curves/import-csv/",
             {"file": ("curves.csv", StringIO(csv_content), "text/csv")},
             format="multipart",
         )
