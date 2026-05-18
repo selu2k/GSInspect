@@ -199,19 +199,48 @@ export default function VettePublishPage() {
               <p className="text-xs text-slate-500">Loading...</p>
             ) : detailData && (
               <div className="border border-slate-200 rounded-lg bg-slate-50 p-2.5 space-y-2">
-                {Object.entries(detailData).map(([key, value]) => (
-                  <div key={key} className="border-b border-slate-200 last:border-b-0 pb-1.5 last:pb-0 flex flex-col sm:flex-row sm:items-start gap-1 text-xs">
-                    <span className="font-medium text-slate-700 sm:w-28 shrink-0">{capitalizeFieldName(key)}:</span>
-                    <span className="text-slate-700">
-                      {key === 'curve' ? (value ? 'Has curve data' : 'No curve data') :
-                      value === null ? '-' : 
-                      typeof value === 'object' && value.name ? value.name :
-                      Array.isArray(value) ? value.join(', ') :
-                      typeof value === 'object' ? JSON.stringify(value) : 
-                      String(value)}
-                    </span>
-                  </div>
-                ))}
+                {Object.entries(detailData).map(([key, value]) => {
+                  // Handle curve data with scrollable table
+                  if (key === 'curve' && value && value.curve_pair && Array.isArray(value.curve_pair) && value.curve_pair.length > 0) {
+                    return (
+                      <div key={key} className="border-b border-slate-200 last:border-b-0 pb-1.5 last:pb-0">
+                        <span className="font-medium text-slate-700 text-xs block mb-2">Curve Data:</span>
+                        <div className="overflow-x-auto border border-slate-300 rounded bg-white max-h-48 overflow-y-auto">
+                          <table className="w-full text-xs">
+                            <thead className="sticky top-0 bg-slate-100 border-b border-slate-200">
+                              <tr>
+                                <th className="px-2 py-1 text-left font-semibold text-slate-700">Displacement (mm)</th>
+                                <th className="px-2 py-1 text-left font-semibold text-slate-700">Load (kN)</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-200">
+                              {value.curve_pair.map((point, idx) => (
+                                <tr key={idx} className="hover:bg-slate-50">
+                                  <td className="px-2 py-1 text-slate-700">{point.displacement !== null ? point.displacement.toFixed(2) : '-'}</td>
+                                  <td className="px-2 py-1 text-slate-700">{point.load !== null ? point.load.toFixed(2) : '-'}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    );
+                  }
+                  
+                  return (
+                    <div key={key} className="border-b border-slate-200 last:border-b-0 pb-1.5 last:pb-0 flex flex-col sm:flex-row sm:items-start gap-1 text-xs">
+                      <span className="font-medium text-slate-700 sm:w-28 shrink-0">{capitalizeFieldName(key)}:</span>
+                      <span className="text-slate-700">
+                        {key === 'curve' ? (value ? 'Has curve data' : 'No curve data') :
+                        value === null ? '-' : 
+                        typeof value === 'object' && value.name ? value.name :
+                        Array.isArray(value) ? value.join(', ') :
+                        typeof value === 'object' ? JSON.stringify(value) : 
+                        String(value)}
+                      </span>
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>

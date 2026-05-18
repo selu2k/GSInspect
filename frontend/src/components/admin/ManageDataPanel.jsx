@@ -461,6 +461,7 @@ function TestsTab({ tests, filterOptions, loading, onRefresh, currentPage, total
   const [loadingDetails, setLoadingDetails] = useState(false);
   const [deleteId, setDeleteId] = useState(null);
   const [customFacility, setCustomFacility] = useState('');
+  const [removeCurve, setRemoveCurve] = useState(false);
   const emptyForm = { bolt: '', methodology: 'dynamic', facility: 'Custom', installation_method: '', encapsulation_method: '', peak_strength: '', bond_strength: '', yield_strength: '', ultimate_deformation: '', stiffness: '', loading_rate: '', energy_absorption: '', number_of_drops: '' };
   const [form, setForm] = useState(emptyForm);
 
@@ -468,6 +469,7 @@ function TestsTab({ tests, filterOptions, loading, onRefresh, currentPage, total
     setForm(emptyForm); 
     setDetailedTest(null);
     setCustomFacility('');
+    setRemoveCurve(false);
     setModal('add'); 
   };
   
@@ -476,6 +478,7 @@ function TestsTab({ tests, filterOptions, loading, onRefresh, currentPage, total
     setLoadingDetails(true);
     setModal('edit');
     setCustomFacility('');
+    setRemoveCurve(false);
     try {
       const data = await get(`${API_BASE}/admin/tests/${t.id}/`);
       setDetailedTest(data);
@@ -503,6 +506,11 @@ function TestsTab({ tests, filterOptions, loading, onRefresh, currentPage, total
   const handleSave = async () => {
     if (!form.bolt) return;
     try {
+      // Remove curve if marked for removal
+      if (removeCurve && detailedTest?.curve?.id) {
+        await del(`${API_BASE}/admin/test-curves/${detailedTest.curve.id}/`);
+      }
+      
       const payload = {
         bolt: parseInt(form.bolt),
         methodology: form.methodology,
@@ -524,6 +532,7 @@ function TestsTab({ tests, filterOptions, loading, onRefresh, currentPage, total
         await put(`${API_BASE}/admin/tests/${editing.id}/`, payload);
       }
       setModal(null);
+      setRemoveCurve(false);
       onRefresh();
     } catch (err) {
       console.error('Failed to save test', err);
@@ -753,6 +762,39 @@ function TestsTab({ tests, filterOptions, loading, onRefresh, currentPage, total
                     >
                       {detailedTest.is_published ? 'Unpublish' : 'Publish'}
                     </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Curve Data Display - Only in Edit Mode */}
+              {modal === 'edit' && detailedTest?.curve?.curve_pair && Array.isArray(detailedTest.curve.curve_pair) && detailedTest.curve.curve_pair.length > 0 && (
+                <div className="border border-slate-300 rounded-lg p-3 bg-slate-50">
+                  <div className="flex justify-between items-center mb-2">
+                    <p className="text-sm font-medium text-slate-700">Curve Data:</p>
+                    <button
+                      onClick={() => setRemoveCurve(!removeCurve)}
+                      className={`px-2 py-1 text-xs font-medium rounded-lg ${removeCurve ? 'bg-red-100 text-red-700 border border-red-300' : 'bg-slate-200 text-slate-700 border border-slate-300 hover:bg-slate-300'}`}
+                    >
+                      {removeCurve ? '✓ Mark for removal' : 'Remove curve data'}
+                    </button>
+                  </div>
+                  <div className="overflow-x-auto border border-slate-300 rounded bg-white max-h-48 overflow-y-auto">
+                    <table className="w-full text-xs">
+                      <thead className="sticky top-0 bg-slate-100 border-b border-slate-200">
+                        <tr>
+                          <th className="px-2 py-1 text-left font-semibold text-slate-700">Displacement (mm)</th>
+                          <th className="px-2 py-1 text-left font-semibold text-slate-700">Load (kN)</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-200">
+                        {detailedTest.curve.curve_pair.map((point, idx) => (
+                          <tr key={idx} className="hover:bg-slate-50">
+                            <td className="px-2 py-1 text-slate-700">{point.displacement !== null ? point.displacement.toFixed(2) : '-'}</td>
+                            <td className="px-2 py-1 text-slate-700">{point.load !== null ? point.load.toFixed(2) : '-'}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
                 </div>
               )}
