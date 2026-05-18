@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useRef, useEffect } from 'react';
-import { Layers, Gauge, Building2, TrendingUp } from 'lucide-react';
+import { Layers, Gauge, Building2, TrendingUp, Search, X } from 'lucide-react';
 import {
   CartesianGrid,
   Legend,
@@ -20,7 +20,8 @@ export default function Dashboard() {
   const { 
     filteredProductsList, filteredTests, filteredCurves, productColorMap, apiStats,
     selectedProductIds, setSelectedProductIds, toggleProductSelection, showAverage, setShowAverage,
-    methodology, setMethodology, selectedFacilities, setSelectedFacilities, facilities
+    methodology, setMethodology, selectedFacilities, setSelectedFacilities, facilities,
+    searchTerm, setSearchTerm
   } = useAppContext();
 
   const [selectedProperty, setSelectedProperty] = useState('peak_strength');
@@ -287,6 +288,28 @@ export default function Dashboard() {
 
   return (
     <div className="flex flex-col gap-4 h-full overflow-y-auto pb-6">
+      {/* Search Bar */}
+      <section className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 shrink-0">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <input
+            type="text"
+            placeholder="Search by product name, supplier, or category..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-9 pr-8 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+          />
+          {searchTerm && (
+            <button
+              onClick={() => setSearchTerm('')}
+              className="absolute right-2 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-600"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+      </section>
+
       <section className="bg-white rounded-xl shadow-sm border border-slate-200 p-5 shrink-0">
         <div className="flex items-center justify-between gap-2 mb-3">
           <div className="flex items-center gap-2">
