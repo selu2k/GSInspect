@@ -110,7 +110,11 @@ export default function VettePublishPage() {
                   <td className="px-6 py-4">
                     <span className="bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full text-xs font-medium">{b.category}</span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td className="px-6 py-4 flex gap-2">
+                    <button onClick={() => openBoltDetail(b.id)}
+                      className="text-xs font-medium text-indigo-600 hover:text-indigo-800 border border-indigo-200 px-3 py-1.5 rounded-lg hover:bg-indigo-50">
+                      Details
+                    </button>
                     <button onClick={() => handlePublishBolt(b.id)}
                       className="text-xs font-medium text-emerald-600 hover:text-emerald-800 border border-emerald-200 px-3 py-1.5 rounded-lg hover:bg-emerald-50">
                       <CheckCircle className="w-3.5 h-3.5 inline mr-1" /> Publish
