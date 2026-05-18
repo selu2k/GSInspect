@@ -189,7 +189,8 @@ export default function VettePublishPage() {
                   <div key={key} className="flex gap-2">
                     <span className="font-medium text-slate-600 w-48 shrink-0">{key}:</span>
                     <span className="text-slate-800">
-                    {value === null ? '-' : 
+                    {key === 'curve' ? (value ? 'Has curve data' : 'No curve data') :
+                    value === null ? '-' : 
                     typeof value === 'object' && value.name ? value.name :
                     Array.isArray(value) ? value.join(', ') :
                     typeof value === 'object' ? JSON.stringify(value) : 
