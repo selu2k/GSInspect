@@ -9,6 +9,9 @@ export default function VettePublishPage() {
   const [bolts, setBolts] = useState([]);
   const [tests, setTests] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [detailModal, setDetailModal] = useState(null);
+  const [detailData, setDetailData] = useState(null);
+  const [loadingDetail, setLoadingDetail] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -45,6 +48,30 @@ export default function VettePublishPage() {
     } catch (err) {
       console.error('Failed to publish test', err);
     }
+  };
+
+  const openBoltDetail = async (id) => {
+    setLoadingDetail(true);
+    setDetailModal('bolt');
+    try {
+      const data = await get(`${API_BASE}/admin/bolts/${id}/`);
+      setDetailData(data);
+    } catch (err) {
+      console.error('Failed to fetch bolt detail', err);
+    }
+    setLoadingDetail(false);
+  };
+  
+  const openTestDetail = async (id) => {
+    setLoadingDetail(true);
+    setDetailModal('test');
+    try {
+      const data = await get(`${API_BASE}/admin/tests/${id}/`);
+      setDetailData(data);
+    } catch (err) {
+      console.error('Failed to fetch test detail', err);
+    }
+    setLoadingDetail(false);
   };
 
   if (loading) return <p className="text-sm text-slate-500">Loading...</p>;
