@@ -74,6 +74,13 @@ export default function VettePublishPage() {
     setLoadingDetail(false);
   };
 
+  const capitalizeFieldName = (str) => {
+    return str
+      .split('_')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+  };
+
   if (loading) return <p className="text-sm text-slate-500">Loading...</p>;
 
   return (
@@ -173,28 +180,28 @@ export default function VettePublishPage() {
       {/* Detail Modal */}
       {detailModal && (
         <div className="fixed inset-0 bg-slate-800/20 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-lg mx-4 p-6">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-bold text-slate-800">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md mx-4 p-3">
+            <div className="flex justify-between items-center mb-3">
+              <h2 className="text-sm font-semibold text-slate-800">
                 {detailModal === 'bolt' ? 'Product Details' : 'Test Details'}
               </h2>
               <button onClick={() => { setDetailModal(null); setDetailData(null); }}
                 className="text-slate-400 hover:text-slate-600 text-xl font-bold">✕</button>
             </div>
             {loadingDetail ? (
-              <p className="text-sm text-slate-500">Loading...</p>
+              <p className="text-xs text-slate-500">Loading...</p>
             ) : detailData && (
-              <div className="space-y-2 text-sm">
+              <div className="border border-slate-200 rounded-lg bg-slate-50 p-2.5 space-y-2">
                 {Object.entries(detailData).map(([key, value]) => (
-                  <div key={key} className="flex gap-2">
-                    <span className="font-medium text-slate-600 w-48 shrink-0">{key}:</span>
-                    <span className="text-slate-800">
-                    {key === 'curve' ? (value ? 'Has curve data' : 'No curve data') :
-                    value === null ? '-' : 
-                    typeof value === 'object' && value.name ? value.name :
-                    Array.isArray(value) ? value.join(', ') :
-                    typeof value === 'object' ? JSON.stringify(value) : 
-                    String(value)}
+                  <div key={key} className="border-b border-slate-200 last:border-b-0 pb-1.5 last:pb-0 flex flex-col sm:flex-row sm:items-start gap-1 text-xs">
+                    <span className="font-medium text-slate-700 sm:w-28 shrink-0">{capitalizeFieldName(key)}:</span>
+                    <span className="text-slate-700">
+                      {key === 'curve' ? (value ? 'Has curve data' : 'No curve data') :
+                      value === null ? '-' : 
+                      typeof value === 'object' && value.name ? value.name :
+                      Array.isArray(value) ? value.join(', ') :
+                      typeof value === 'object' ? JSON.stringify(value) : 
+                      String(value)}
                     </span>
                   </div>
                 ))}
