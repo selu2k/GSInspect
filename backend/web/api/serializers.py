@@ -195,8 +195,9 @@ class AdminTestListSerializer(serializers.ModelSerializer):
             "bolt",
             "methodology",
             "facility",
+            "is_published",
         ]
-        read_only_fields = ["id", "methodology", "facility"]
+        read_only_fields = ["id", "methodology", "facility", "is_published"]
 
 
 class BoltPublishSerializer(serializers.ModelSerializer):
