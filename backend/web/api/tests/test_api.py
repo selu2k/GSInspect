@@ -352,6 +352,8 @@ class TestPagination:
         response = authenticated_client.get("/api/admin/bolts/?limit=200")
         # Should be limited to 100
         assert response.status_code == status.HTTP_200_OK
+
+
 @pytest.mark.django_db
 class TestExternalAPI:
     """Test suite for external API endpoints."""
@@ -393,7 +395,9 @@ class TestExternalAPI:
         assert response.data["count"] == 0
         assert response.data["results"] == []
 
-    def test_external_test_curves_with_published_data(self, api_client, bolt, test_data, test_curve):
+    def test_external_test_curves_with_published_data(
+        self, api_client, bolt, test_data, test_curve
+    ):
         """Test external test curves endpoint returns published test curve data."""
         bolt.is_published = True
         bolt.save()
@@ -413,7 +417,9 @@ class TestExternalAPI:
         assert "curve" in response.data["results"][0]
         assert "curve_pair" in response.data["results"][0]["curve"]
 
-    def test_external_test_curves_filter_by_bolt_id(self, api_client, bolt, test_data, test_curve):
+    def test_external_test_curves_filter_by_bolt_id(
+        self, api_client, bolt, test_data, test_curve
+    ):
         """Test external test curves endpoint filters by bolt ID."""
         bolt.is_published = True
         bolt.save()
@@ -430,7 +436,9 @@ class TestExternalAPI:
         assert response.data["count"] == 1
         assert response.data["results"][0]["bolt"]["id"] == bolt.id
 
-    def test_external_test_curves_filter_by_methodology(self, api_client, bolt, test_data, test_curve):
+    def test_external_test_curves_filter_by_methodology(
+        self, api_client, bolt, test_data, test_curve
+    ):
         """Test external test curves endpoint filters by methodology."""
         bolt.is_published = True
         bolt.save()
