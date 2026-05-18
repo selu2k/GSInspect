@@ -417,9 +417,7 @@ class TestExternalAPI:
         assert "curve" in response.data["results"][0]
         assert "curve_pair" in response.data["results"][0]["curve"]
 
-    def test_external_test_curves_filter_by_bolt_id(
-        self, api_client, bolt, test_data, test_curve
-    ):
+    def test_external_test_curves_filter_by_bolt_id(self, api_client, bolt, test_data, test_curve):
         """Test external test curves endpoint filters by bolt ID."""
         bolt.is_published = True
         bolt.save()
@@ -449,9 +447,7 @@ class TestExternalAPI:
         test_curve.is_published = True
         test_curve.save()
 
-        response = api_client.get(
-            f"/api/external/test-curves/?methodology={test_data.methodology}"
-        )
+        response = api_client.get(f"/api/external/test-curves/?methodology={test_data.methodology}")
 
         assert response.status_code == status.HTTP_200_OK
         assert response.data["count"] == 1
