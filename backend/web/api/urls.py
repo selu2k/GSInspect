@@ -7,11 +7,14 @@ from drf_spectacular.views import (
 from rest_framework_simplejwt.views import TokenRefreshView
 
 from .views import (
+    AdminBoltCSVImportView,
     AdminBoltDetailView,
     AdminBoltListCreateView,
     AdminBoltPublishView,
     AdminSupplierDetailView,
     AdminSupplierListCreateView,
+    AdminTestCSVImportView,
+    AdminTestCurveCSVImportView,
     AdminTestCurveCreateView,
     AdminTestCurveDetailView,
     AdminTestCurvePublishView,
@@ -20,6 +23,7 @@ from .views import (
     AdminTestPublishView,
     ExternalBoltSummaryStatsView,
     ExternalTestCurvesView,
+    AuditLogListView,
     HealthView,
     MyTokenObtainPairView,
     PublicBoltListView,
@@ -131,3 +135,26 @@ urlpatterns = [
         AdminTestCurveCreateView.as_view(),
         name="admin-test-curve-create",
     ),
+    # Admin API - Audit logs
+    path(
+        "admin/audit-logs/",
+        AuditLogListView.as_view(),
+        name="admin-audit-logs",
+    ),
+    # CSV Import endpoints
+    path(
+        "admin/bolts/import-csv/",
+        AdminBoltCSVImportView.as_view(),
+        name="admin-bolt-csv-import",
+    ),
+    path(
+        "admin/tests/import-csv/",
+        AdminTestCSVImportView.as_view(),
+        name="admin-test-csv-import",
+    ),
+    path(
+        "admin/test-curves/import-csv/",
+        AdminTestCurveCSVImportView.as_view(),
+        name="admin-test-curve-csv-import",
+    ),
+]
