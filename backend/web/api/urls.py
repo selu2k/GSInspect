@@ -18,6 +18,7 @@ from .views import (
     AdminTestDetailView,
     AdminTestListCreateView,
     AdminTestPublishView,
+    AuditLogListView,
     HealthView,
     MyTokenObtainPairView,
     PublicBoltListView,
@@ -87,5 +88,11 @@ urlpatterns = [
         "admin/test-curves/",
         AdminTestCurveCreateView.as_view(),
         name="admin-test-curve-create",
+    ),
+    # Admin API - Audit logs
+    path(
+        "admin/audit-logs/",
+        AuditLogListView.as_view(),
+        name="admin-audit-logs",
     ),
 ]

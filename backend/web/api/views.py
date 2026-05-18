@@ -14,12 +14,13 @@ from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenObtainPairView
 
-from .models import Bolt, Supplier, Test, TestCurve
+from .models import AuditLog, Bolt, Supplier, Test, TestCurve
 from .serializers import (
     AdminBoltSerializer,
     AdminTestCurveSerializer,
     AdminTestListSerializer,
     AdminTestSerializer,
+    AuditLogSerializer,
     BoltPublishSerializer,
     MyTokenObtainPairSerializer,
     PublicBoltSerializer,
@@ -605,3 +606,50 @@ class AdminTestCurveCreateView(generics.CreateAPIView):
             {"created": created_count, "errors": errors, "total": len(data)},
             status=status.HTTP_201_CREATED,
         )
+
+
+class AuditLogListView(generics.ListAPIView):
+    """
+    Admin API endpoint to retrieve audit logs.
+
+    Lists all API calls with their metadata:
+    - IP address that made the call
+    - Authenticated user (if any)
+    - HTTP method and endpoint path
+    - Response status code
+    - Response time (ms)
+    - Request body (for POST/PATCH)
+    - Error message (if 4xx/5xx)
+
+    Query parameters:
+    - ip_address: Filter by client IP
+    - user: Filter by user ID
+    - path: Filter by API path
+    - method: Filter by HTTP method (GET, POST, etc.)
+    - status_code: Filter by response status code
+    - date_from: Filter by date (YYYY-MM-DD)
+    - date_to: Filter by date (YYYY-MM-DD)
+
+    Ordered by timestamp (newest first).
+    """
+
+    queryset = AuditLog.objects.all()
+    serializer_class = AuditLogSerializer
+    permission_classes = [IsAdminUser]
+    pagination_class = PageNumberPagination
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ["user", "path", "method", "status_code"]
+    ordering = ["-timestamp"]
+
+    def get_queryset(self):
+        """Filter audit logs by optional date range."""
+        queryset = super().get_queryset()
+        date_from = self.request.query_params.get("date_from")
+        date_to = self.request.query_params.get("date_to")
+
+        if date_from:
+            queryset = queryset.filter(timestamp__date__gte=date_from)
+        if date_to:
+            queryset = queryset.filter(timestamp__date__lte=date_to)
+
+        return queryset
