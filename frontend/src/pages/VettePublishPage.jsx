@@ -171,7 +171,7 @@ export default function VettePublishPage() {
       </div>
       {/* Detail Modal */}
       {detailModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-slate-800/20 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-lg mx-4 p-6">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-lg font-bold text-slate-800">
