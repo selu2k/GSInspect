@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, X, Check, Database, Package, Building2 } from 'lucide-react';
+import { Plus, Edit, Trash2, X, Check, Database, Package, Building2, Search } from 'lucide-react';
 import { get, post, put, del, patch } from '../../api/client';
 
 const API_BASE = '/api';
@@ -10,8 +10,8 @@ const API_BASE = '/api';
 // --- Reusable Modal ---
 function Modal({ title, onClose, children }) {
   return (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-lg md:max-w-2xl lg:max-w-3xl max-h-[90vh] flex flex-col relative">
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4" onClick={onClose}>
+      <div className="bg-white rounded-xl shadow-xl w-full max-w-lg md:max-w-2xl lg:max-w-3xl max-h-[90vh] flex flex-col relative" onClick={e => e.stopPropagation()}>
         <div className="flex justify-between items-center px-6 py-4 border-b border-slate-200 flex-shrink-0">
           <h3 className="text-lg font-bold text-slate-800">{title}</h3>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-600">
@@ -153,7 +153,8 @@ function SuppliersTab({ suppliers, loading, onRefresh, currentPage, totalCount, 
 }
 
 // --- Products Tab ---
-function ProductsTab({ products, suppliers, filterOptions, loading, onRefresh, currentPage, totalCount, nextUrl, prevUrl, onNextPage, onPrevPage }) {
+function ProductsTab({ products, suppliers, filterOptions, loading, onRefresh, currentPage, totalCount, nextUrl, prevUrl, onNextPage, onPrevPage, searchValue, onSearch }) {
+  const [localSearch, setLocalSearch] = useState(searchValue);
   const [modal, setModal] = useState(null);
   const [editing, setEditing] = useState(null);
   const [detailedProduct, setDetailedProduct] = useState(null);
@@ -163,6 +164,10 @@ function ProductsTab({ products, suppliers, filterOptions, loading, onRefresh, c
   const [customEquipment, setCustomEquipment] = useState('');
   const emptyForm = { supplier: '', name: '', length: '', diameter: '', category: 'Encapsulated', equipment_compatibility: [], is_published: false };
   const [form, setForm] = useState(emptyForm);
+
+  useEffect(() => {
+    setLocalSearch(searchValue);
+  }, [searchValue]);
 
   const openAdd = () => { 
     setForm(emptyForm); 
@@ -243,12 +248,37 @@ function ProductsTab({ products, suppliers, filterOptions, loading, onRefresh, c
 
   if (loading) return <p className="text-sm text-slate-500">Loading products...</p>;
 
-  const itemsPerPage = 10;
+  const itemsPerPage = 20;
   const startIndex = (currentPage - 1) * itemsPerPage + 1;
   const endIndex = Math.min(currentPage * itemsPerPage, totalCount);
 
   return (
     <div className="space-y-4">
+      {/* Search Bar */}
+      <div className="relative flex gap-2">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <input
+            type="text"
+            placeholder="Search by bolt name..."
+            value={localSearch}
+            onChange={(e) => setLocalSearch(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                onSearch(localSearch);
+              }
+            }}
+            className="w-full pl-9 pr-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+          />
+        </div>
+        <button
+          onClick={() => onSearch(localSearch)}
+          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium"
+        >
+          Search
+        </button>
+      </div>
+
       <div className="flex justify-between items-center">
         <p className="text-sm text-slate-500">{startIndex}-{endIndex} of {totalCount} product(s)</p>
         <button onClick={openAdd} className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium">
@@ -454,20 +484,27 @@ function ProductsTab({ products, suppliers, filterOptions, loading, onRefresh, c
 }
 
 // --- Tests Tab ---
-function TestsTab({ tests, filterOptions, loading, onRefresh, currentPage, totalCount, nextUrl, prevUrl, onNextPage, onPrevPage }) {
+function TestsTab({ tests, filterOptions, loading, onRefresh, currentPage, totalCount, nextUrl, prevUrl, onNextPage, onPrevPage, searchValue, onSearch }) {
+  const [localSearch, setLocalSearch] = useState(searchValue);
   const [modal, setModal] = useState(null);
   const [editing, setEditing] = useState(null);
   const [detailedTest, setDetailedTest] = useState(null);
   const [loadingDetails, setLoadingDetails] = useState(false);
   const [deleteId, setDeleteId] = useState(null);
   const [customFacility, setCustomFacility] = useState('');
+  const [removeCurve, setRemoveCurve] = useState(false);
   const emptyForm = { bolt: '', methodology: 'dynamic', facility: 'Custom', installation_method: '', encapsulation_method: '', peak_strength: '', bond_strength: '', yield_strength: '', ultimate_deformation: '', stiffness: '', loading_rate: '', energy_absorption: '', number_of_drops: '' };
   const [form, setForm] = useState(emptyForm);
+
+  useEffect(() => {
+    setLocalSearch(searchValue);
+  }, [searchValue]);
 
   const openAdd = () => { 
     setForm(emptyForm); 
     setDetailedTest(null);
     setCustomFacility('');
+    setRemoveCurve(false);
     setModal('add'); 
   };
   
@@ -476,6 +513,7 @@ function TestsTab({ tests, filterOptions, loading, onRefresh, currentPage, total
     setLoadingDetails(true);
     setModal('edit');
     setCustomFacility('');
+    setRemoveCurve(false);
     try {
       const data = await get(`${API_BASE}/admin/tests/${t.id}/`);
       setDetailedTest(data);
@@ -503,6 +541,11 @@ function TestsTab({ tests, filterOptions, loading, onRefresh, currentPage, total
   const handleSave = async () => {
     if (!form.bolt) return;
     try {
+      // Remove curve if marked for removal
+      if (removeCurve && detailedTest?.curve?.id) {
+        await del(`${API_BASE}/admin/test-curves/${detailedTest.curve.id}/`);
+      }
+      
       const payload = {
         bolt: parseInt(form.bolt),
         methodology: form.methodology,
@@ -524,6 +567,7 @@ function TestsTab({ tests, filterOptions, loading, onRefresh, currentPage, total
         await put(`${API_BASE}/admin/tests/${editing.id}/`, payload);
       }
       setModal(null);
+      setRemoveCurve(false);
       onRefresh();
     } catch (err) {
       console.error('Failed to save test', err);
@@ -558,6 +602,31 @@ function TestsTab({ tests, filterOptions, loading, onRefresh, currentPage, total
 
   return (
     <div className="space-y-4">
+      {/* Search Bar */}
+      <div className="relative flex gap-2">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <input
+            type="text"
+            placeholder="Search by test ID..."
+            value={localSearch}
+            onChange={(e) => setLocalSearch(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                onSearch(localSearch);
+              }
+            }}
+            className="w-full pl-9 pr-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+          />
+        </div>
+        <button
+          onClick={() => onSearch(localSearch)}
+          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium"
+        >
+          Search
+        </button>
+      </div>
+
       <div className="flex justify-between items-center">
         <p className="text-sm text-slate-500">{startIndex}-{endIndex} of {totalCount} test(s)</p>
         <button onClick={openAdd} className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium">
@@ -569,6 +638,7 @@ function TestsTab({ tests, filterOptions, loading, onRefresh, currentPage, total
         <table className="w-full text-sm text-left">
           <thead className="bg-slate-50 border-b border-slate-200">
             <tr>
+              <th className="px-5 py-3 font-semibold text-slate-600">Test ID</th>
               <th className="px-5 py-3 font-semibold text-slate-600">Product</th>
               <th className="px-5 py-3 font-semibold text-slate-600">Methodology</th>
               <th className="px-5 py-3 font-semibold text-slate-600">Facility</th>
@@ -578,6 +648,7 @@ function TestsTab({ tests, filterOptions, loading, onRefresh, currentPage, total
           <tbody className="divide-y divide-slate-100">
             {tests.map(t => (
               <tr key={t.id} className="hover:bg-slate-50">
+                <td className="px-5 py-3 font-medium text-slate-500">{t.id}</td>
                 <td className="px-5 py-3 font-medium text-slate-800 max-w-[200px] truncate">{t.bolt?.name || t.bolt}</td>
                 <td className="px-5 py-3">
                   <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${t.methodology === 'dynamic' ? 'bg-amber-50 text-amber-700' : 'bg-teal-50 text-teal-700'}`}>
@@ -757,6 +828,39 @@ function TestsTab({ tests, filterOptions, loading, onRefresh, currentPage, total
                 </div>
               )}
 
+              {/* Curve Data Display - Only in Edit Mode */}
+              {modal === 'edit' && detailedTest?.curve?.curve_pair && Array.isArray(detailedTest.curve.curve_pair) && detailedTest.curve.curve_pair.length > 0 && (
+                <div className="border border-slate-300 rounded-lg p-3 bg-slate-50">
+                  <div className="flex justify-between items-center mb-2">
+                    <p className="text-sm font-medium text-slate-700">Curve Data:</p>
+                    <button
+                      onClick={() => setRemoveCurve(!removeCurve)}
+                      className={`px-2 py-1 text-xs font-medium rounded-lg ${removeCurve ? 'bg-red-100 text-red-700 border border-red-300' : 'bg-slate-200 text-slate-700 border border-slate-300 hover:bg-slate-300'}`}
+                    >
+                      {removeCurve ? '✓ Mark for removal' : 'Remove curve data'}
+                    </button>
+                  </div>
+                  <div className="overflow-x-auto border border-slate-300 rounded bg-white max-h-48 overflow-y-auto">
+                    <table className="w-full text-xs">
+                      <thead className="sticky top-0 bg-slate-100 border-b border-slate-200">
+                        <tr>
+                          <th className="px-2 py-1 text-left font-semibold text-slate-700">Displacement (mm)</th>
+                          <th className="px-2 py-1 text-left font-semibold text-slate-700">Load (kN)</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-200">
+                        {detailedTest.curve.curve_pair.map((point, idx) => (
+                          <tr key={idx} className="hover:bg-slate-50">
+                            <td className="px-2 py-1 text-slate-700">{point.displacement !== null ? point.displacement.toFixed(2) : '-'}</td>
+                            <td className="px-2 py-1 text-slate-700">{point.load !== null ? point.load.toFixed(2) : '-'}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
               {/* Action Buttons */}
               <div className="flex justify-end gap-2 pt-2 border-t border-slate-200">
                 <button onClick={() => setModal(null)} className="px-4 py-2 text-sm border border-slate-300 rounded-lg hover:bg-slate-50 font-medium">
@@ -816,6 +920,10 @@ export default function ManageDataPanel() {
     nextUrl: null,
     prevUrl: null,
   });
+
+  // Search state
+  const [productSearch, setProductSearch] = useState('');
+  const [testSearch, setTestSearch] = useState('');
 
   const fetchAllData = async () => {
     setLoading(true);
@@ -901,7 +1009,56 @@ export default function ManageDataPanel() {
     setLoading(false);
   };
 
+  const handleProductSearch = async (searchValue) => {
+    setProductSearch(searchValue);
+    setLoading(true);
+    try {
+      const url = new URL(`${window.location.origin}${API_BASE}/admin/bolts/`);
+      if (searchValue.trim()) {
+        url.searchParams.append('name', searchValue.trim());
+      }
+      url.searchParams.append('page', '1');
+      const pathAndQuery = url.pathname + url.search;
+      const data = await get(pathAndQuery);
+      setProducts(data.results || data);
+      setProductsPagination({
+        currentPage: 1,
+        totalCount: data.count || 0,
+        nextUrl: data.next || null,
+        prevUrl: data.previous || null,
+      });
+    } catch (err) {
+      console.error('Failed to search products', err);
+    }
+    setLoading(false);
+  };
+
+  const handleTestSearch = async (searchValue) => {
+    setTestSearch(searchValue);
+    setLoading(true);
+    try {
+      const url = new URL(`${window.location.origin}${API_BASE}/admin/tests/`);
+      if (searchValue.trim()) {
+        url.searchParams.append('id', searchValue.trim());
+      }
+      url.searchParams.append('page', '1');
+      const pathAndQuery = url.pathname + url.search;
+      const data = await get(pathAndQuery);
+      setTests(data.results || data);
+      setTestsPagination({
+        currentPage: 1,
+        totalCount: data.count || 0,
+        nextUrl: data.next || null,
+        prevUrl: data.previous || null,
+      });
+    } catch (err) {
+      console.error('Failed to search tests', err);
+    }
+    setLoading(false);
+  };
+
   // Fetch all data on mount
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     fetchAllData();
   }, []);
@@ -958,6 +1115,8 @@ export default function ManageDataPanel() {
           prevUrl={productsPagination.prevUrl}
           onNextPage={() => handleNextPage(productsPagination, setProductsPagination, setProducts)}
           onPrevPage={() => handlePrevPage(productsPagination, setProductsPagination, setProducts)}
+          searchValue={productSearch}
+          onSearch={handleProductSearch}
         />
       )}
       {tab === 'tests' && (
@@ -972,6 +1131,8 @@ export default function ManageDataPanel() {
           prevUrl={testsPagination.prevUrl}
           onNextPage={() => handleNextPage(testsPagination, setTestsPagination, setTests)}
           onPrevPage={() => handlePrevPage(testsPagination, setTestsPagination, setTests)}
+          searchValue={testSearch}
+          onSearch={handleTestSearch}
         />
       )}
     </div>
