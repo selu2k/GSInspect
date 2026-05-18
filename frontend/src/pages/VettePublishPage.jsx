@@ -153,8 +153,11 @@ export default function VettePublishPage() {
                       {t.methodology}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-slate-500">{t.facility}</td>
-                  <td className="px-6 py-4">
+                  <td className="px-6 py-4 flex gap-2">
+                    <button onClick={() => openTestDetail(t.id)}
+                      className="text-xs font-medium text-indigo-600 hover:text-indigo-800 border border-indigo-200 px-3 py-1.5 rounded-lg hover:bg-indigo-50">
+                      Details
+                    </button>
                     <button onClick={() => handlePublishTest(t.id)}
                       className="text-xs font-medium text-emerald-600 hover:text-emerald-800 border border-emerald-200 px-3 py-1.5 rounded-lg hover:bg-emerald-50">
                       <CheckCircle className="w-3.5 h-3.5 inline mr-1" /> Publish
