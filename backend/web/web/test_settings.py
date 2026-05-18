@@ -16,6 +16,7 @@ DATABASES = {
 # Disable password validators for faster test user creation
 AUTH_PASSWORD_VALIDATORS = []
 
+
 # Disable migrations for speed
 class DisableMigrations:
     def __contains__(self, item):
@@ -36,7 +37,7 @@ PASSWORD_HASHERS = [
 SECRET_KEY = "test-secret-key-unsafe-do-not-use-in-production"
 
 # Disable debug toolbar and other expensive middleware
-MIDDLEWARE = [m for m in MIDDLEWARE if "debug_toolbar" not in m]
+MIDDLEWARE = [m for m in MIDDLEWARE if "debug_toolbar" not in m]  # noqa: F405
 
 # Faster CSRF
 CSRF_COOKIE_SECURE = False
