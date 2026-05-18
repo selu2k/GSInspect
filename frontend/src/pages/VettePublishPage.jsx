@@ -169,6 +169,34 @@ export default function VettePublishPage() {
           </table>
         </div>
       </div>
+      {/* Detail Modal */}
+      {detailModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-lg mx-4 p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-bold text-slate-800">
+                {detailModal === 'bolt' ? 'Product Details' : 'Test Details'}
+              </h2>
+              <button onClick={() => { setDetailModal(null); setDetailData(null); }}
+                className="text-slate-400 hover:text-slate-600 text-xl font-bold">✕</button>
+            </div>
+            {loadingDetail ? (
+              <p className="text-sm text-slate-500">Loading...</p>
+            ) : detailData && (
+              <div className="space-y-2 text-sm">
+                {Object.entries(detailData).map(([key, value]) => (
+                  <div key={key} className="flex gap-2">
+                    <span className="font-medium text-slate-600 w-48 shrink-0">{key}:</span>
+                    <span className="text-slate-800">
+                      {typeof value === 'object' ? JSON.stringify(value) : String(value ?? '-')}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
