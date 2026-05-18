@@ -794,13 +794,13 @@ class AdminTestCSVImportView(generics.CreateAPIView):
 
                     # Create or update test
                     if client_test_id:
-                        test, created = Test.objects.update_or_create(
+                        Test.objects.update_or_create(
                             bolt=bolt,
                             client_test_id=client_test_id,
                             defaults=test_data,
                         )
                     else:
-                        test = Test.objects.create(**test_data)
+                        Test.objects.create(**test_data)
 
                     created_count += 1
 
@@ -871,10 +871,12 @@ class AdminTestCurveCSVImportView(generics.CreateAPIView):
                     if key not in grouped_data:
                         grouped_data[key] = []
 
-                    grouped_data[key].append({
-                        "displacement": displacement,
-                        "load": load,
-                    })
+                    grouped_data[key].append(
+                        {
+                            "displacement": displacement,
+                            "load": load,
+                        }
+                    )
 
                 except ValueError as e:
                     errors.append({"row": row_idx, "error": f"Invalid data format: {str(e)}"})
@@ -903,21 +905,27 @@ class AdminTestCurveCSVImportView(generics.CreateAPIView):
 
                 except Test.DoesNotExist:
                     if key[0] == "test_id":
-                        errors.append({
-                            "test_id": key[1],
-                            "error": f"Test not found for test_id={key[1]}",
-                        })
+                        errors.append(
+                            {
+                                "test_id": key[1],
+                                "error": f"Test not found for test_id={key[1]}",
+                            }
+                        )
                     else:
-                        errors.append({
-                            "client_test_id": key[2],
-                            "error": f"Test not found for supplier_id={key[1]}, client_test_id={key[2]}",
-                        })
+                        errors.append(
+                            {
+                                "client_test_id": key[2],
+                                "error": f"Test not found for supplier_id={key[1]}, client_test_id={key[2]}",
+                            }
+                        )
                 except Exception as e:
                     error_key = key[1] if key[0] == "test_id" else key[2]
-                    errors.append({
-                        "key": error_key,
-                        "error": str(e),
-                    })
+                    errors.append(
+                        {
+                            "key": error_key,
+                            "error": str(e),
+                        }
+                    )
 
         except Exception as e:
             return Response(

@@ -36,8 +36,11 @@ class Bolt(models.Model):
     )
     name = models.CharField(max_length=255)
     client_product_id = models.CharField(
-        max_length=255, blank=True, null=True, db_index=True,
-        help_text="External product ID from supplier, combined with supplier_id for uniqueness"
+        max_length=255,
+        blank=True,
+        null=True,
+        db_index=True,
+        help_text="External product ID from supplier, combined with supplier_id for uniqueness",
     )
     length = models.FloatField(db_index=True)
     diameter = models.FloatField()
@@ -107,8 +110,11 @@ class Test(models.Model):
 
     # External reference
     client_test_id = models.CharField(
-        max_length=255, blank=True, null=True, db_index=True,
-        help_text="External test ID from supplier, combined with supplier_id for uniqueness"
+        max_length=255,
+        blank=True,
+        null=True,
+        db_index=True,
+        help_text="External test ID from supplier, combined with supplier_id for uniqueness",
     )
 
     is_published = models.BooleanField(default=False, db_index=True)
