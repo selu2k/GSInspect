@@ -153,6 +153,7 @@ export default function VettePublishPage() {
                       {t.methodology}
                     </span>
                   </td>
+                  <td className="px-6 py-4 text-slate-500">{t.facility || '-'}</td>
                   <td className="px-6 py-4 flex gap-2">
                     <button onClick={() => openTestDetail(t.id)}
                       className="text-xs font-medium text-indigo-600 hover:text-indigo-800 border border-indigo-200 px-3 py-1.5 rounded-lg hover:bg-indigo-50">
