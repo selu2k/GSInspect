@@ -10,8 +10,8 @@ const API_BASE = '/api';
 // --- Reusable Modal ---
 function Modal({ title, onClose, children }) {
   return (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-lg md:max-w-2xl lg:max-w-3xl max-h-[90vh] flex flex-col relative">
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4" onClick={onClose}>
+      <div className="bg-white rounded-xl shadow-xl w-full max-w-lg md:max-w-2xl lg:max-w-3xl max-h-[90vh] flex flex-col relative" onClick={e => e.stopPropagation()}>
         <div className="flex justify-between items-center px-6 py-4 border-b border-slate-200 flex-shrink-0">
           <h3 className="text-lg font-bold text-slate-800">{title}</h3>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-600">
@@ -902,6 +902,7 @@ export default function ManageDataPanel() {
   };
 
   // Fetch all data on mount
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     fetchAllData();
   }, []);

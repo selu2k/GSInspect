@@ -1,9 +1,31 @@
 import React, { useState, useEffect } from 'react';
 import { CheckCircle, Clock } from 'lucide-react';
-import { get, post, patch } from '../api/client';
+import { get, patch } from '../api/client';
 
 
 const API_BASE = '/api';
+
+// const capitalizeFieldName = (str) => {
+//   return str
+//     .split('_')
+//     .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+//     .join(' ');
+// };
+
+const fetchData = async (setLoading, setBolts, setTests) => {
+  setLoading(true);
+  try {
+    const [boltsData, testsData] = await Promise.all([
+      get(`${API_BASE}/admin/bolts/`),
+      get(`${API_BASE}/admin/tests/`),
+    ]);
+    setBolts((boltsData.results || boltsData).filter(b => !b.is_published));
+    setTests((testsData.results || testsData).filter(t => !t.is_published));
+  } catch (err) {
+    console.error('Failed to fetch data', err);
+  }
+  setLoading(false);
+};
 
 export default function VettePublishPage() {
   const [bolts, setBolts] = useState([]);
@@ -14,28 +36,13 @@ export default function VettePublishPage() {
   const [loadingDetail, setLoadingDetail] = useState(false);
 
   useEffect(() => {
-    fetchData();
+    fetchData(setLoading, setBolts, setTests);
   }, []);
-
-  const fetchData = async () => {
-    setLoading(true);
-    try {
-      const [boltsData, testsData] = await Promise.all([
-        get(`${API_BASE}/admin/bolts/`),
-        get(`${API_BASE}/admin/tests/`),
-      ]);
-      setBolts((boltsData.results || boltsData).filter(b => !b.is_published));
-      setTests((testsData.results || testsData).filter(t => !t.is_published));
-    } catch (err) {
-      console.error('Failed to fetch data', err);
-    }
-    setLoading(false);
-  };
 
   const handlePublishBolt = async (id) => {
     try {
       await patch(`${API_BASE}/admin/bolts/${id}/publish/`, { is_published: true });
-      fetchData();
+      fetchData(setLoading, setBolts, setTests);
     } catch (err) {
       console.error('Failed to publish bolt', err);
     }
@@ -44,7 +51,7 @@ export default function VettePublishPage() {
   const handlePublishTest = async (id) => {
     try {
       await patch(`${API_BASE}/admin/tests/${id}/publish/`, { is_published: true });
-      fetchData();
+      fetchData(setLoading, setBolts, setTests);
     } catch (err) {
       console.error('Failed to publish test', err);
     }
@@ -179,8 +186,8 @@ export default function VettePublishPage() {
       </div>
       {/* Detail Modal */}
       {detailModal && (
-        <div className="fixed inset-0 bg-slate-800/20 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-md mx-4 p-3">
+        <div className="fixed inset-0 bg-slate-800/20 flex items-center justify-center z-50" onClick={() => { setDetailModal(null); setDetailData(null); }}>
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md mx-4 p-3" onClick={e => e.stopPropagation()}>
             <div className="flex justify-between items-center mb-3">
               <h2 className="text-sm font-semibold text-slate-800">
                 {detailModal === 'bolt' ? 'Product Details' : 'Test Details'}
