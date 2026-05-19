@@ -56,6 +56,17 @@ export function AppProvider({ children }) {
       });
   }, []);
 
+  // Listen for token expiration from API client
+  useEffect(() => {
+    const handleTokenExpired = () => {
+      setIsAuthenticated(false);
+      setUserRole(null);
+    };
+    
+    window.addEventListener('tokenExpired', handleTokenExpired);
+    return () => window.removeEventListener('tokenExpired', handleTokenExpired);
+  }, []);
+
   // Filter State
   const [supportType] = useState('rockbolt');
   const [methodology, setMethodology] = useState('dynamic');
@@ -65,6 +76,7 @@ export function AppProvider({ children }) {
   const [selectedProductIds, setSelectedProductIds] = useState([]);
   const [selectedFacilities, setSelectedFacilities] = useState([]);
   const [showAverage, setShowAverage] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
 
   const triggerSearch = (filters) => {
     setSelectedCategories(filters.categories || []);
@@ -126,7 +138,16 @@ export function AppProvider({ children }) {
   const facilities = useMemo(() => ['All', ...filterOptions.facilities], [filterOptions.facilities]);
   const lengthRange = useMemo(() => filterOptions.length_range, [filterOptions.length_range]);
   
-  const filteredProductsList = products;
+  const filteredProductsList = useMemo(() => {
+    if (!searchTerm.trim()) return products;
+    
+    const term = searchTerm.toLowerCase();
+    return products.filter(product => 
+      product.product_name?.toLowerCase().includes(term) ||
+      product.supplier?.toLowerCase().includes(term) ||
+      product.bolt_category?.toLowerCase().includes(term)
+    );
+  }, [products, searchTerm]);
 
   const productColorMap = useMemo(() => {
     const map = {};
@@ -270,6 +291,7 @@ export function AppProvider({ children }) {
     selectedFacilities, setSelectedFacilities,
     showAverage, setShowAverage,
     selectedProductIds, setSelectedProductIds,
+    searchTerm, setSearchTerm,
     categories, suppliers, lengthRange, facilities,
     filteredProductsList, productColorMap,
     filteredTests, filteredCurves,
