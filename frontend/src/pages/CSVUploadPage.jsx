@@ -1,40 +1,45 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { UploadCloud, FileSpreadsheet, X, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
 import { apiCall } from '../api/client';
 
 const API_BASE = '/api';
 
+const CSV_TYPES = [
+  {
+    id: 'tests',
+    label: 'Test Records',
+    endpoint: `${API_BASE}/admin/tests/import-csv/`,
+    description: 'Import test records linked to existing bolts',
+    columns: 'product_id, supplier_id, client_product_id, client_test_id, methodology, facility, ...',
+  },
+  {
+    id: 'test-curves',
+    label: 'Test Curves',
+    endpoint: `${API_BASE}/admin/test-curves/import-csv/`,
+    description: 'Import displacement/load curve data for existing tests',
+    columns: 'test_id, supplier_id, client_test_id, displacement, load',
+  },
+  {
+    id: 'bolts',
+    label: 'Bolts (Products)',
+    endpoint: `${API_BASE}/admin/bolts/import-csv/`,
+    description: 'Import new bolt products',
+    columns: 'supplier_id, client_product_id, name, length, diameter, category, equipment_compatibility',
+  },
+];
+
 export default function CSVUploadPage() {
   const [file, setFile] = useState(null);
   const [dragging, setDragging] = useState(false);
-  const [boltId, setBoltId] = useState('');
-  const [methodology, setMethodology] = useState('dynamic');
-  const [facility, setFacility] = useState('');
+  const [csvType, setCsvType] = useState('tests');
 
-  const [bolts, setBolts] = useState([]);
-  const [loadingBolts, setLoadingBolts] = useState(true);
-  const [boltsError, setBoltsError] = useState(null);
-
-  const [status, setStatus] = useState(null); // null | 'uploading' | 'success' | 'error'
+  const [status, setStatus] = useState(null);
   const [errorMsg, setErrorMsg] = useState('');
+  const [resultMsg, setResultMsg] = useState('');
 
   const inputRef = useRef(null);
 
-  // Fetch bolt list on mount
-  useEffect(() => {
-    async function fetchBolts() {
-      try {
-        const res = await apiCall(`${API_BASE}/admin/bolts/`);
-        const data = await res.json();
-        setBolts(Array.isArray(data) ? data : (data.results ?? []));
-      } catch (err) {
-        setBoltsError('Failed to load products. Please refresh.');
-      } finally {
-        setLoadingBolts(false);
-      }
-    }
-    fetchBolts();
-  }, []);
+  const selectedType = CSV_TYPES.find(t => t.id === csvType);
 
   const handleDrop = (e) => {
     e.preventDefault();
@@ -49,60 +54,33 @@ export default function CSVUploadPage() {
   };
 
   const handleSubmit = async () => {
-    if (!file || !boltId || !facility) return;
+    if (!file) return;
 
     setStatus('uploading');
     setErrorMsg('');
+    setResultMsg('');
 
     try {
-      // Step 1: Create Test record → get test_id
-      const testRes = await apiCall(`${API_BASE}/admin/tests/`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          bolt: parseInt(boltId),
-          methodology,           // 'static' or 'dynamic'
-          facility,
-        }),
-      });
-      const testData = await testRes.json();
-      const testId = testData.id;
-
-      // Step 2: Upload CSV with test_id injected per row
-      // Parse CSV client-side, inject test_id, re-serialize as FormData
-      const csvText = await file.text();
-      const lines = csvText.trim().split('\n');
-      const headers = lines[0].split(',').map(h => h.trim());
-
-      // Build new CSV with test_id column
-      const newHeaders = ['test_id', ...headers];
-      const newRows = lines.slice(1).map(line => `${testId},${line}`);
-      const newCsv = [newHeaders.join(','), ...newRows].join('\n');
-      const csvBlob = new Blob([newCsv], { type: 'text/csv' });
-
       const formData = new FormData();
-      formData.append('file', csvBlob, file.name);
+      formData.append('file', file);
 
-      await apiCall(`${API_BASE}/admin/test-curves/`, {
+      const res = await apiCall(selectedType.endpoint, {
         method: 'POST',
-        headers: {},   // let browser set multipart/form-data + boundary
+        headers: {},
         body: formData,
       });
 
+      const data = await res.json();
       setStatus('success');
+      setResultMsg(`Successfully imported ${data.created ?? ''} records.`);
       setFile(null);
-      setBoltId('');
-      setFacility('');
-      setMethodology('dynamic');
-      setTimeout(() => setStatus(null), 4000);
+      setTimeout(() => setStatus(null), 5000);
 
     } catch (err) {
       setStatus('error');
-      setErrorMsg(err.message || 'Upload failed. Please try again.');
+      setErrorMsg(err.message || 'Upload failed. Please check your CSV format and try again.');
     }
   };
-
-  const isReady = file && boltId && facility && status !== 'uploading';
 
   return (
     <div className="max-w-3xl">
@@ -110,14 +88,35 @@ export default function CSVUploadPage() {
 
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-8 flex flex-col gap-6">
 
-        {/* Step 1: File Upload */}
+        {/* Step 1: Select CSV Type */}
         <div>
-          <p className="text-sm font-semibold text-slate-700 mb-2">
-            1. Select CSV File
+          <p className="text-sm font-semibold text-slate-700 mb-3">1. Select Data Type</p>
+          <div className="grid grid-cols-3 gap-3">
+            {CSV_TYPES.map(type => (
+              <button
+                key={type.id}
+                onClick={() => { setCsvType(type.id); setFile(null); setStatus(null); }}
+                className={`text-left p-3 rounded-lg border transition-colors ${
+                  csvType === type.id
+                    ? 'border-indigo-400 bg-indigo-50'
+                    : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+                }`}
+              >
+                <p className={`text-sm font-semibold ${csvType === type.id ? 'text-indigo-700' : 'text-slate-700'}`}>
+                  {type.label}
+                </p>
+                <p className="text-xs text-slate-400 mt-1">{type.description}</p>
+              </button>
+            ))}
+          </div>
+          <p className="text-xs text-slate-400 mt-2">
+            Required columns: <code className="bg-slate-100 px-1 rounded">{selectedType.columns}</code>
           </p>
-          <p className="text-xs text-slate-400 mb-3">
-            Required columns: <code className="bg-slate-100 px-1 rounded">displacement</code>, <code className="bg-slate-100 px-1 rounded">load</code>, <code className="bg-slate-100 px-1 rounded">energy_absorbed</code>
-          </p>
+        </div>
+
+        {/* Step 2: File Upload */}
+        <div>
+          <p className="text-sm font-semibold text-slate-700 mb-2">2. Select CSV File</p>
           <div
             onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
             onDragLeave={() => setDragging(false)}
@@ -149,58 +148,11 @@ export default function CSVUploadPage() {
           </div>
         </div>
 
-        {/* Step 2: Link to Bolt */}
-        <div>
-          <p className="text-sm font-semibold text-slate-700 mb-2">2. Link to Product (Bolt)</p>
-          {boltsError ? (
-            <p className="text-sm text-red-500">{boltsError}</p>
-          ) : (
-            <select
-              value={boltId}
-              onChange={(e) => setBoltId(e.target.value)}
-              disabled={loadingBolts}
-              className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-700 focus:outline-none focus:border-indigo-400 disabled:bg-slate-50 disabled:text-slate-400"
-            >
-              <option value="">
-                {loadingBolts ? 'Loading products...' : '-- Select a product --'}
-              </option>
-              {bolts.map(b => (
-                <option key={b.id} value={b.id}>{b.name}</option>
-              ))}
-            </select>
-          )}
-        </div>
-
-        {/* Step 3: Methodology & Facility */}
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <p className="text-sm font-semibold text-slate-700 mb-2">3. Test Methodology</p>
-            <select
-              value={methodology}
-              onChange={(e) => setMethodology(e.target.value)}
-              className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-700 focus:outline-none focus:border-indigo-400"
-            >
-              <option value="dynamic">Dynamic</option>
-              <option value="static">Static</option>
-            </select>
-          </div>
-          <div>
-            <p className="text-sm font-semibold text-slate-700 mb-2">Test Facility</p>
-            <input
-              type="text"
-              placeholder="e.g. Facility D"
-              value={facility}
-              onChange={(e) => setFacility(e.target.value)}
-              className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm text-slate-700 focus:outline-none focus:border-indigo-400"
-            />
-          </div>
-        </div>
-
         {/* Feedback */}
         {status === 'success' && (
           <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm px-4 py-3 rounded-lg">
             <CheckCircle2 className="w-4 h-4 shrink-0" />
-            Test record created and CSV uploaded successfully!
+            {resultMsg}
           </div>
         )}
         {status === 'error' && (
@@ -213,12 +165,12 @@ export default function CSVUploadPage() {
         {/* Submit */}
         <button
           onClick={handleSubmit}
-          disabled={!isReady}
+          disabled={!file || status === 'uploading'}
           className="self-end flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white text-sm font-semibold px-6 py-3 rounded-xl transition-colors"
         >
           {status === 'uploading'
             ? <><Loader2 className="w-4 h-4 animate-spin" /> Uploading...</>
-            : <><UploadCloud className="w-4 h-4" /> Upload & Save to Database</>
+            : <><UploadCloud className="w-4 h-4" /> Upload & Import</>
           }
         </button>
 
