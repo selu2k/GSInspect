@@ -66,7 +66,6 @@ export default function CSVUploadPage() {
 
       const res = await apiCall(selectedType.endpoint, {
         method: 'POST',
-        headers: {},
         body: formData,
       });
 
