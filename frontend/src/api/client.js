@@ -84,11 +84,14 @@ async function handle401() {
 export async function apiCall(url, options = {}, retry = true) {
   const token = localStorage.getItem('token');
   
-  // Build headers
-  const headers = {
-    'Content-Type': 'application/json',
-    ...options.headers,
-  };
+  // Build headers (skip Content-Type for FormData - let browser set it)
+  const headers = {};
+  
+  if (!(options.body instanceof FormData)) {
+    headers['Content-Type'] = 'application/json';
+  }
+  
+  Object.assign(headers, options.headers);
 
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
