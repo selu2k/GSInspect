@@ -73,11 +73,15 @@ export default function CSVUploadPage() {
       setStatus('success');
       setResultMsg(`Successfully imported ${data.created ?? ''} records.`);
       setFile(null);
+      inputRef.current.value = '';
       setTimeout(() => setStatus(null), 5000);
 
     } catch (err) {
       setStatus('error');
       setErrorMsg(err.message || 'Upload failed. Please check your CSV format and try again.');
+      setFile(null);
+      inputRef.current.value = '';
+      setTimeout(() => setStatus(null), 5000);
     }
   };
 
