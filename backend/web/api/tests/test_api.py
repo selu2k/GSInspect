@@ -208,12 +208,12 @@ class TestTestCurveAPI:
 
     def test_create_test_curve_csv(self, authenticated_client, test_data):
         """Test creating test curves with CSV file."""
-        csv_content = "test_id,displacement,load,energy_absorbed\n"
-        csv_content += f"{test_data.id},0.1,100,50\n"
-        csv_content += f"{test_data.id},0.2,200,120\n"
+        csv_content = "test_id,supplier_id,client_test_id,displacement,load\n"
+        csv_content += f"{test_data.id},1,TEST001,0.1,100\n"
+        csv_content += f"{test_data.id},1,TEST001,0.2,200\n"
 
         response = authenticated_client.post(
-            "/api/admin/test-curves/",
+            "/api/admin/test-curves/import-csv/",
             {"file": ("curves.csv", StringIO(csv_content), "text/csv")},
             format="multipart",
         )
@@ -352,3 +352,103 @@ class TestPagination:
         response = authenticated_client.get("/api/admin/bolts/?limit=200")
         # Should be limited to 100
         assert response.status_code == status.HTTP_200_OK
+
+
+@pytest.mark.django_db
+class TestExternalAPI:
+    """Test suite for external API endpoints."""
+
+    def test_external_bolts_summary_empty(self, api_client):
+        """Test external bolt summary endpoint with no published bolts."""
+        response = api_client.get("/api/external/bolts-summary/")
+
+        assert response.status_code == status.HTTP_200_OK
+        assert "count" in response.data
+        assert "results" in response.data
+        assert response.data["count"] == 0
+        assert response.data["results"] == []
+
+    def test_external_bolts_summary_with_published_bolt(self, api_client, bolt, test_data):
+        """Test external bolt summary endpoint returns published bolt summary."""
+        bolt.is_published = True
+        bolt.save()
+
+        test_data.is_published = True
+        test_data.save()
+
+        response = api_client.get("/api/external/bolts-summary/")
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data["count"] == 1
+        assert response.data["results"][0]["id"] == bolt.id
+        assert response.data["results"][0]["name"] == bolt.name
+        assert "supplier" in response.data["results"][0]
+        assert "summary_stats" in response.data["results"][0]
+
+    def test_external_test_curves_empty(self, api_client):
+        """Test external test curves endpoint with no published curve data."""
+        response = api_client.get("/api/external/test-curves/")
+
+        assert response.status_code == status.HTTP_200_OK
+        assert "count" in response.data
+        assert "results" in response.data
+        assert response.data["count"] == 0
+        assert response.data["results"] == []
+
+    def test_external_test_curves_with_published_data(
+        self, api_client, bolt, test_data, test_curve
+    ):
+        """Test external test curves endpoint returns published test curve data."""
+        bolt.is_published = True
+        bolt.save()
+
+        test_data.is_published = True
+        test_data.save()
+
+        test_curve.is_published = True
+        test_curve.save()
+
+        response = api_client.get("/api/external/test-curves/")
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data["count"] == 1
+        assert response.data["results"][0]["test_id"] == test_data.id
+        assert response.data["results"][0]["bolt"]["id"] == bolt.id
+        assert "curve" in response.data["results"][0]
+        assert "curve_pair" in response.data["results"][0]["curve"]
+
+    def test_external_test_curves_filter_by_bolt_id(self, api_client, bolt, test_data, test_curve):
+        """Test external test curves endpoint filters by bolt ID."""
+        bolt.is_published = True
+        bolt.save()
+
+        test_data.is_published = True
+        test_data.save()
+
+        test_curve.is_published = True
+        test_curve.save()
+
+        response = api_client.get(f"/api/external/test-curves/?bolt_ids={bolt.id}")
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data["count"] == 1
+        assert response.data["results"][0]["bolt"]["id"] == bolt.id
+
+    def test_external_test_curves_filter_by_methodology(
+        self, api_client, bolt, test_data, test_curve
+    ):
+        """Test external test curves endpoint filters by methodology."""
+        bolt.is_published = True
+        bolt.save()
+
+        test_data.is_published = True
+        test_data.save()
+
+        test_curve.is_published = True
+        test_curve.save()
+
+        response = api_client.get(f"/api/external/test-curves/?methodology={test_data.methodology}")
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data["count"] == 1
+        assert response.data["results"][0]["methodology"] == test_data.methodology
