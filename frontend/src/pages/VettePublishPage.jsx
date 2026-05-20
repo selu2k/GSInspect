@@ -16,11 +16,11 @@ const fetchData = async (setLoading, setBolts, setTests) => {
   setLoading(true);
   try {
     const [boltsData, testsData] = await Promise.all([
-      get(`${API_BASE}/admin/bolts/`),
-      get(`${API_BASE}/admin/tests/`),
+      get(`${API_BASE}/admin/bolts/?is_published=false`),
+      get(`${API_BASE}/admin/tests/?is_published=false`),
     ]);
-    setBolts((boltsData.results || boltsData).filter(b => !b.is_published));
-    setTests((testsData.results || testsData).filter(t => !t.is_published));
+    setBolts((boltsData.results || boltsData));
+    setTests((testsData.results || testsData));
   } catch (err) {
     console.error('Failed to fetch data', err);
   }

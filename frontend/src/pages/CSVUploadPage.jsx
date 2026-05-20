@@ -36,6 +36,7 @@ export default function CSVUploadPage() {
   const [status, setStatus] = useState(null);
   const [errorMsg, setErrorMsg] = useState('');
   const [resultMsg, setResultMsg] = useState('');
+  const [importErrors, setImportErrors] = useState([]);
 
   const inputRef = useRef(null);
 
@@ -59,6 +60,7 @@ export default function CSVUploadPage() {
     setStatus('uploading');
     setErrorMsg('');
     setResultMsg('');
+    setImportErrors([]);
 
     try {
       const formData = new FormData();
@@ -71,7 +73,8 @@ export default function CSVUploadPage() {
 
       const data = await res.json();
       setStatus('success');
-      setResultMsg(`Successfully imported ${data.created ?? ''} records.`);
+      setResultMsg(`Successfully imported ${data.created ?? 0} records.`);
+      setImportErrors(data.errors || []);
       setFile(null);
       inputRef.current.value = '';
       setTimeout(() => setStatus(null), 5000);
@@ -153,9 +156,25 @@ export default function CSVUploadPage() {
 
         {/* Feedback */}
         {status === 'success' && (
-          <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm px-4 py-3 rounded-lg">
-            <CheckCircle2 className="w-4 h-4 shrink-0" />
-            {resultMsg}
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm px-4 py-3 rounded-lg">
+              <CheckCircle2 className="w-4 h-4 shrink-0" />
+              {resultMsg}
+            </div>
+            {importErrors.length > 0 && (
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                <p className="text-sm font-semibold text-amber-900 mb-2">
+                  {importErrors.length} {importErrors.length === 1 ? 'error' : 'errors'} during import:
+                </p>
+                <div className="max-h-48 overflow-y-auto space-y-1">
+                  {importErrors.map((err, idx) => (
+                    <div key={idx} className="text-xs text-amber-800 bg-white px-2 py-1 rounded border border-amber-100">
+                      <strong>Row {err.row}</strong>: {err.error || JSON.stringify(err.errors)}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
         {status === 'error' && (
