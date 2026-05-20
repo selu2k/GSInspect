@@ -372,10 +372,10 @@ export default function Dashboard() {
               const product = filteredProductsList.find(p => p.id === productId);
               const color = productColorMap[productId]?.hex || '#3b82f6';
               
-              // Debug log
-              if (product) {
-                console.log(`Product ${product.product_name}:`, product);
-              }
+              // // Debug log
+              // if (product) {
+              //   console.log(`Product ${product.product_name}:`, product);
+              // }
               
               return (
                 <div
