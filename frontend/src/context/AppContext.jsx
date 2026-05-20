@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useContext } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { AppContext, TAILWIND_COLORS, HEX_COLORS } from './AppContextCore';
 
 export function AppProvider({ children }) {
@@ -121,7 +121,9 @@ export function AppProvider({ children }) {
           supplier: b?.supplier?.name || 'Unknown',
           product_name: b?.name || 'Unknown Product',
           bolt_length: String(b?.length || 0),
-          bolt_category: b?.category || 'Unknown'
+          bolt_diameter: String(b?.diameter || 0),
+          bolt_category: b?.category || 'Unknown',
+          equipment_compatibility: b?.equipment_compatibility || []
         }));
         setProducts(bolts);
         setSelectedProductIds([]); // Do not auto-select products
@@ -304,5 +306,3 @@ export function AppProvider({ children }) {
     </AppContext.Provider>
   );
 }
-
-export const useAppContext = () => useContext(AppContext);

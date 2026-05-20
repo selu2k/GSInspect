@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Filter, ShieldAlert, Zap, Package, Building2 } from 'lucide-react';
-import { useAppContext } from '../../context/AppContextCore';
+import { useAppContext } from '../../context/useAppContext';
 import MultiSelect from '../filters/MultiSelect';
 
 export default function Sidebar() {

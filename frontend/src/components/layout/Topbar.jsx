@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Activity, User, LogOut, LogIn, Settings } from 'lucide-react';
-import { useAppContext } from '../../context/AppContextCore';
+import { useAppContext } from '../../context/useAppContext';
 import { useNavigate } from 'react-router-dom';
 
 export default function Topbar() {

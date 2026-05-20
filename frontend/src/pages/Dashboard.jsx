@@ -13,7 +13,7 @@ import {
   Bar,
   Cell
 } from 'recharts';
-import { useAppContext } from '../context/AppContextCore';
+import { useAppContext } from '../context/useAppContext';
 import MultiSelect from '../components/filters/MultiSelect';
 
 export default function Dashboard() {
@@ -358,6 +358,58 @@ export default function Dashboard() {
           </div>
         )}
       </section>
+
+      {selectedProductIds.length > 0 && (
+        <section className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 shrink-0">
+          <div className="flex items-center gap-2 mb-4 pb-3 border-b border-slate-200">
+            <div className="bg-gradient-to-br from-blue-500 to-indigo-600 p-2 rounded-lg shadow-md">
+              <Layers className="w-4 h-4 text-white" />
+            </div>
+            <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider">Selected Bolts Summary</h3>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+            {selectedProductIds.map((productId) => {
+              const product = filteredProductsList.find(p => p.id === productId);
+              const color = productColorMap[productId]?.hex || '#3b82f6';
+              
+              // Debug log
+              if (product) {
+                console.log(`Product ${product.product_name}:`, product);
+              }
+              
+              return (
+                <div
+                  key={productId}
+                  className="bg-slate-50 rounded-lg border-2 p-2 hover:shadow-md transition-shadow"
+                  style={{ borderColor: color }}
+                >
+                  {/* Product Name */}
+                  <p className="text-xs font-bold text-slate-800 line-clamp-2 mb-2">{product?.product_name}</p>
+
+                  {/* Details */}
+                  <div className="text-xs text-slate-600 space-y-1">
+                    <p className="truncate">
+                      <span className="font-semibold text-slate-700">Supplier:</span> {product?.supplier}
+                    </p>
+                    <p className="truncate">
+                      <span className="font-semibold text-slate-700">Type:</span> {product?.bolt_category}
+                    </p>
+                    <p className="truncate">
+                      <span className="font-semibold text-slate-700">Diameter:</span> {product?.bolt_diameter}mm
+                    </p>
+                    <p className="truncate">
+                      <span className="font-semibold text-slate-700">Length:</span> {product?.bolt_length}mm
+                    </p>
+                    <p className="break-words">
+                      <span className="font-semibold text-slate-700">Equipment:</span> {Array.isArray(product?.equipment_compatibility) && product.equipment_compatibility.length > 0 ? product.equipment_compatibility.join(', ') : 'N/A'}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       <section className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 shrink-0">
         <div className="flex items-center gap-2 mb-3 pb-3 border-b border-slate-100">
