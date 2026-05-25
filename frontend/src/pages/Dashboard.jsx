@@ -289,7 +289,7 @@ export default function Dashboard() {
   return (
     <div className="flex flex-col gap-4 h-full overflow-y-auto pb-6">
       {/* Search Bar */}
-      <section className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 shrink-0">
+      <section className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 md:p-4 shrink-0">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
           <input
@@ -297,7 +297,7 @@ export default function Dashboard() {
             placeholder="Search by product name, supplier, or category..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-9 pr-8 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+            className="w-full pl-9 pr-8 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs md:text-sm"
           />
           {searchTerm && (
             <button
@@ -310,16 +310,16 @@ export default function Dashboard() {
         </div>
       </section>
 
-      <section className="bg-white rounded-xl shadow-sm border border-slate-200 p-5 shrink-0">
-        <div className="flex items-center justify-between gap-2 mb-3">
+      <section className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 md:p-5 shrink-0">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 mb-3">
           <div className="flex items-center gap-2">
             <Layers className="w-4 h-4 text-blue-500" />
-            <h2 className="text-sm font-semibold text-slate-700 uppercase tracking-wide">Products Matching Filters</h2>
+            <h2 className="text-xs md:text-sm font-semibold text-slate-700 uppercase tracking-wide">Products Matching Filters</h2>
           </div>
           {selectedProductIds.length > 0 && (
             <button
               onClick={() => setSelectedProductIds([])}
-              className="text-xs text-slate-500 hover:text-slate-700 underline"
+              className="text-xs text-slate-500 hover:text-slate-700 underline self-end sm:self-auto"
             >
               Clear selection
             </button>
@@ -327,7 +327,7 @@ export default function Dashboard() {
         </div>
 
         {filteredProductsList.length === 0 ? (
-          <p className="text-sm text-slate-500 italic">No products currently match the selected filters.</p>
+          <p className="text-xs md:text-sm text-slate-500 italic">No products currently match the selected filters.</p>
         ) : (
           <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
             {filteredProductsList.map((product) => {
@@ -347,7 +347,7 @@ export default function Dashboard() {
                         }
                       : {}
                   }
-                  className={`inline-flex items-center rounded-full border px-3 py-1 text-sm transition-colors ${
+                  className={`inline-flex items-center rounded-full border px-2 md:px-3 py-1 text-xs md:text-sm transition-colors ${
                     !isSelected ? 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100' : 'font-medium'
                   }`}
                 >
@@ -460,17 +460,17 @@ export default function Dashboard() {
       </section>
 
       <section className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 md:p-5 flex-1 min-h-[400px] flex flex-col shrink-0">
-        <div className="flex items-center justify-between gap-3 mb-3 shrink-0">
-          <div className="flex items-center gap-3">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 mb-3 shrink-0">
+          <div className="flex items-center gap-3 min-w-0">
             <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wide">Force-Displacement Chart</h3>
             <span className="text-xs text-slate-500">{selectedProductIds.length} product(s) plotted</span>
           </div>
           {selectedProductIds.length > 0 && (
-            <div className="flex items-center gap-2">
-              <div className="flex bg-slate-100 p-1 rounded-lg gap-1">
+            <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto lg:justify-end">
+              <div className="flex bg-slate-100 p-1 rounded-lg gap-1 flex-wrap">
                 <button
                   onClick={() => setColorBy('product')}
-                  className={`text-xs py-1.5 px-2.5 rounded-md font-semibold transition-all ${
+                  className={`text-xs py-1.5 px-2.5 rounded-md font-semibold transition-all whitespace-nowrap ${
                     colorBy === 'product'
                       ? 'bg-blue-600 text-white shadow-md'
                       : 'text-slate-600 hover:text-slate-800'
@@ -480,7 +480,7 @@ export default function Dashboard() {
                 </button>
                 <button
                   onClick={() => setColorBy('facility')}
-                  className={`text-xs py-1.5 px-2.5 rounded-md font-semibold transition-all ${
+                  className={`text-xs py-1.5 px-2.5 rounded-md font-semibold transition-all whitespace-nowrap ${
                     colorBy === 'facility'
                       ? 'bg-blue-600 text-white shadow-md'
                       : 'text-slate-600 hover:text-slate-800'
@@ -491,7 +491,7 @@ export default function Dashboard() {
               </div>
               <button
                 onClick={() => setShowAverage(!showAverage)}
-                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap shrink-0 ${
                   showAverage
                     ? 'bg-emerald-600 text-white shadow-md'
                     : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
@@ -609,26 +609,26 @@ export default function Dashboard() {
 
       {/* Tests Table Section */}
       {plottedTests.length > 0 && (
-        <section ref={tableRef} className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 md:p-5 shrink-0 overflow-hidden flex flex-col">
-          <div className="flex items-center justify-between gap-3 mb-3 shrink-0">
-            <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wide">Plotted Tests Data</h3>
+        <section ref={tableRef} className="bg-white rounded-xl shadow-sm border border-slate-200 p-3 md:p-5 shrink-0 overflow-hidden flex flex-col">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 mb-3 shrink-0">
+            <h3 className="text-xs md:text-sm font-semibold text-slate-700 uppercase tracking-wide">Plotted Tests Data</h3>
           </div>
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-sm whitespace-nowrap">
+            <table className="min-w-[1100px] w-full text-left border-collapse text-xs md:text-sm whitespace-nowrap">
               <thead>
                 <tr className="bg-slate-50 border-y border-slate-200 text-slate-600">
-                  <th className="px-4 py-3 font-medium">Test ID</th>
-                  <th className="px-4 py-3 font-medium">Product</th>
-                  <th className="px-4 py-3 font-medium">Peak Strength (kN)</th>
-                  <th className="px-4 py-3 font-medium">Yield Strength (kN)</th>
-                  <th className="px-4 py-3 font-medium">Ultimate Def. (mm)</th>
-                  <th className="px-4 py-3 font-medium">Energy Abs. (kJ)</th>
-                  <th className="px-4 py-3 font-medium">Bond Strength</th>
-                  <th className="px-4 py-3 font-medium">Stiffness</th>
-                  <th className="px-4 py-3 font-medium">Install Method</th>
-                  <th className="px-4 py-3 font-medium">Encap. Method</th>
-                  <th className="px-4 py-3 font-medium">Loading Rate</th>
-                  <th className="px-4 py-3 font-medium">Drops</th>
+                  <th className="px-2 md:px-4 py-2 md:py-3 font-medium">Test ID</th>
+                  <th className="px-2 md:px-4 py-2 md:py-3 font-medium">Product</th>
+                  <th className="px-2 md:px-4 py-2 md:py-3 font-medium sm:table-cell">Peak (kN)</th>
+                  <th className="px-2 md:px-4 py-2 md:py-3 font-medium md:table-cell">Yield (kN)</th>
+                  <th className="px-2 md:px-4 py-2 md:py-3 font-medium lg:table-cell">Def. (mm)</th>
+                  <th className="px-2 md:px-4 py-2 md:py-3 font-medium lg:table-cell">Energy</th>
+                  <th className="px-2 md:px-4 py-2 md:py-3 font-medium xl:table-cell">Bond</th>
+                  <th className="px-2 md:px-4 py-2 md:py-3 font-medium xl:table-cell">Stiffness</th>
+                  <th className="px-2 md:px-4 py-2 md:py-3 font-medium 2xl:table-cell">Install</th>
+                  <th className="px-2 md:px-4 py-2 md:py-3 font-medium 2xl:table-cell">Encap.</th>
+                  <th className="px-2 md:px-4 py-2 md:py-3 font-medium 2xl:table-cell">Load Rate</th>
+                  <th className="px-2 md:px-4 py-2 md:py-3 font-medium 2xl:table-cell">Drops</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -646,20 +646,20 @@ export default function Dashboard() {
                           : 'hover:bg-slate-50'
                       }`}
                     >
-                      <td className="px-4 py-3 font-medium text-slate-700 border-l-4" style={{ borderLeftColor: colorMap?.hex || '#cbd5e1' }}>
+                      <td className="px-2 md:px-4 py-2 font-medium text-slate-700 border-l-4" style={{ borderLeftColor: colorMap?.hex || '#cbd5e1' }}>
                         {test.test_id}
                       </td>
-                      <td className="px-4 py-3 text-slate-600">{product?.product_name || 'Unknown'}</td>
-                      <td className="px-4 py-3 text-slate-600">{test.peak_strength ? Number(test.peak_strength).toFixed(2) : '-'}</td>
-                      <td className="px-4 py-3 text-slate-600">{test.yield_strength ?? '-'}</td>
-                      <td className="px-4 py-3 text-slate-600">{test.ultimate_deformation ?? '-'}</td>
-                      <td className="px-4 py-3 text-slate-600">{test.energy_absorption ?? '-'}</td>
-                      <td className="px-4 py-3 text-slate-600">{test.bond_strength ?? '-'}</td>
-                      <td className="px-4 py-3 text-slate-600">{test.stiffness ?? '-'}</td>
-                      <td className="px-4 py-3 text-slate-600">{test.installation_method || '-'}</td>
-                      <td className="px-4 py-3 text-slate-600">{test.encapsulation_method || '-'}</td>
-                      <td className="px-4 py-3 text-slate-600">{test.loading_rate || '-'}</td>
-                      <td className="px-4 py-3 text-slate-600">{test.number_of_drops ?? '-'}</td>
+                      <td className="px-2 md:px-4 py-2 text-slate-600 max-w-xs truncate">{product?.product_name || 'Unknown'}</td>
+                      <td className="px-2 md:px-4 py-2 text-slate-600 sm:table-cell">{test.peak_strength ? Number(test.peak_strength).toFixed(2) : '-'}</td>
+                      <td className="px-2 md:px-4 py-2 text-slate-600 md:table-cell">{test.yield_strength ?? '-'}</td>
+                      <td className="px-2 md:px-4 py-2 text-slate-600 lg:table-cell">{test.ultimate_deformation ?? '-'}</td>
+                      <td className="px-2 md:px-4 py-2 text-slate-600 lg:table-cell">{test.energy_absorption ?? '-'}</td>
+                      <td className="px-2 md:px-4 py-2 text-slate-600 xl:table-cell">{test.bond_strength ?? '-'}</td>
+                      <td className="px-2 md:px-4 py-2 text-slate-600 xl:table-cell">{test.stiffness ?? '-'}</td>
+                      <td className="px-2 md:px-4 py-2 text-slate-600 2xl:table-cell">{test.installation_method || '-'}</td>
+                      <td className="px-2 md:px-4 py-2 text-slate-600 2xl:table-cell">{test.encapsulation_method || '-'}</td>
+                      <td className="px-2 md:px-4 py-2 text-slate-600 2xl:table-cell">{test.loading_rate || '-'}</td>
+                      <td className="px-2 md:px-4 py-2 text-slate-600 2xl:table-cell">{test.number_of_drops ?? '-'}</td>
                     </tr>
                   );
                 })}
@@ -759,6 +759,26 @@ export default function Dashboard() {
               </button>
             </div>
           </div>
+
+          <div className="mb-3 flex flex-wrap items-center gap-2 text-xs text-slate-600">
+            <span className="font-semibold uppercase tracking-wider text-slate-500">Legend:</span>
+            {colorBy === 'facility'
+              ? facilities.filter(f => f !== 'All').map((facility) => (
+                  <span key={`legend-${facility}`} className="inline-flex items-center gap-1.5 rounded-full bg-slate-50 px-2 py-1 border border-slate-200">
+                    <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: facilityColorMap[facility] || '#cbd5e1' }} />
+                    <span>{facility}</span>
+                  </span>
+                ))
+              : selectedProductIds.map((productId) => {
+                  const product = filteredProductsList.find(p => p.id === productId);
+                  return (
+                    <span key={`legend-${productId}`} className="inline-flex items-center gap-1.5 rounded-full bg-slate-50 px-2 py-1 border border-slate-200">
+                      <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: productColorMap[productId]?.hex || '#cbd5e1' }} />
+                      <span className="max-w-[10rem] truncate">{product?.product_name || 'Unknown'}</span>
+                    </span>
+                  );
+                })}
+          </div>
           
           <div className="flex-1 min-h-0 w-full relative">
             <ResponsiveContainer width="100%" height="100%">
@@ -783,11 +803,6 @@ export default function Dashboard() {
                 <Tooltip
                   contentStyle={{ borderRadius: '0.75rem', borderColor: '#cbd5e1', backgroundColor: '#ffffff' }}
                   cursor={{ fill: '#f1f5f9' }}
-                />
-                <Legend 
-                  verticalAlign="top" 
-                  height={36}
-                  wrapperStyle={{ paddingBottom: '12px' }}
                 />
                 {colorBy === 'facility'
                   ? facilities.filter(f => f !== 'All').map((facility) => (
