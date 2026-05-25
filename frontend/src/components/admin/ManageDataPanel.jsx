@@ -10,15 +10,15 @@ const API_BASE = '/api';
 // --- Reusable Modal ---
 function Modal({ title, onClose, children }) {
   return (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4" onClick={onClose}>
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-lg md:max-w-2xl lg:max-w-3xl max-h-[90vh] flex flex-col relative" onClick={e => e.stopPropagation()}>
-        <div className="flex justify-between items-center px-6 py-4 border-b border-slate-200 flex-shrink-0">
-          <h3 className="text-lg font-bold text-slate-800">{title}</h3>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600">
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 px-3 md:px-4" onClick={onClose}>
+      <div className="bg-white rounded-xl shadow-xl w-full max-w-sm md:max-w-lg lg:max-w-2xl max-h-[90vh] flex flex-col relative" onClick={e => e.stopPropagation()}>
+        <div className="flex justify-between items-center px-4 md:px-6 py-3 md:py-4 border-b border-slate-200 flex-shrink-0">
+          <h3 className="text-base md:text-lg font-bold text-slate-800 truncate">{title}</h3>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 flex-shrink-0">
             <X className="w-5 h-5" />
           </button>
         </div>
-        <div className="flex-1 overflow-y-auto px-6 py-4">
+        <div className="flex-1 overflow-y-auto px-4 md:px-6 py-3 md:py-4">
           {children}
         </div>
       </div>
@@ -68,32 +68,32 @@ function SuppliersTab({ suppliers, loading, onRefresh, currentPage, totalCount, 
   const endIndex = Math.min(currentPage * itemsPerPage, totalCount);
 
   return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <p className="text-sm text-slate-500">{startIndex}-{endIndex} of {totalCount} supplier(s)</p>
-        <button onClick={openAdd} className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium">
+<div className="space-y-4 md:space-y-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+        <p className="text-xs md:text-sm text-slate-500">{startIndex}-{endIndex} of {totalCount} supplier(s)</p>
+        <button onClick={openAdd} className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-3 md:px-4 py-2 rounded-lg text-xs md:text-sm font-medium">
           <Plus className="w-4 h-4" /> Add Supplier
         </button>
       </div>
 
-      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-        <table className="w-full text-sm text-left">
+      <div className="bg-white rounded-xl border border-slate-200 overflow-x-auto">
+        <table className="min-w-[640px] w-full text-xs md:text-sm text-left">
           <thead className="bg-slate-50 border-b border-slate-200">
             <tr>
-              <th className="px-5 py-3 font-semibold text-slate-600">Name</th>
-              <th className="px-5 py-3 font-semibold text-slate-600 text-right">Actions</th>
+              <th className="px-3 md:px-5 py-2 md:py-3 font-semibold text-slate-600">Name</th>
+              <th className="px-3 md:px-5 py-2 md:py-3 font-semibold text-slate-600 text-right">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
             {suppliers.map(s => (
               <tr key={s.id} className="hover:bg-slate-50">
-                <td className="px-5 py-3 font-medium text-slate-800">{s.name}</td>
-                <td className="px-5 py-3 text-right space-x-2">
-                  <button onClick={() => openEdit(s)} className="text-indigo-600 hover:text-indigo-900 bg-indigo-50 px-3 py-1 rounded-md text-xs font-medium inline-flex items-center gap-1">
-                    <Edit className="w-3 h-3" /> Edit
+                <td className="px-3 md:px-5 py-2 md:py-3 font-medium text-slate-800">{s.name}</td>
+                <td className="px-3 md:px-5 py-2 md:py-3 text-right space-x-1 md:space-x-2 flex justify-end">
+                  <button onClick={() => openEdit(s)} className="text-indigo-600 hover:text-indigo-900 bg-indigo-50 px-2 md:px-3 py-1 rounded-md text-xs font-medium inline-flex items-center gap-1">
+                    <Edit className="w-3 h-3" /> <span className="hidden sm:inline">Edit</span>
                   </button>
-                  <button onClick={() => setDeleteId(s.id)} className="text-red-600 hover:text-red-900 bg-red-50 px-3 py-1 rounded-md text-xs font-medium inline-flex items-center gap-1">
-                    <Trash2 className="w-3 h-3" /> Delete
+                  <button onClick={() => setDeleteId(s.id)} className="text-red-600 hover:text-red-900 bg-red-50 px-2 md:px-3 py-1 rounded-md text-xs font-medium inline-flex items-center gap-1">
+                    <Trash2 className="w-3 h-3" /> <span className="hidden sm:inline">Delete</span>
                   </button>
                 </td>
               </tr>
@@ -103,19 +103,19 @@ function SuppliersTab({ suppliers, loading, onRefresh, currentPage, totalCount, 
       </div>
 
       {/* Pagination Controls */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-center gap-2">
         <button 
           onClick={onPrevPage} 
           disabled={!prevUrl}
-          className="px-4 py-2 text-sm border border-slate-300 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+          className="px-3 md:px-4 py-2 text-xs md:text-sm border border-slate-300 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed font-medium w-full sm:w-auto"
         >
           ← Previous
         </button>
-        <p className="text-sm text-slate-600 font-medium">Page {currentPage}</p>
+        <p className="text-xs md:text-sm text-slate-600 font-medium">Page {currentPage}</p>
         <button 
           onClick={onNextPage} 
           disabled={!nextUrl}
-          className="px-4 py-2 text-sm border border-slate-300 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+          className="px-3 md:px-4 py-2 text-xs md:text-sm border border-slate-300 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed font-medium w-full sm:w-auto"
         >
           Next →
         </button>
@@ -286,8 +286,8 @@ function ProductsTab({ products, suppliers, filterOptions, loading, onRefresh, c
         </button>
       </div>
 
-      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-        <table className="w-full text-sm text-left">
+      <div className="bg-white rounded-xl border border-slate-200 overflow-x-auto">
+        <table className="min-w-[900px] w-full text-sm text-left">
           <thead className="bg-slate-50 border-b border-slate-200">
             <tr>
               <th className="px-5 py-3 font-semibold text-slate-600">ID</th>
@@ -634,8 +634,8 @@ function TestsTab({ tests, filterOptions, loading, onRefresh, currentPage, total
         </button>
       </div>
 
-      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-        <table className="w-full text-sm text-left">
+      <div className="bg-white rounded-xl border border-slate-200 overflow-x-auto">
+        <table className="min-w-[720px] w-full text-sm text-left">
           <thead className="bg-slate-50 border-b border-slate-200">
             <tr>
               <th className="px-5 py-3 font-semibold text-slate-600">Test ID</th>
