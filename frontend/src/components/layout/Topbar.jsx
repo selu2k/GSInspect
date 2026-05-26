@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { Activity, User, LogOut, LogIn, Settings, Menu, X } from 'lucide-react';
+import { Activity, User, LogOut, LogIn, Settings, Menu, X, Home } from 'lucide-react';
 import { useAppContext } from '../../context/useAppContext';
 import { useNavigate } from 'react-router-dom';
 
-export default function Topbar({ onMenuToggle, menuOpen = false }) {
+export default function Topbar({ onMenuToggle, menuOpen = false, isAdminPage = false }) {
   const { userRole, isAuthenticated, logout } = useAppContext();
   const [profileOpen, setProfileOpen] = useState(false);
   const navigate = useNavigate();
@@ -65,10 +65,18 @@ export default function Topbar({ onMenuToggle, menuOpen = false }) {
             {isAuthenticated ? (
               <>
                 <button 
-                  onClick={() => { setProfileOpen(false); navigate('/admin'); }}
+                  onClick={() => { setProfileOpen(false); navigate(isAdminPage ? '/dashboard' : '/admin'); }}
                   className="w-full text-left px-3 md:px-4 py-2 text-slate-700 hover:bg-slate-50 flex items-center gap-2"
                 >
-                  <Settings className="w-4 h-4 flex-shrink-0" /> Admin Panel
+                  {isAdminPage ? (
+                    <>
+                      <Home className="w-4 h-4 flex-shrink-0" /> Dashboard
+                    </>
+                  ) : (
+                    <>
+                      <Settings className="w-4 h-4 flex-shrink-0" /> Admin Panel
+                    </>
+                  )}
                 </button>
                 <div className="h-px bg-slate-200 my-1"></div>
                 <button 
