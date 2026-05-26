@@ -2,7 +2,6 @@ import csv
 import io
 import json
 
-from django.db import IntegrityError
 from django.db.models import Max, Min
 from django_filters import BaseInFilter, CharFilter, FilterSet, NumberFilter
 from django_filters.rest_framework import DjangoFilterBackend
@@ -240,20 +239,6 @@ class AdminSupplierDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = SupplierSerializer
     permission_classes = [IsAdminUser]
     lookup_field = "id"
-
-    def delete(self, request, *args, **kwargs):
-        """Delete supplier with error handling for protected relationships."""
-        try:
-            return super().delete(request, *args, **kwargs)
-        except IntegrityError as e:
-            if "PROTECT" in str(e) or "protected" in str(e):
-                return Response(
-                    {
-                        "detail": "Cannot delete supplier with existing bolts. Delete all related bolts first."
-                    },
-                    status=status.HTTP_409_CONFLICT,
-                )
-            raise
 
 
 class AdminBoltListCreateView(generics.ListCreateAPIView):
