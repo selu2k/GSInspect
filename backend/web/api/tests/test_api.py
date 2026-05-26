@@ -35,15 +35,13 @@ class TestSupplierAPI:
         assert response.data["name"] == "Test Supplier"
 
     def test_delete_supplier_with_bolts(self, authenticated_client, bolt):
-        """Test deleting supplier with bolts should fail (PROTECT constraint)."""
+        """Test deleting supplier cascades to bolts and tests."""
         supplier = bolt.supplier
         response = authenticated_client.delete(f"/api/admin/suppliers/{supplier.id}/")
-        # Should fail because PROTECT constraint prevents deletion
-        # Returns 400 Bad Request error
-        assert response.status_code in [
-            status.HTTP_400_BAD_REQUEST,
-            status.HTTP_409_CONFLICT,
-        ]
+        assert response.status_code == status.HTTP_204_NO_CONTENT
+        assert not Supplier.objects.filter(id=supplier.id).exists()
+        assert not Bolt.objects.filter(id=bolt.id).exists()
+        assert not Test.objects.filter(bolt__supplier_id=supplier.id).exists()
 
 
 @pytest.mark.django_db

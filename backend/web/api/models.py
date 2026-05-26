@@ -32,7 +32,7 @@ class Supplier(models.Model):
 
 class Bolt(models.Model):
     supplier = models.ForeignKey(
-        Supplier, on_delete=models.PROTECT, related_name="bolts", db_index=True
+        Supplier, on_delete=models.CASCADE, related_name="bolts", db_index=True
     )
     name = models.CharField(max_length=255)
     client_product_id = models.CharField(
@@ -84,7 +84,7 @@ class Test(models.Model):
         DYNAMIC = "dynamic", "Dynamic"
 
     # required fields
-    bolt = models.ForeignKey(Bolt, on_delete=models.PROTECT, related_name="tests", db_index=True)
+    bolt = models.ForeignKey(Bolt, on_delete=models.CASCADE, related_name="tests", db_index=True)
     methodology = models.CharField(max_length=10, choices=Methodology.choices, db_index=True)
     facility = models.CharField(max_length=255, db_index=True)
 
