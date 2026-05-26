@@ -137,7 +137,7 @@ export default function CSVUploadPage() {
                 <FileSpreadsheet className="w-5 md:w-6 h-5 md:h-6 text-emerald-500 flex-shrink-0" />
                 <span className="font-medium text-xs md:text-sm truncate flex-1">{file.name}</span>
                 <button
-                  onClick={(e) => { e.stopPropagation(); setFile(null); }}
+                  onClick={(e) => { e.stopPropagation(); setFile(null); inputRef.current.value = ''; }}
                   className="text-slate-400 hover:text-red-500 flex-shrink-0"
                 >
                   <X className="w-4 h-4" />
