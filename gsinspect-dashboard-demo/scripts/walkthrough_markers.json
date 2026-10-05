@@ -1,0 +1,58 @@
+[
+ {
+  "label": "start",
+  "t": 0.403
+ },
+ {
+  "label": "apply",
+  "t": 4.923
+ },
+ {
+  "label": "search",
+  "t": 8.353
+ },
+ {
+  "label": "select",
+  "t": 12.115
+ },
+ {
+  "label": "summary",
+  "t": 21.685
+ },
+ {
+  "label": "chart",
+  "t": 24.451
+ },
+ {
+  "label": "average",
+  "t": 30.261
+ },
+ {
+  "label": "facility",
+  "t": 35.996
+ },
+ {
+  "label": "methodology",
+  "t": 41.815
+ },
+ {
+  "label": "table",
+  "t": 51.627
+ },
+ {
+  "label": "stats",
+  "t": 58.517
+ },
+ {
+  "label": "histogram",
+  "t": 64.069
+ },
+ {
+  "label": "outro",
+  "t": 69.476
+ },
+ {
+  "label": "end",
+  "t": 74.399
+ }
+]

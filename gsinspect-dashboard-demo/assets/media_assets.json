@@ -1,0 +1,812 @@
+{
+  "assets": {
+    "76b05ac7": {
+      "id": "76b05ac7",
+      "type": "video",
+      "src": "assets/dashboard_walkthrough.mp4",
+      "duration_s": 73.366667,
+      "resolution": null,
+      "provider": "user_import",
+      "generation": {
+        "source_path": "assets/dashboard_walkthrough.mp4",
+        "original_filename": "dashboard_walkthrough.mp4",
+        "imported": true,
+        "copy": true
+      },
+      "created_at": "2026-10-05T13:01:09Z",
+      "tags": [
+        "screen-recording",
+        "dashboard"
+      ],
+      "shot": null,
+      "take": null,
+      "parent": null,
+      "change": null,
+      "label": null,
+      "note": null,
+      "preview": null,
+      "fingerprint": {
+        "size": 14015842,
+        "mtime_ns": 1791205259547511792,
+        "sha256": "1fb12bf1b00f8bae3ef5be0ed86cc40142675b49d589577866e9e992136bd83a"
+      },
+      "group_id": "g_76b05ac7"
+    },
+    "00fdcf21": {
+      "id": "00fdcf21",
+      "type": "audio",
+      "src": "assets/vo_01_intro.mp3",
+      "duration_s": 4.318912,
+      "resolution": null,
+      "provider": "eleven_multilingual_v2",
+      "generation": {
+        "tool": "generate_audio",
+        "call": {
+          "text": "Meet GSInspect: one place to explore rockbolt test data.",
+          "options": {
+            "voice_id": "8Jri6RvIkHyisppDpZmQ",
+            "stability": 0.55,
+            "style": 0.15
+          },
+          "output_filename": "vo_01_intro",
+          "shot": "vo-01"
+        },
+        "model": "eleven_multilingual_v2",
+        "provider": "elevenlabs",
+        "request": {
+          "model": "eleven_multilingual_v2",
+          "voice_id": "8Jri6RvIkHyisppDpZmQ",
+          "voice_settings": {
+            "stability": 0.55,
+            "similarity_boost": 0.75,
+            "style": 0.15,
+            "speed": 1.0
+          },
+          "text": "Meet GSInspect: one place to explore rockbolt test data."
+        },
+        "response": {},
+        "cost_usd": 0.0056,
+        "started_at": "2026-10-05T13:02:34Z",
+        "finished_at": "2026-10-05T13:02:41Z",
+        "status": "ready"
+      },
+      "created_at": "2026-10-05T13:02:41Z",
+      "tags": null,
+      "shot": "vo-01",
+      "take": 1,
+      "parent": null,
+      "change": null,
+      "label": null,
+      "note": null,
+      "preview": null,
+      "fingerprint": {
+        "size": 70261,
+        "mtime_ns": 1791205361696631969,
+        "sha256": "40bcbd71ba0862392f6610b8194a0a89dbca11c916aea71f424e0e1952578982"
+      },
+      "group_id": "g_00fdcf21"
+    },
+    "775d6466": {
+      "id": "775d6466",
+      "type": "audio",
+      "src": "assets/vo_02_apply.mp3",
+      "duration_s": 4.458231,
+      "resolution": null,
+      "provider": "eleven_multilingual_v2",
+      "generation": {
+        "tool": "generate_audio",
+        "call": {
+          "text": "Set your filters in the sidebar, hit Apply, and every matching product appears.",
+          "options": {
+            "voice_id": "8Jri6RvIkHyisppDpZmQ",
+            "stability": 0.55,
+            "style": 0.15
+          },
+          "output_filename": "vo_02_apply",
+          "shot": "vo-02"
+        },
+        "model": "eleven_multilingual_v2",
+        "provider": "elevenlabs",
+        "request": {
+          "model": "eleven_multilingual_v2",
+          "voice_id": "8Jri6RvIkHyisppDpZmQ",
+          "voice_settings": {
+            "stability": 0.55,
+            "similarity_boost": 0.75,
+            "style": 0.15,
+            "speed": 1.0
+          },
+          "text": "Set your filters in the sidebar, hit Apply, and every matching product appears."
+        },
+        "response": {},
+        "cost_usd": 0.0079,
+        "started_at": "2026-10-05T13:02:41Z",
+        "finished_at": "2026-10-05T13:02:43Z",
+        "status": "ready"
+      },
+      "created_at": "2026-10-05T13:02:43Z",
+      "tags": null,
+      "shot": "vo-02",
+      "take": 1,
+      "parent": null,
+      "change": null,
+      "label": null,
+      "note": null,
+      "preview": null,
+      "fingerprint": {
+        "size": 72351,
+        "mtime_ns": 1791205363641861520,
+        "sha256": "1d40803aec6c71eba3243114f2f9b88427c5e49261578a5defe81f1a71c01941"
+      },
+      "group_id": "g_775d6466"
+    },
+    "e4cea849": {
+      "id": "e4cea849",
+      "type": "audio",
+      "src": "assets/vo_03_search.mp3",
+      "duration_s": 7.941224,
+      "resolution": null,
+      "provider": "eleven_multilingual_v2",
+      "generation": {
+        "tool": "generate_audio",
+        "call": {
+          "text": "Search narrows the list as you type. Click a product to add it to the chart. Here, two hybrid bolts, and a resin bolt for comparison.",
+          "options": {
+            "voice_id": "8Jri6RvIkHyisppDpZmQ",
+            "stability": 0.55,
+            "style": 0.15
+          },
+          "output_filename": "vo_03_search",
+          "shot": "vo-03"
+        },
+        "model": "eleven_multilingual_v2",
+        "provider": "elevenlabs",
+        "request": {
+          "model": "eleven_multilingual_v2",
+          "voice_id": "8Jri6RvIkHyisppDpZmQ",
+          "voice_settings": {
+            "stability": 0.55,
+            "similarity_boost": 0.75,
+            "style": 0.15,
+            "speed": 1.0
+          },
+          "text": "Search narrows the list as you type. Click a product to add it to the chart. Here, two hybrid bolts, and a resin bolt for comparison."
+        },
+        "response": {},
+        "cost_usd": 0.0133,
+        "started_at": "2026-10-05T13:02:43Z",
+        "finished_at": "2026-10-05T13:02:46Z",
+        "status": "ready"
+      },
+      "created_at": "2026-10-05T13:02:46Z",
+      "tags": null,
+      "shot": "vo-03",
+      "take": 1,
+      "parent": null,
+      "change": null,
+      "label": null,
+      "note": null,
+      "preview": null,
+      "fingerprint": {
+        "size": 127939,
+        "mtime_ns": 1791205366277151571,
+        "sha256": "3f78ed1de4e01b519e5167020ef478a101997ab5f656574b88f115c358537ef2"
+      },
+      "group_id": "g_e4cea849"
+    },
+    "353ec75b": {
+      "id": "353ec75b",
+      "type": "audio",
+      "src": "assets/vo_04_summary.mp3",
+      "duration_s": 6.130068,
+      "resolution": null,
+      "provider": "eleven_multilingual_v2",
+      "generation": {
+        "tool": "generate_audio",
+        "call": {
+          "text": "Each selection gets a spec card: supplier, type, diameter, length, and compatible equipment.",
+          "options": {
+            "voice_id": "8Jri6RvIkHyisppDpZmQ",
+            "stability": 0.55,
+            "style": 0.15
+          },
+          "output_filename": "vo_04_summary",
+          "shot": "vo-04"
+        },
+        "model": "eleven_multilingual_v2",
+        "provider": "elevenlabs",
+        "request": {
+          "model": "eleven_multilingual_v2",
+          "voice_id": "8Jri6RvIkHyisppDpZmQ",
+          "voice_settings": {
+            "stability": 0.55,
+            "similarity_boost": 0.75,
+            "style": 0.15,
+            "speed": 1.0
+          },
+          "text": "Each selection gets a spec card: supplier, type, diameter, length, and compatible equipment."
+        },
+        "response": {},
+        "cost_usd": 0.0092,
+        "started_at": "2026-10-05T13:02:46Z",
+        "finished_at": "2026-10-05T13:02:48Z",
+        "status": "ready"
+      },
+      "created_at": "2026-10-05T13:02:48Z",
+      "tags": null,
+      "shot": "vo-04",
+      "take": 1,
+      "parent": null,
+      "change": null,
+      "label": null,
+      "note": null,
+      "preview": null,
+      "fingerprint": {
+        "size": 99100,
+        "mtime_ns": 1791205368317147205,
+        "sha256": "74d92b95eaabb700ce02c7e1595b302eaa07d6a57a985286e8524eb4e6480607"
+      },
+      "group_id": "g_353ec75b"
+    },
+    "296edd1b": {
+      "id": "296edd1b",
+      "type": "audio",
+      "src": "assets/vo_05_chart.mp3",
+      "duration_s": 5.01551,
+      "resolution": null,
+      "provider": "eleven_multilingual_v2",
+      "generation": {
+        "tool": "generate_audio",
+        "call": {
+          "text": "The force-displacement chart overlays every test. Hover to read the load at any point.",
+          "options": {
+            "voice_id": "8Jri6RvIkHyisppDpZmQ",
+            "stability": 0.55,
+            "style": 0.15
+          },
+          "output_filename": "vo_05_chart",
+          "shot": "vo-05"
+        },
+        "model": "eleven_multilingual_v2",
+        "provider": "elevenlabs",
+        "request": {
+          "model": "eleven_multilingual_v2",
+          "voice_id": "8Jri6RvIkHyisppDpZmQ",
+          "voice_settings": {
+            "stability": 0.55,
+            "similarity_boost": 0.75,
+            "style": 0.15,
+            "speed": 1.0
+          },
+          "text": "The force-displacement chart overlays every test. Hover to read the load at any point."
+        },
+        "response": {},
+        "cost_usd": 0.0086,
+        "started_at": "2026-10-05T13:02:48Z",
+        "finished_at": "2026-10-05T13:02:50Z",
+        "status": "ready"
+      },
+      "created_at": "2026-10-05T13:02:50Z",
+      "tags": null,
+      "shot": "vo-05",
+      "take": 1,
+      "parent": null,
+      "change": null,
+      "label": null,
+      "note": null,
+      "preview": null,
+      "fingerprint": {
+        "size": 81128,
+        "mtime_ns": 1791205370053731329,
+        "sha256": "964948cc684e6c08601450c5e9f4e92fc5e7ee373de1b043836a8721ea9bd4c8"
+      },
+      "group_id": "g_296edd1b"
+    },
+    "72cca489": {
+      "id": "72cca489",
+      "type": "audio",
+      "src": "assets/vo_06_average.mp3",
+      "duration_s": 3.018594,
+      "resolution": null,
+      "provider": "eleven_multilingual_v2",
+      "generation": {
+        "tool": "generate_audio",
+        "call": {
+          "text": "Turn on averages to see each product's typical curve.",
+          "options": {
+            "voice_id": "8Jri6RvIkHyisppDpZmQ",
+            "stability": 0.55,
+            "style": 0.15
+          },
+          "output_filename": "vo_06_average",
+          "shot": "vo-06"
+        },
+        "model": "eleven_multilingual_v2",
+        "provider": "elevenlabs",
+        "request": {
+          "model": "eleven_multilingual_v2",
+          "voice_id": "8Jri6RvIkHyisppDpZmQ",
+          "voice_settings": {
+            "stability": 0.55,
+            "similarity_boost": 0.75,
+            "style": 0.15,
+            "speed": 1.0
+          },
+          "text": "Turn on averages to see each product's typical curve."
+        },
+        "response": {},
+        "cost_usd": 0.0053,
+        "started_at": "2026-10-05T13:02:50Z",
+        "finished_at": "2026-10-05T13:02:51Z",
+        "status": "ready"
+      },
+      "created_at": "2026-10-05T13:02:51Z",
+      "tags": null,
+      "shot": "vo-06",
+      "take": 1,
+      "parent": null,
+      "change": null,
+      "label": null,
+      "note": null,
+      "preview": null,
+      "fingerprint": {
+        "size": 49363,
+        "mtime_ns": 1791205371569421674,
+        "sha256": "b7928074083e009a4555c2eb37403b58f4d069914305ca90f461b7484611d93b"
+      },
+      "group_id": "g_72cca489"
+    },
+    "6d60e008": {
+      "id": "6d60e008",
+      "type": "audio",
+      "src": "assets/vo_07_facility.mp3",
+      "duration_s": 3.529433,
+      "resolution": null,
+      "provider": "eleven_multilingual_v2",
+      "generation": {
+        "tool": "generate_audio",
+        "call": {
+          "text": "Or colour by facility, to compare where the tests were run.",
+          "options": {
+            "voice_id": "8Jri6RvIkHyisppDpZmQ",
+            "stability": 0.55,
+            "style": 0.15
+          },
+          "output_filename": "vo_07_facility",
+          "shot": "vo-07"
+        },
+        "model": "eleven_multilingual_v2",
+        "provider": "elevenlabs",
+        "request": {
+          "model": "eleven_multilingual_v2",
+          "voice_id": "8Jri6RvIkHyisppDpZmQ",
+          "voice_settings": {
+            "stability": 0.55,
+            "similarity_boost": 0.75,
+            "style": 0.15,
+            "speed": 1.0
+          },
+          "text": "Or colour by facility, to compare where the tests were run."
+        },
+        "response": {},
+        "cost_usd": 0.0059,
+        "started_at": "2026-10-05T13:02:51Z",
+        "finished_at": "2026-10-05T13:02:53Z",
+        "status": "ready"
+      },
+      "created_at": "2026-10-05T13:02:53Z",
+      "tags": null,
+      "shot": "vo-07",
+      "take": 1,
+      "parent": null,
+      "change": null,
+      "label": null,
+      "note": null,
+      "preview": null,
+      "fingerprint": {
+        "size": 57722,
+        "mtime_ns": 1791205373604745984,
+        "sha256": "5e1d69e4d01838ab49284da2195559beb0edf222f2f943f8c8ffd0754f1edbe1"
+      },
+      "group_id": "g_6d60e008"
+    },
+    "49dbddec": {
+      "id": "49dbddec",
+      "type": "audio",
+      "src": "assets/vo_08_method.mp3",
+      "duration_s": 4.551111,
+      "resolution": null,
+      "provider": "eleven_multilingual_v2",
+      "generation": {
+        "tool": "generate_audio",
+        "call": {
+          "text": "Switch between static and dynamic test methods, and the whole dashboard follows.",
+          "options": {
+            "voice_id": "8Jri6RvIkHyisppDpZmQ",
+            "stability": 0.55,
+            "style": 0.15
+          },
+          "output_filename": "vo_08_method",
+          "shot": "vo-08"
+        },
+        "model": "eleven_multilingual_v2",
+        "provider": "elevenlabs",
+        "request": {
+          "model": "eleven_multilingual_v2",
+          "voice_id": "8Jri6RvIkHyisppDpZmQ",
+          "voice_settings": {
+            "stability": 0.55,
+            "similarity_boost": 0.75,
+            "style": 0.15,
+            "speed": 1.0
+          },
+          "text": "Switch between static and dynamic test methods, and the whole dashboard follows."
+        },
+        "response": {},
+        "cost_usd": 0.008,
+        "started_at": "2026-10-05T13:02:53Z",
+        "finished_at": "2026-10-05T13:02:56Z",
+        "status": "ready"
+      },
+      "created_at": "2026-10-05T13:02:56Z",
+      "tags": null,
+      "shot": "vo-08",
+      "take": 1,
+      "parent": null,
+      "change": null,
+      "label": null,
+      "note": null,
+      "preview": null,
+      "fingerprint": {
+        "size": 74022,
+        "mtime_ns": 1791205376467662218,
+        "sha256": "1dc37488e7858a6aa01e6e983302f6b2302d8ab77dbf21839bce826c591e5f00"
+      },
+      "group_id": "g_49dbddec"
+    },
+    "7a772948": {
+      "id": "7a772948",
+      "type": "audio",
+      "src": "assets/vo_09_table.mp3",
+      "duration_s": 7.430385,
+      "resolution": null,
+      "provider": "eleven_multilingual_v2",
+      "generation": {
+        "tool": "generate_audio",
+        "call": {
+          "text": "Every plotted test is listed below, with peak load, yield, deformation and energy. Click a row to highlight it.",
+          "options": {
+            "voice_id": "8Jri6RvIkHyisppDpZmQ",
+            "stability": 0.55,
+            "style": 0.15
+          },
+          "output_filename": "vo_09_table",
+          "shot": "vo-09"
+        },
+        "model": "eleven_multilingual_v2",
+        "provider": "elevenlabs",
+        "request": {
+          "model": "eleven_multilingual_v2",
+          "voice_id": "8Jri6RvIkHyisppDpZmQ",
+          "voice_settings": {
+            "stability": 0.55,
+            "similarity_boost": 0.75,
+            "style": 0.15,
+            "speed": 1.0
+          },
+          "text": "Every plotted test is listed below, with peak load, yield, deformation and energy. Click a row to highlight it."
+        },
+        "response": {},
+        "cost_usd": 0.0111,
+        "started_at": "2026-10-05T13:02:56Z",
+        "finished_at": "2026-10-05T13:02:58Z",
+        "status": "ready"
+      },
+      "created_at": "2026-10-05T13:02:58Z",
+      "tags": null,
+      "shot": "vo-09",
+      "take": 1,
+      "parent": null,
+      "change": null,
+      "label": null,
+      "note": null,
+      "preview": null,
+      "fingerprint": {
+        "size": 119998,
+        "mtime_ns": 1791205378714713948,
+        "sha256": "81e8723acca950524c41dc62b24386d07658008b81046a10e62285aa63685b11"
+      },
+      "group_id": "g_7a772948"
+    },
+    "a8daa116": {
+      "id": "a8daa116",
+      "type": "audio",
+      "src": "assets/vo_10_stats.mp3",
+      "duration_s": 6.362268,
+      "resolution": null,
+      "provider": "eleven_multilingual_v2",
+      "generation": {
+        "tool": "generate_audio",
+        "call": {
+          "text": "Summary statistics break down any property: min, max, mean, quartiles and spread.",
+          "options": {
+            "voice_id": "8Jri6RvIkHyisppDpZmQ",
+            "stability": 0.55,
+            "style": 0.15
+          },
+          "output_filename": "vo_10_stats",
+          "shot": "vo-10"
+        },
+        "model": "eleven_multilingual_v2",
+        "provider": "elevenlabs",
+        "request": {
+          "model": "eleven_multilingual_v2",
+          "voice_id": "8Jri6RvIkHyisppDpZmQ",
+          "voice_settings": {
+            "stability": 0.55,
+            "similarity_boost": 0.75,
+            "style": 0.15,
+            "speed": 1.0
+          },
+          "text": "Summary statistics break down any property: min, max, mean, quartiles and spread."
+        },
+        "response": {},
+        "cost_usd": 0.0081,
+        "started_at": "2026-10-05T13:02:58Z",
+        "finished_at": "2026-10-05T13:03:02Z",
+        "status": "ready"
+      },
+      "created_at": "2026-10-05T13:03:02Z",
+      "tags": null,
+      "shot": "vo-10",
+      "take": 1,
+      "parent": null,
+      "change": null,
+      "label": null,
+      "note": null,
+      "preview": null,
+      "fingerprint": {
+        "size": 102862,
+        "mtime_ns": 1791205382122278813,
+        "sha256": "7f7886cf474c77c2c375292f36153115d0cfa43491f7c22666433ea53ff44542"
+      },
+      "group_id": "g_a8daa116"
+    },
+    "e20cbb7e": {
+      "id": "e20cbb7e",
+      "type": "audio",
+      "src": "assets/vo_11_hist.mp3",
+      "duration_s": 4.133152,
+      "resolution": null,
+      "provider": "eleven_multilingual_v2",
+      "generation": {
+        "tool": "generate_audio",
+        "call": {
+          "text": "And the distribution view shows how the results stack up, product by product.",
+          "options": {
+            "voice_id": "8Jri6RvIkHyisppDpZmQ",
+            "stability": 0.55,
+            "style": 0.15
+          },
+          "output_filename": "vo_11_hist",
+          "shot": "vo-11"
+        },
+        "model": "eleven_multilingual_v2",
+        "provider": "elevenlabs",
+        "request": {
+          "model": "eleven_multilingual_v2",
+          "voice_id": "8Jri6RvIkHyisppDpZmQ",
+          "voice_settings": {
+            "stability": 0.55,
+            "similarity_boost": 0.75,
+            "style": 0.15,
+            "speed": 1.0
+          },
+          "text": "And the distribution view shows how the results stack up, product by product."
+        },
+        "response": {},
+        "cost_usd": 0.0077,
+        "started_at": "2026-10-05T13:03:02Z",
+        "finished_at": "2026-10-05T13:03:03Z",
+        "status": "ready"
+      },
+      "created_at": "2026-10-05T13:03:03Z",
+      "tags": null,
+      "shot": "vo-11",
+      "take": 1,
+      "parent": null,
+      "change": null,
+      "label": null,
+      "note": null,
+      "preview": null,
+      "fingerprint": {
+        "size": 67335,
+        "mtime_ns": 1791205383710540446,
+        "sha256": "5d52133620891bb1168b0bf70b1ab41b6946a50820da2b98b7ad04f15a36aead"
+      },
+      "group_id": "g_e20cbb7e"
+    },
+    "f5ea7a81": {
+      "id": "f5ea7a81",
+      "type": "audio",
+      "src": "assets/vo_12_outro.mp3",
+      "duration_s": 3.204354,
+      "resolution": null,
+      "provider": "eleven_multilingual_v2",
+      "generation": {
+        "tool": "generate_audio",
+        "call": {
+          "text": "GSInspect. Rockbolt performance, side by side.",
+          "options": {
+            "voice_id": "8Jri6RvIkHyisppDpZmQ",
+            "stability": 0.55,
+            "style": 0.15
+          },
+          "output_filename": "vo_12_outro",
+          "shot": "vo-12"
+        },
+        "model": "eleven_multilingual_v2",
+        "provider": "elevenlabs",
+        "request": {
+          "model": "eleven_multilingual_v2",
+          "voice_id": "8Jri6RvIkHyisppDpZmQ",
+          "voice_settings": {
+            "stability": 0.55,
+            "similarity_boost": 0.75,
+            "style": 0.15,
+            "speed": 1.0
+          },
+          "text": "GSInspect. Rockbolt performance, side by side."
+        },
+        "response": {},
+        "cost_usd": 0.0046,
+        "started_at": "2026-10-05T13:03:03Z",
+        "finished_at": "2026-10-05T13:03:05Z",
+        "status": "ready"
+      },
+      "created_at": "2026-10-05T13:03:05Z",
+      "tags": null,
+      "shot": "vo-12",
+      "take": 1,
+      "parent": null,
+      "change": null,
+      "label": null,
+      "note": null,
+      "preview": null,
+      "fingerprint": {
+        "size": 52288,
+        "mtime_ns": 1791205385285762687,
+        "sha256": "7c9a3f8c9af49030d9f3d6d364148c55f2660bf50235020c6cf53202c94467a9"
+      },
+      "group_id": "g_f5ea7a81"
+    },
+    "1dee9be4": {
+      "id": "1dee9be4",
+      "type": "video",
+      "src": "assets/card_intro.mp4",
+      "duration_s": 4.0,
+      "resolution": null,
+      "provider": "remotion",
+      "generation": {
+        "composition": "GSCard",
+        "duration": 4.0,
+        "props": {
+          "variant": "intro",
+          "title": "GSInspect",
+          "kicker": "Ground Support",
+          "line": "Rockbolt test data, compared side by side",
+          "_durationFrames": 120,
+          "_fps": 30.0
+        },
+        "mode": "final",
+        "transparent": false
+      },
+      "created_at": "2026-10-05T13:06:57Z",
+      "tags": null,
+      "shot": null,
+      "take": null,
+      "parent": null,
+      "change": null,
+      "label": null,
+      "note": null,
+      "preview": null,
+      "fingerprint": {
+        "size": 992789,
+        "mtime_ns": 1791205617691412545,
+        "sha256": "d16a8a3337c7859761b1a80c58d235c77497d3496463813c4c4e17f05b331b85"
+      },
+      "group_id": "g_1dee9be4"
+    },
+    "ea1164af": {
+      "id": "ea1164af",
+      "type": "video",
+      "src": "assets/card_outro.mp4",
+      "duration_s": 5.0,
+      "resolution": null,
+      "provider": "remotion",
+      "generation": {
+        "composition": "GSCard",
+        "duration": 5.0,
+        "props": {
+          "variant": "outro",
+          "title": "GSInspect",
+          "kicker": "Ground Support",
+          "line": "Rockbolt performance, side by side",
+          "_durationFrames": 150,
+          "_fps": 30.0
+        },
+        "mode": "final",
+        "transparent": false
+      },
+      "created_at": "2026-10-05T13:07:04Z",
+      "tags": null,
+      "shot": null,
+      "take": null,
+      "parent": null,
+      "change": null,
+      "label": null,
+      "note": null,
+      "preview": null,
+      "fingerprint": {
+        "size": 1223139,
+        "mtime_ns": 1791205624156110274,
+        "sha256": "bc678474025e36f904005080529908f1d38ad962bc7a17c7892d092f0261f8a0"
+      },
+      "group_id": "g_ea1164af"
+    },
+    "72e7ff14": {
+      "id": "72e7ff14",
+      "type": "audio",
+      "src": "assets/vo_08b_bridge.mp3",
+      "duration_s": 3.111474,
+      "resolution": null,
+      "provider": "eleven_multilingual_v2",
+      "generation": {
+        "tool": "generate_audio",
+        "call": {
+          "text": "Switch back, and scroll down to the underlying data.",
+          "options": {
+            "voice_id": "8Jri6RvIkHyisppDpZmQ",
+            "stability": 0.55,
+            "style": 0.15
+          },
+          "output_filename": "vo_08b_bridge",
+          "shot": "vo-08b"
+        },
+        "model": "eleven_multilingual_v2",
+        "provider": "elevenlabs",
+        "request": {
+          "model": "eleven_multilingual_v2",
+          "voice_id": "8Jri6RvIkHyisppDpZmQ",
+          "voice_settings": {
+            "stability": 0.55,
+            "similarity_boost": 0.75,
+            "style": 0.15,
+            "speed": 1.0
+          },
+          "text": "Switch back, and scroll down to the underlying data."
+        },
+        "response": {},
+        "cost_usd": 0.0052,
+        "started_at": "2026-10-05T13:09:46Z",
+        "finished_at": "2026-10-05T13:09:50Z",
+        "status": "ready"
+      },
+      "created_at": "2026-10-05T13:09:50Z",
+      "tags": null,
+      "shot": "vo-08b",
+      "take": 1,
+      "parent": null,
+      "change": null,
+      "label": null,
+      "note": null,
+      "preview": null,
+      "fingerprint": {
+        "size": 51035,
+        "mtime_ns": 1791205790098582974,
+        "sha256": "02eda46d2d74e9c72dbc032d61d689440e8175d39ebd4509668834b4811c60ef"
+      },
+      "group_id": "g_72e7ff14"
+    }
+  }
+}

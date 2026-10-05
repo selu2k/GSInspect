@@ -1,0 +1,127 @@
+{
+  "schema": 2,
+  "version": 2,
+  "parent": 1,
+  "title": "dashboard-demo",
+  "settings": {
+    "size": "1920x1080",
+    "fps": 30.0
+  },
+  "picture": [
+    {
+      "id": "c1",
+      "src": "assets/card_intro.mp4"
+    },
+    {
+      "id": "c2",
+      "src": "assets/dashboard_walkthrough.mp4",
+      "trim": [
+        0.0,
+        70.396667
+      ],
+      "transition": "crossfade",
+      "transition_duration": 0.5
+    },
+    {
+      "id": "c3",
+      "src": "assets/card_outro.mp4",
+      "transition": "crossfade",
+      "transition_duration": 0.5
+    }
+  ],
+  "audio_tracks": [
+    {
+      "id": "a2",
+      "role": "dialogue",
+      "clips": [
+        {
+          "id": "c4",
+          "src": "assets/vo_01_intro.mp3",
+          "at": 0.5
+        },
+        {
+          "id": "c5",
+          "src": "assets/vo_02_apply.mp3",
+          "at": 6.7
+        },
+        {
+          "id": "c6",
+          "src": "assets/vo_03_search.mp3",
+          "at": 12.1
+        },
+        {
+          "id": "c7",
+          "src": "assets/vo_04_summary.mp3",
+          "at": 22.0
+        },
+        {
+          "id": "c8",
+          "src": "assets/vo_05_chart.mp3",
+          "at": 29.1
+        },
+        {
+          "id": "c9",
+          "src": "assets/vo_06_average.mp3",
+          "at": 34.3
+        },
+        {
+          "id": "c10",
+          "src": "assets/vo_07_facility.mp3",
+          "at": 39.5
+        },
+        {
+          "id": "c11",
+          "src": "assets/vo_08_method.mp3",
+          "at": 45.4
+        },
+        {
+          "id": "c12",
+          "src": "assets/vo_09_table.mp3",
+          "at": 54.8
+        },
+        {
+          "id": "c13",
+          "src": "assets/vo_10_stats.mp3",
+          "at": 62.5
+        },
+        {
+          "id": "c14",
+          "src": "assets/vo_11_hist.mp3",
+          "at": 69.1
+        },
+        {
+          "id": "c15",
+          "src": "assets/vo_12_outro.mp3",
+          "at": 74.33333333333333
+        },
+        {
+          "id": "c17",
+          "src": "assets/vo_08b_bridge.mp3",
+          "at": 50.6
+        }
+      ]
+    },
+    {
+      "id": "a3",
+      "role": "music",
+      "duck": 0.6,
+      "clips": [
+        {
+          "id": "c16",
+          "src": "library:music-corporate-uplifting",
+          "at": 0.0,
+          "end": 78.4,
+          "level_db": -6.0,
+          "fade_in": 0.5,
+          "fade_out": 2.5
+        }
+      ]
+    }
+  ],
+  "export": {
+    "file": "dashboard-demo.mp4",
+    "loudness_lufs": -14.0
+  },
+  "last_id": 17,
+  "content_hash": "d637abaf35c87160"
+}
